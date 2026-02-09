@@ -4,6 +4,3 @@ Membres de l'équipe:
 -Abderrahim Hermez
 -Lilia Ait-Mokhtar
 -Rayane Hebbache
-
-
-qegpiheroruhssoruh
