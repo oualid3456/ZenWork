@@ -12,13 +12,18 @@ function App() {
         <img src="public/login_pic.png" alt="login pic" />
       </div>
       <div className="right">
-        <h1>ZenWork</h1>
-        <button onClick={() => setSpace("employee")}>
-          Employé
-        </button>
-        <button onClick={() => setSpace("rh")}>
-          RH
-        </button>
+        <div className="title">
+          <img src="public/zenwork_logo.png" alt="zenwork logo" />
+          <h1>ZenWork</h1>
+        </div>
+        <div className="choice">
+          <button className={space === "employee" ? "in" : "out"} onClick={() => setSpace("employee")}>
+            Employé  
+          </button>
+          <button className={space === "rh" ? "in" : "out"} onClick={() => setSpace("rh")}>
+            RH  
+          </button>
+        </div>
         {space === "employee" && <EmployeeLogin />}
         {space === "rh" && <RhLogin />}
       </div>

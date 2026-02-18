@@ -1,11 +1,16 @@
 function RhLogin() {
   return (
     <div>
-      <h2>Connexion Employé</h2>
       <form>
-        <label>Email<input type="email" /></label>
+        <label>Email
+          <br />
+          <input type="email" />
+        </label>
         <br />
-        <label>Mot de passe<input type="password" /></label>
+        <label>Mot de passe
+          <br />
+          <input type="password" />
+        </label>
         <br />
         <button>Se connecter</button>
       </form>
