@@ -6,15 +6,15 @@ import './login.css';
 function App() {
   const [space, setSpace] = useState("employee");
   return (
-    // on a besoin de container ici car, on a pas de body
     <div className="container">
+    {/* on a besoin de container ici car, on a pas de body */}
       <div className="left">
         <img src="public/login_pic.png" alt="login pic" />
       </div>
       <div className="right">
-        <div className="title">
+        <div>
+          {/* logo tout pixelise a change */}
           <img src="public/zenwork_logo.png" alt="zenwork logo" />
-          <h1>ZenWork</h1>
         </div>
         <div className="choice">
           <button className={space === "employee" ? "in" : "out"} onClick={() => setSpace("employee")}>
