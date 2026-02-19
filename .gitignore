@@ -1,0 +1,19 @@
+
+# Environnement virtuel 
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Base de données locale
+db.sqlite3
+
+# Dossier Frontend 
+node_modules/
+
+# VS Code
+.vscode/
