@@ -1,19 +1,23 @@
-
-# Environnement virtuel 
-venv/
-.venv/
-env/
-
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# Base de données locale
+*.pyo
+*.egg-info/
 db.sqlite3
 
-# Dossier Frontend 
-node_modules/
+# Virtual environment - each person creates their own!
+venv/
+env/
+.venv/
 
-# VS Code
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+node_modules/
