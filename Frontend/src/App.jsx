@@ -17,6 +17,8 @@ function App() {
           <img src="public/zenwork_logo.png" alt="zenwork logo" />
         </div>
         <div className="choice">
+          {/* expression ternaire pour mettre l'un a in et l'autre a out pour */}
+          {/* que dans le css on puisse souligner l'un en bleu et l'autre en gris */}
           <button className={space === "employee" ? "in" : "out"} onClick={() => setSpace("employee")}>
             Employé  
           </button>
