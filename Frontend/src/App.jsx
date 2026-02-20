@@ -1,35 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import EmployeeLogin from "./EmployeeLogin";
+import RhLogin from "./RhLogin";
+import './login.css';
 
 function App() {
-  const [count, setCount] = useState(0)
-
+  const [space, setSpace] = useState("employee");
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="container">
+    {/* on a besoin de container ici car, on a pas de body */}
+      <div className="left">
+        <img src="public/login_pic.png" alt="login pic" />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+      <div className="right">
+        <div>
+          {/* logo tout pixelise a change */}
+          <img src="public/zenwork_logo.png" alt="zenwork logo" />
+        </div>
+        <div className="choice">
+          {/* expression ternaire pour mettre l'un a in et l'autre a out pour */}
+          {/* que dans le css on puisse souligner l'un en bleu et l'autre en gris */}
+          <button className={space === "employee" ? "in" : "out"} onClick={() => setSpace("employee")}>
+            Employé  
+          </button>
+          <button className={space === "rh" ? "in" : "out"} onClick={() => setSpace("rh")}>
+            RH  
+          </button>
+        </div>
+        {space === "employee" && <EmployeeLogin />}
+        {space === "rh" && <RhLogin />}
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
