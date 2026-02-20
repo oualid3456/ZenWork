@@ -19,6 +19,11 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+<<<<<<< HEAD
     path("admin/", admin.site.urls),
     path("api/", include("rh_management.urls")),  # API endpoints
+=======
+    path('admin/', admin.site.urls),
+    path('psychobot/', include('psychobot.urls', namespace='psychobot')),
+>>>>>>> af8f2b5c4c6a674f03fc1305a4995e9236cb21ac
 ]

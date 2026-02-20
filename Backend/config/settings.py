@@ -40,7 +40,11 @@ INSTALLED_APPS = [
     "rh_management",
     "rest_framework",
     "corsheaders",
+    "psychobot",
 ]
+
+GEMINI_API_KEY = "AIzaSyCAMOuEhHToFmH9jpc2r7LuhG7r6ILXG90"
+
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

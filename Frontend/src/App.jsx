@@ -1,13 +1,13 @@
 import { useState } from "react";
-import EmployeeLogin from "./EmployeeLogin";
-import RhLogin from "./RhLogin";
-import './login.css';
+import "./login.css";
+import Register from "./register.jsx";
+import Login from "./login.jsx";
 
 function App() {
   const [space, setSpace] = useState("employee");
   return (
     <div className="container">
-    {/* on a besoin de container ici car, on a pas de body */}
+      {/* on a besoin de container ici car, on a pas de body */}
       <div className="left">
         <img src="public/login_pic.png" alt="login pic" />
       </div>
@@ -19,11 +19,17 @@ function App() {
         <div className="choice">
           {/* expression ternaire pour mettre l'un a in et l'autre a out pour */}
           {/* que dans le css on puisse souligner l'un en bleu et l'autre en gris */}
-          <button className={space === "employee" ? "in" : "out"} onClick={() => setSpace("employee")}>
-            Employé  
+          <button
+            className={space === "employee" ? "in" : "out"}
+            onClick={() => setSpace("employee")}
+          >
+            Employé
           </button>
-          <button className={space === "rh" ? "in" : "out"} onClick={() => setSpace("rh")}>
-            RH  
+          <button
+            className={space === "rh" ? "in" : "out"}
+            onClick={() => setSpace("rh")}
+          >
+            RH
           </button>
         </div>
         {space === "employee" && <EmployeeLogin />}
