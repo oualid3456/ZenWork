@@ -35,7 +35,7 @@ function RhLogin() {
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
         </label>
         <br />
-        <button>Se connecter</button>
+        <button type = "submit">Se connecter</button>
       </form>
     </div>
   );

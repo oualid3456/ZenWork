@@ -1,6 +1,6 @@
 import { useState } from "react";
 import EmployeeDiscussion from "./EmployeeDiscussion";
-import SecureSpace from "./Secured_Space";
+import Secured_Space from "./Secured_Space";
 import "./forum.css";
 
 export default function ForumHome({ userRole }) {
