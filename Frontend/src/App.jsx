@@ -1,10 +1,15 @@
 import { useState } from "react";
 import EmployeeLogin from "./EmployeeLogin";
 import RhLogin from "./RhLogin";
+import ForumHome from "./Forum/ForumHome";
+import './Forum/forum.css';
 import './login.css';
 
 function App() {
   const [space, setSpace] = useState("employee");
+  const [logged, setLogged] = useState(false);
+  const [role, setRole] = useState(null);
+
   return (
     <div className="container">
     {/* on a besoin de container ici car, on a pas de body */}
@@ -26,8 +31,13 @@ function App() {
             RH  
           </button>
         </div>
-        {space === "employee" && <EmployeeLogin />}
-        {space === "rh" && <RhLogin />}
+        
+        {/* On passe setLogged et setRole au login */}
+        {space === "employee" && (<EmployeeLogin onSuccess={() => { 
+          setLogged(true); setRole("employee"); }}/>)}
+
+        {space === "rh" && (<RhLogin onSuccess={() => { 
+          setLogged(true); setRole("rh"); }}/>)}
       </div>
     </div>
   );
