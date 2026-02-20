@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rh_management',
+    'psychobot',  
 ]
+
+GEMINI_API_KEY = "AIzaSyCAMOuEhHToFmH9jpc2r7LuhG7r6ILXG90"
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
