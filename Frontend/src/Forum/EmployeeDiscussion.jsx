@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Post from "./Post";
 
-export default function EmployeeDiscussion({ mode }) {
+function EmployeeDiscussion({ mode }) {
   const [posts, setPosts] = useState([]);
   const [text, setText] = useState("");
 
@@ -26,3 +26,4 @@ export default function EmployeeDiscussion({ mode }) {
     </div>
   );
 }
+export default EmployeeDiscussion

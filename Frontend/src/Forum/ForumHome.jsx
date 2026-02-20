@@ -33,7 +33,7 @@ export default function ForumHome({ userRole }) {
 
       {tab === "feed" && <EmployeeDiscussion mode="public" />}
       {tab === "employees" && <EmployeeDiscussion mode="private" />}
-      {tab === "secure" && <SecureSpace role={userRole} />}
+      {tab === "secure" && <Secured_Space role={userRole} />}
     </div>
   );
 }
