@@ -10,6 +10,12 @@ function App() {
   const [logged, setLogged] = useState(false);
   const [role, setRole] = useState(null);
 
+  {/* ce if est temporaire car il permet uniquement de passer directement 
+   au forum une fois connecté  */}
+  if (logged) {
+      return <ForumHome userRole={role} />;
+    }
+    
   return (
     <div className="container">
     {/* on a besoin de container ici car, on a pas de body */}
@@ -17,6 +23,7 @@ function App() {
         <img src="public/login_pic.png" alt="login pic" />
       </div>
       <div className="right">
+        
         <div>
           {/* logo tout pixelise a change */}
           <img src="public/zenwork_logo.png" alt="zenwork logo" />

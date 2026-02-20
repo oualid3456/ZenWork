@@ -1,7 +1,7 @@
 import { useState } from "react";
 import EmployeeDiscussion from "./EmployeeDiscussion";
-import SecureSpace from "./SecureSpace";
-import "./../forum.css";
+import SecureSpace from "./Secured_Space";
+import "./forum.css";
 
 export default function ForumHome({ userRole }) {
   const [tab, setTab] = useState("feed");
