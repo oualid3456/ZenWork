@@ -27,12 +27,12 @@ function RhLogin() {
       <form onSubmit={fetchLogin}>
         <label>Email
           <br />
-          <input type="email" value={username} onChange={e => setUsername(e.target.value)} required />
+          <input type="email" value={username} onChange={e => setUsername(e.target.value)} maxLength={30} required />
         </label>
         <br />
         <label>Mot de passe
           <br />
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} maxLength={30} required />
         </label>
         <br />
         <button>Se connecter</button>

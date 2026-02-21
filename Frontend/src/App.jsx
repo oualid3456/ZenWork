@@ -1,20 +1,25 @@
 import { useState } from "react";
 import "./login.css";
+import EmployeeLogin from "./EmployeeLogin.jsx";
+import RhLogin from "./RhLogin.jsx";
 import Register from "./register.jsx";
 import Login from "./login.jsx";
 
 function App() {
   const [space, setSpace] = useState("employee");
+  const DarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
   return (
     <div className="container">
       {/* on a besoin de container ici car, on a pas de body */}
       <div className="left">
-        <img src="public/login_pic.png" alt="login pic" />
+        {/* on choisit l'image en fonction de si l'utilisateur active */}
+        {/* le dark theme ou non */}
+        <img src={DarkTheme ? "public/login_pic_dark.png" : "public/login_pic.png"} alt="login pic" />
       </div>
       <div className="right">
         <div>
           {/* logo tout pixelise a change */}
-          <img src="public/zenwork_logo.png" alt="zenwork logo" />
+          <img src={DarkTheme ? "public/zenwork_logo_dark.png" : "public/zenwork_logo.png"} alt="zenwork logo" />
         </div>
         <div className="choice">
           {/* expression ternaire pour mettre l'un a in et l'autre a out pour */}
