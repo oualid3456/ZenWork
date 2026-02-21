@@ -7,13 +7,18 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("EMPLOYE");
   const [message, setMessage] = useState("");
+  const [nom, setNom] = useState("");
+  const [prenom, setPrenom] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
     const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
+      email,
+      password,
+      options: {
+        data: { nom, prenom },
+      },
     });
 
     if (error) {
@@ -21,9 +26,16 @@ export default function Register() {
       return;
     }
 
+    if (!data?.user?.id) {
+      setMessage("Impossible de recuperer l'utilisateur apres l'inscription.");
+      return;
+    }
+
     const { error: profileError } = await supabase.from("profiles").insert({
       id: data.user.id,
-      role: role,
+      role,
+      nom,
+      prenom,
     });
 
     if (profileError) {
@@ -31,7 +43,7 @@ export default function Register() {
       return;
     }
 
-    setMessage("Compte créé avec succès !");
+    setMessage("Compte cree avec succes !");
   };
 
   return (
@@ -53,12 +65,26 @@ export default function Register() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
+        <input
+          type="text"
+          placeholder="Nom"
+          required
+          onChange={(e) => setNom(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="Prenom"
+          required
+          onChange={(e) => setPrenom(e.target.value)}
+        />
+
         <select onChange={(e) => setRole(e.target.value)}>
-          <option value="EMPLOYE">Employé</option>
+          <option value="EMPLOYE">Employe</option>
           <option value="RH">RH</option>
         </select>
 
-        <button type="submit">Créer le compte</button>
+        <button type="submit">Creer le compte</button>
       </form>
 
       <p>{message}</p>
