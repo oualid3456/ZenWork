@@ -1,7 +1,7 @@
 import json
 from datetime import date, timedelta
 
-from django.contrib.auth.decorators import login_required
+from .supabase_auth import supabase_login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
@@ -26,7 +26,7 @@ def lundi_semaine_courante() -> date:
 # ─────────────────────────────────────────────
 
 @csrf_exempt
-@login_required
+@supabase_login_required
 @require_POST
 def soumettre_questionnaire(request):
     """
@@ -104,7 +104,7 @@ def soumettre_questionnaire(request):
 # ALERTES (vue RH)
 # ─────────────────────────────────────────────
 
-@login_required
+@supabase_login_required
 @require_GET
 def liste_alertes(request):
     """
@@ -156,7 +156,7 @@ def _exporter_alertes_json(alertes: list):
 # ─────────────────────────────────────────────
 
 @csrf_exempt
-@login_required
+@supabase_login_required
 @require_POST
 def demarrer_session(request):
     """
@@ -189,7 +189,7 @@ def demarrer_session(request):
 
 
 @csrf_exempt
-@login_required
+@supabase_login_required
 @require_POST
 def envoyer_message_chat(request, session_id):
     """
@@ -235,7 +235,7 @@ def envoyer_message_chat(request, session_id):
     return JsonResponse({"reponse": reponse_bot})
 
 
-@login_required
+@supabase_login_required
 @require_GET
 def historique_chat(request, session_id):
     """
