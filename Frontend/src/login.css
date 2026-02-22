@@ -101,6 +101,18 @@ html, body {
   transform: scale(1.05);
 }
 
+.errorMessage {
+  color: red;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+.register {
+  color: blue;
+  cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
   html, body {
     margin: 0;
@@ -203,5 +215,17 @@ html, body {
 
   .right form button:hover {
     transform: scale(1.05);
+  }
+
+  .errorMessage {
+    color: red;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 0;
+  }
+
+  .register {
+    color: blue;
+    cursor: pointer;
   }
 }

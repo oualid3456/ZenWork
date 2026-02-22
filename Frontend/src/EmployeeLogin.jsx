@@ -20,7 +20,7 @@ function EmployeeLogin() {
         // message pour l'utilisateur (pour le moment pas opti
         // car ne distingue pas s'il s'agit de l'utilisateur
         // qui s'est trompé ou si l'erreur viens de la base)
-        setErrorMessage("Identifiant ou mot de passe incorrect");
+        setErrorMessage("Email ou mot de passe incorrect");
         return;
       }
   
@@ -43,7 +43,7 @@ function EmployeeLogin() {
         <br />
         <button>Se connecter</button>
       </form>
-      {errorMessage  && <p>{errorMessage }</p>}
+      {errorMessage  && <p className="errorMessage">{errorMessage}</p>}
     </div>
   );
 }

@@ -41,9 +41,9 @@ function App() {
         </div>
         {space === "employee" && <EmployeeLogin />}
         {space === "rh" && <RhLogin />}
-        <button onClick={() => setShowRegister(true)}>
+        <p className="register" onClick={() => setShowRegister(true)}>
           Créer un compte
-        </button>
+        </p>
       </div>
     </div>
   );
