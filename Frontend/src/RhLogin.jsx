@@ -1,42 +1,49 @@
 import { useState } from "react";
+import { supabase } from "./supabaseClient";
 
 function RhLogin() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const fetchLogin = (event) => {
-    event.preventDefault();
-    fetch('http://127.0.0.1:8000/login/', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username, password, role: 'rh'})
-    })
-    .then(resultat => resultat.json())
-    .then(data => {
-      if (data.success) {
-        alert('Connexion réussie');
-      } else {
-        alert('Identifiants incorrects');
+  const handleLogin = async (e) => {
+      e.preventDefault();
+  
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+  
+      if (error) {
+        setMessage(error.message);
+        // message pour l'utilisateur (pour le moment pas opti
+        // car ne distingue pas s'il s'agit de l'utilisateur
+        // qui s'est trompé ou si l'erreur viens de la base)
+        setErrorMessage("Identifiant ou mot de passe incorrect");
+        return;
       }
-    })
-    .catch(e => console.error('Erreur réseau :', e));
-  };
+  
+      setMessage("Connexion réussie !");
+      console.log("User connecté :", data.user);
+    };
 
   return (
     <div>
-      <form onSubmit={fetchLogin}>
+      <form onSubmit={handleLogin}>
         <label>Email
           <br />
-          <input type="email" value={username} onChange={e => setUsername(e.target.value)} maxLength={30} required />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
         </label>
         <br />
         <label>Mot de passe
           <br />
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} maxLength={30} required />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
         </label>
         <br />
         <button>Se connecter</button>
       </form>
+      {errorMessage  && <p>{errorMessage }</p>}
     </div>
   );
 }

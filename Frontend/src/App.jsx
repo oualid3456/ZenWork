@@ -1,13 +1,15 @@
 import { useState } from "react";
-import "./login.css";
 import EmployeeLogin from "./EmployeeLogin.jsx";
 import RhLogin from "./RhLogin.jsx";
 import Register from "./register.jsx";
-import Login from "./login.jsx";
 
 function App() {
   const [space, setSpace] = useState("employee");
   const DarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const [showRegister, setShowRegister] = useState(false);
+  if (showRegister) {
+    return <Register />;
+  }  
   return (
     <div className="container">
       {/* on a besoin de container ici car, on a pas de body */}
@@ -39,6 +41,9 @@ function App() {
         </div>
         {space === "employee" && <EmployeeLogin />}
         {space === "rh" && <RhLogin />}
+        <button onClick={() => setShowRegister(true)}>
+          Créer un compte
+        </button>
       </div>
     </div>
   );
