@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabaseClient";
+import styles from "./login.module.css";
 
 function RhLogin() {
   const [email, setEmail] = useState("");
@@ -29,21 +30,21 @@ function RhLogin() {
     };
 
   return (
-    <div>
-      <form onSubmit={handleLogin}>
-        <label>Email
+    <div className={styles.div}>
+      <form className={styles.form} onSubmit={handleLogin}>
+        <label className={styles.label}>Email
           <br />
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input className={styles.input}  type="email" value={email} onChange={e => setEmail(e.target.value)} required />
         </label>
         <br />
-        <label>Mot de passe
+        <label className={styles.label} >Mot de passe
           <br />
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+          <input className={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
         </label>
         <br />
-        <button>Se connecter</button>
+        <button className={styles.button}>Se connecter</button>
       </form>
-      {errorMessage  && <p className="errorMessage">{errorMessage}</p>}
+      {errorMessage  && <p className={styles.errorMessage}>{errorMessage}</p>}
     </div>
   );
 }
