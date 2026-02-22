@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabaseClient";
-import "./login.css";
+import styles from "./register.module.css";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -47,7 +47,7 @@ export default function Register() {
   };
 
   return (
-    <div>
+    <div className={styles.container}>
       <h2>Inscription</h2>
 
       <form onSubmit={handleRegister}>

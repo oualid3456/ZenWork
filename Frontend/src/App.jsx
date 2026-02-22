@@ -2,6 +2,7 @@ import { useState } from "react";
 import EmployeeLogin from "./EmployeeLogin.jsx";
 import RhLogin from "./RhLogin.jsx";
 import Register from "./register.jsx";
+import styles from "./login.module.css";
 
 function App() {
   const [space, setSpace] = useState("employee");
@@ -11,29 +12,29 @@ function App() {
     return <Register />;
   }  
   return (
-    <div className="container">
+    <div className={styles.container}>
       {/* on a besoin de container ici car, on a pas de body */}
-      <div className="left">
+      <div className={styles.left}>
         {/* on choisit l'image en fonction de si l'utilisateur active */}
         {/* le dark theme ou non */}
         <img src={DarkTheme ? "public/login_pic_dark.png" : "public/login_pic.png"} alt="login pic" />
       </div>
-      <div className="right">
+      <div className={styles.right}>
         <div>
           {/* logo tout pixelise a change */}
           <img src={DarkTheme ? "public/zenwork_logo_dark.png" : "public/zenwork_logo.png"} alt="zenwork logo" />
         </div>
-        <div className="choice">
+        <div className={styles.choice}>
           {/* expression ternaire pour mettre l'un a in et l'autre a out pour */}
           {/* que dans le css on puisse souligner l'un en bleu et l'autre en gris */}
           <button
-            className={space === "employee" ? "in" : "out"}
+            className={space === "employee" ? styles.in : styles.out}
             onClick={() => setSpace("employee")}
           >
             Employé
           </button>
           <button
-            className={space === "rh" ? "in" : "out"}
+            className={space === "rh" ? styles.in : styles.out}
             onClick={() => setSpace("rh")}
           >
             RH
@@ -41,7 +42,7 @@ function App() {
         </div>
         {space === "employee" && <EmployeeLogin />}
         {space === "rh" && <RhLogin />}
-        <p className="register" onClick={() => setShowRegister(true)}>
+        <p className={styles.register} onClick={() => setShowRegister(true)}>
           Créer un compte
         </p>
       </div>
