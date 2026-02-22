@@ -24,6 +24,17 @@ function EmployeeLogin() {
         setErrorMessage("Email ou mot de passe incorrect");
         return;
       }
+
+      const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
+      if (profileError || profile.role !== "EMPLOYE") {
+        setErrorMessage("Email ou mot de passe incorrect");
+        return;
+      }
   
       setMessage("Connexion réussie !");
       console.log("User connecté :", data.user);

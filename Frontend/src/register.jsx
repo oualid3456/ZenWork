@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabaseClient";
+import App from "./app.jsx";
 import styles from "./register.module.css";
 
 export default function Register() {
@@ -9,6 +10,10 @@ export default function Register() {
   const [message, setMessage] = useState("");
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
+  const [showApp, setShowApp] = useState(false);
+  if (showApp) {
+    return <App />;
+  }
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -43,13 +48,13 @@ export default function Register() {
       return;
     }
 
-    setMessage("Compte cree avec succes !");
+    setMessage("Compte crée avec succes !");
   };
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.h2} >Inscription</h2>
       <div className={styles.create}>
+        <h2 className={styles.h2} >Inscription</h2>
         <form className={styles.form} onSubmit={handleRegister}>
           <input className={styles.input}
             type="email"
@@ -62,6 +67,7 @@ export default function Register() {
             type="password"
             placeholder="Mot de passe"
             required
+            pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*])(?=.*[0-9]).{10,}"
             onChange={(e) => setPassword(e.target.value)}
           />
 
@@ -86,6 +92,9 @@ export default function Register() {
 
           <button className={styles.button} type="submit">Creer le compte</button>
         </form>
+        <p className={styles.login} onClick={() => setShowApp(true)}>
+          Retourner a l'espace de connexion
+        </p>
         <p className={styles.p}>{message}</p>
       </div>
     </div>
