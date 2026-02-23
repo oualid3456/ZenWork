@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { supabase } from "./supabaseClient";
-import App from "./app.jsx";
+import { supabase } from "./supabaseClient.js";
+import App from "./App.jsx";
 import styles from "./register.module.css";
 
-export default function Register() {
+function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("EMPLOYE");
@@ -80,7 +80,7 @@ export default function Register() {
 
           <input className={styles.input}
             type="text"
-            placeholder="Prenom"
+            placeholder="Prénom"
             required
             onChange={(e) => setPrenom(e.target.value)}
           />
@@ -90,7 +90,7 @@ export default function Register() {
             <option className={styles.option} value="RH">RH</option>
           </select>
 
-          <button className={styles.button} type="submit">Creer le compte</button>
+          <button className={styles.button} type="submit">Créer le compte</button>
         </form>
         <p className={styles.login} onClick={() => setShowApp(true)}>
           Retourner a l'espace de connexion
@@ -100,3 +100,5 @@ export default function Register() {
     </div>
   );
 }
+
+export default Register;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import EmployeeLogin from "./EmployeeLogin.jsx";
 import RhLogin from "./RhLogin.jsx";
-import Register from "./register.jsx";
+import Register from "./Register.jsx";
 import styles from "./login.module.css";
 
 function App() {
