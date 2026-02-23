@@ -1,252 +1,176 @@
 import json
-from datetime import date, timedelta
-
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST, require_GET
-from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
+from django.db import connection
 
-from .models import QuestionnaireReponse, AlerteBurnout, SessionChat, MessageChat
-from .gemini_service import (
-    analyser_questionnaire,
-    determine_niveau,
-    build_context_prefix,
-    envoyer_message,
+# Import de tes services IA (les fonctions Gemini du fichier services.py)
+from .services import (
+    compute_burnout_score, 
+    chat_with_gemini, 
+    update_score_from_chat, 
+    determine_level,
+    build_context_prefix
 )
 
+# ─────────────────────────────────────────────
+# 1) REQUÊTES SQL SUPABASE (LECTURE / ÉCRITURE)
+# ─────────────────────────────────────────────
 
-def lundi_semaine_courante() -> date:
-    today = date.today()
-    return today - timedelta(days=today.weekday())
+def _get_reponses_questionnaire(questionnaire_id):
+    """Va chercher les réponses de l'employé directement dans la table psychobot_questionnaireresponse."""
+    with connection.cursor() as cursor:
+        # Note : adapte la clause WHERE selon comment est lié ton questionnaire_id à cette table
+        cursor.execute(
+            """
+            SELECT niveau_stress_sur_10, qualite_sommeil, charge_de_travail, 
+                   sentiment_isolement, commentaire_libre
+            FROM psychobot_questionnaireresponse
+            WHERE id = %s 
+            """,
+            [questionnaire_id]
+        )
+        row = cursor.fetchone()
+        if row:
+            return {
+                "niveau_stress_sur_10": row[0],
+                "qualite_sommeil": row[1],
+                "charge_de_travail": row[2],
+                "sentiment_isolement": row[3],
+                "commentaire_libre": row[4]
+            }
+        return None
+
+def _upsert_alerte_burnout(questionnaire_id, niveau, score, raisons):
+    """
+    Insère l'alerte dans psychobot_alerteburnout. 
+    On utilise un ON CONFLICT pour mettre à jour si l'alerte existe déjà (ex: après le chat).
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO psychobot_alerteburnout (questionnaire_id, niveau, score, raisons, analyse_le)
+            VALUES (%s, %s, %s, %s::jsonb, NOW())
+            ON CONFLICT (questionnaire_id) 
+            DO UPDATE SET 
+                niveau = EXCLUDED.niveau,
+                score = EXCLUDED.score,
+                raisons = EXCLUDED.raisons,
+                analyse_le = NOW()
+            RETURNING id;
+            """,
+            [questionnaire_id, niveau, score, json.dumps(raisons)]
+        )
+        return cursor.fetchone()[0]
 
 
 # ─────────────────────────────────────────────
-# QUESTIONNAIRE
+# 2) VUES / ENDPOINTS API POUR LE FRONTEND
 # ─────────────────────────────────────────────
 
 @csrf_exempt
-@login_required
 @require_POST
-def soumettre_questionnaire(request):
+def analyze_questionnaire(request):
     """
-    POST /psychobot/questionnaire/
-    Body JSON :
-    {
-      "niveau_stress_sur_10": 8,
-      "qualite_sommeil": "...",
-      "charge_de_travail": "...",
-      "sentiment_isolement": "...",
-      "commentaire_libre": "..."
-    }
+    Déclenché par le front après soumission du questionnaire.
+    1. Lit l'ID du questionnaire.
+    2. Récupère les données en BDD.
+    3. Calcule le score IA initial et génère l'alerte en BDD.
     """
     try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({"erreur": "JSON invalide."}, status=400)
+        utilisateur_id = request.supabase_user_id
+    except AttributeError:
+        return JsonResponse({"error": "Non authentifié (supabase_user_id manquant)"}, status=401)
 
-    semaine = lundi_semaine_courante()
+    data = json.loads(request.body)
+    questionnaire_id = data.get("questionnaire_id")
 
-    if QuestionnaireReponse.objects.filter(employe=request.user, semaine=semaine).exists():
-        return JsonResponse(
-            {"erreur": "Questionnaire déjà soumis cette semaine."},
-            status=400
-        )
+    if not questionnaire_id:
+        return JsonResponse({"error": "questionnaire_id manquant"}, status=400)
 
-    # Validation champs obligatoires
-    champs = ["niveau_stress_sur_10", "qualite_sommeil", "charge_de_travail", "sentiment_isolement"]
-    for champ in champs:
-        if champ not in data:
-            return JsonResponse({"erreur": f"Champ manquant : {champ}"}, status=400)
+    # 1. Lecture en base de données
+    reponses = _get_reponses_questionnaire(questionnaire_id)
+    if not reponses:
+        return JsonResponse({"error": "Questionnaire introuvable en BDD"}, status=404)
 
-    q = QuestionnaireReponse.objects.create(
-        employe              = request.user,
-        employe_id_ext       = data.get("employe_id", ""),
-        departement          = data.get("departement", ""),
-        date_soumission      = date.today(),
-        semaine              = semaine,
-        niveau_stress_sur_10 = data["niveau_stress_sur_10"],
-        qualite_sommeil      = data["qualite_sommeil"],
-        charge_de_travail    = data["charge_de_travail"],
-        sentiment_isolement  = data["sentiment_isolement"],
-        commentaire_libre    = data.get("commentaire_libre", ""),
-    )
+    # 2. Analyse IA avec Gemini
+    result = compute_burnout_score(reponses)
+    score_initial = result["score"]
+    niveau_initial = determine_level(score_initial)
+    raisons_initiales = result["raisons"]
 
-    # Analyse Gemini immédiate
-    try:
-        reponses = q.to_reponses_dict()
-        resultat = analyser_questionnaire(reponses)
-        niveau   = determine_niveau(resultat["score"])
-
-        if niveau:
-            AlerteBurnout.objects.create(
-                questionnaire = q,
-                niveau        = niveau,
-                score         = resultat["score"],
-                raisons       = resultat["raisons"],
-            )
-
-        return JsonResponse({
-            "message":  "Questionnaire soumis et analysé.",
-            "score":    resultat["score"],
-            "niveau":   niveau,
-            "raisons":  resultat["raisons"],
-        }, status=201)
-
-    except Exception as e:
-        return JsonResponse({
-            "message": "Questionnaire soumis. Analyse IA échouée.",
-            "erreur":  str(e),
-        }, status=201)
-
-
-# ─────────────────────────────────────────────
-# ALERTES (vue RH)
-# ─────────────────────────────────────────────
-
-@login_required
-@require_GET
-def liste_alertes(request):
-    """
-    GET /psychobot/alertes/
-    Retourne toutes les alertes + exporte alerts_output.json
-    """
-    alertes = AlerteBurnout.objects.select_related(
-        "questionnaire", "questionnaire__employe"
-    ).all()
-
-    data = []
-    for a in alertes:
-        data.append({
-            "employe_id":  a.questionnaire.employe.username,
-            "departement": a.questionnaire.departement,
-            "date":        a.questionnaire.date_soumission.isoformat(),
-            "niveau":      a.niveau,
-            "score":       a.score,
-            "raisons":     a.raisons,
-            "analyse_le":  a.analyse_le.isoformat(),
-        })
-
-    # Export fichier JSON (comme la version console)
-    _exporter_alertes_json(data)
-
+    # 3. Sauvegarde immédiate de l'alerte initiale
+    alerte_id = _upsert_alerte_burnout(questionnaire_id, niveau_initial, score_initial, raisons_initiales)
+    
     return JsonResponse({
-        "total_alertes": len(data),
-        "alertes":       data,
+        "alerte_id": alerte_id,
+        "score_initial": score_initial,
+        "niveau": niveau_initial,
+        "raisons": raisons_initiales
     })
 
 
-def _exporter_alertes_json(alertes: list):
-    from django.conf import settings
-    import os
-    from datetime import datetime
+@csrf_exempt
+@require_POST
+def send_chat_message(request):
+    """Gère l'échange en temps réel avec Gemini."""
+    try:
+        utilisateur_id = request.supabase_user_id
+    except AttributeError:
+        return JsonResponse({"error": "Non authentifié"}, status=401)
 
-    output = {
-        "exporte_le":    datetime.now().isoformat(),
-        "total_alertes": len(alertes),
-        "alertes":       alertes,
-    }
-    path = os.path.join(settings.BASE_DIR, "alerts_output.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    data = json.loads(request.body)
+    history = data.get("history", [])
+    user_message = data.get("message", "")
+    questionnaire_id = data.get("questionnaire_id")
+    
+    prefix = ""
+    # Injecte le contexte caché de la BDD pour le TOUT PREMIER message du chat
+    if len(history) == 1 and questionnaire_id:
+        reponses = _get_reponses_questionnaire(questionnaire_id)
+        if reponses:
+            prefix = build_context_prefix(reponses)
+    
+    bot_response = chat_with_gemini(history, user_message, prefix)
+    
+    return JsonResponse({"response": bot_response})
 
-
-# ─────────────────────────────────────────────
-# CHAT
-# ─────────────────────────────────────────────
 
 @csrf_exempt
-@login_required
 @require_POST
-def demarrer_session(request):
+def close_chat_session(request):
     """
-    POST /psychobot/chat/demarrer/
-    Crée une session et retourne le message de bienvenue de PsychoBot.
+    À la fin du chat :
+    1. Reçoit l'historique complet.
+    2. Met à jour le score (en rendant les raisons vagues/anonymes).
+    3. Met à jour la table psychobot_alerteburnout.
     """
-    semaine = lundi_semaine_courante()
-    questionnaire = QuestionnaireReponse.objects.filter(
-        employe=request.user, semaine=semaine
-    ).first()
+    try:
+        utilisateur_id = request.supabase_user_id
+    except AttributeError:
+        return JsonResponse({"error": "Non authentifié"}, status=401)
 
-    session = SessionChat.objects.create(
-        employe       = request.user,
-        questionnaire = questionnaire,
-    )
+    data = json.loads(request.body)
+    history = data.get("history", [])
+    questionnaire_id = data.get("questionnaire_id")
+    initial_score = data.get("score_initial", 0)
+    initial_raisons = data.get("raisons_initiales", [])
 
-    bienvenue = (
-        "Bonjour ! J'ai pris connaissance de votre questionnaire de cette semaine. "
-        "Comment vous sentez-vous en ce moment ?"
-        if questionnaire else
-        "Bonjour ! Je suis PsychoBot. Comment vous sentez-vous aujourd'hui ?"
-    )
+    if not questionnaire_id:
+        return JsonResponse({"error": "questionnaire_id manquant"}, status=400)
 
-    MessageChat.objects.create(session=session, role="assistant", contenu=bienvenue)
+    # Analyse de la conversation pour anonymiser et ajuster le score
+    new_data = update_score_from_chat(history, initial_score, initial_raisons)
+    score_final = new_data["score"]
+    raisons_vagues = new_data["raisons"] 
+    niveau_final = determine_level(score_final)
+
+    # Mise à jour de l'alerte en BDD avec le nouveau score et les raisons vagues
+    _upsert_alerte_burnout(questionnaire_id, niveau_final, score_final, raisons_vagues)
 
     return JsonResponse({
-        "session_id": session.id,
-        "message":    bienvenue,
-    }, status=201)
-
-
-@csrf_exempt
-@login_required
-@require_POST
-def envoyer_message_chat(request, session_id):
-    """
-    POST /psychobot/chat/<session_id>/
-    Body JSON : {"message": "..."}
-    """
-    try:
-        session = SessionChat.objects.get(id=session_id, employe=request.user, active=True)
-    except SessionChat.DoesNotExist:
-        return JsonResponse({"erreur": "Session introuvable."}, status=404)
-
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({"erreur": "JSON invalide."}, status=400)
-
-    message_user = data.get("message", "").strip()
-    if not message_user:
-        return JsonResponse({"erreur": "Message vide."}, status=400)
-
-    # Sauvegarde message utilisateur
-    MessageChat.objects.create(session=session, role="user", contenu=message_user)
-
-    # Historique existant (sans le message qu'on vient d'ajouter)
-    historique = list(
-        session.messages.order_by("timestamp")
-               .values("role", "contenu")[:-1]
-    )
-
-    # Contexte questionnaire injecté uniquement sur le 1er message utilisateur
-    premier_message_user = not any(m["role"] == "user" for m in historique)
-    context_prefix = ""
-    if premier_message_user and session.questionnaire:
-        context_prefix = build_context_prefix(session.questionnaire.to_reponses_dict())
-
-    try:
-        reponse_bot = envoyer_message(historique, message_user, context_prefix)
-    except Exception as e:
-        return JsonResponse({"erreur": f"Erreur Gemini : {e}"}, status=500)
-
-    MessageChat.objects.create(session=session, role="assistant", contenu=reponse_bot)
-
-    return JsonResponse({"reponse": reponse_bot})
-
-
-@login_required
-@require_GET
-def historique_chat(request, session_id):
-    """
-    GET /psychobot/chat/<session_id>/historique/
-    """
-    try:
-        session = SessionChat.objects.get(id=session_id, employe=request.user)
-    except SessionChat.DoesNotExist:
-        return JsonResponse({"erreur": "Session introuvable."}, status=404)
-
-    messages = list(
-        session.messages.order_by("timestamp").values("role", "contenu", "timestamp")
-    )
-    return JsonResponse({"messages": messages})
+        "status": "Session clôturée et base mise à jour",
+        "score_final": score_final,
+        "niveau_final": niveau_final,
+        "raisons_anonymisees": raisons_vagues
+    })

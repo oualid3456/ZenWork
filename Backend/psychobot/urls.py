@@ -4,14 +4,7 @@ from . import views
 app_name = "psychobot"
 
 urlpatterns = [
-    # Questionnaire
-    path("questionnaire/",          views.soumettre_questionnaire, name="soumettre_questionnaire"),
-
-    # Alertes (vue RH)
-    path("alertes/",                views.liste_alertes,           name="liste_alertes"),
-
-    # Chat
-    path("chat/demarrer/",          views.demarrer_session,        name="demarrer_session"),
-    path("chat/<int:session_id>/",  views.envoyer_message_chat,    name="envoyer_message_chat"),
-    path("chat/<int:session_id>/historique/", views.historique_chat, name="historique_chat"),
+    path("questionnaire/",              views.analyze_questionnaire,  name="questionnaire"),
+    path("chat/message/",               views.send_chat_message,      name="chat_message"),
+    path("chat/fermer/",                views.close_chat_session,     name="chat_fermer"),
 ]
