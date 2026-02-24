@@ -9,7 +9,7 @@ function Questionnaire() {
   const [cmp, setCmp] = useState(0);
   // un tableau contenant l'ensemble des questions dans l'ordre
   const questions = [
-    "Question 1 ?",
+    "Question 1 ? aeggggggggggggggggggggggggggggggggggggggggggga       agae",
     "Question 2 ?",
     "Question 3 ?",
     "Question 4 ?",
@@ -44,26 +44,26 @@ function Questionnaire() {
     return (
       <div className={styles.div}>
         <h1 className={styles.h1}>Voulez vous procédé au test ?</h1>
-        <button onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-        <p>Il s'agit d'un questionnaire anonyme de X questions ayant pour but<br />
+        <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
+        <p className={styles.p}>Il s'agit d'un questionnaire anonyme de X questions ayant pour but<br />
         d'évalué votre santé mentale afin de pouvoir vous aidé si besoin.<br />
         Il vous sera demandé de répondre avec honeteté afin de ne pas fausser<br />
         le questionnaire qui pourrait vous aider.</p>
-        <p>Il s'agit d'un questionnaire complet et détaillé basé sur de nombreux questionnaires fiables</p>
+        <p className={styles.p}>Il s'agit d'un questionnaire complet et détaillé basé sur de nombreux questionnaires fiables.</p>
       </div>
     );
   }
   if (currentQuestion < questions.length) {
     return (
-      <div className={styles.div}>
-        <h2 className={styles.h2} >{questions[currentQuestion]}</h2>
+      <div className={styles.questionnaire}>
+        <h2 className={styles.h2}>{questions[currentQuestion]}</h2>
         <div className={styles.progression_container}>
           <div className={styles.bar} style={{ width: `${progression}%` }}>
           </div>
         </div>
         <div className={styles.div}>
           {Object.keys(ratings).map((emoji) => (
-            <button className={styles.button} key={emoji} onClick={() => {
+            <button className={styles.emoji_button} key={emoji} onClick={() => {
               setCmp(cmp + ratings[emoji]);
               setAnswers({...answers, [questions[currentQuestion]]: emoji});
               setCurrentQuestion(currentQuestion + 1)}}>
@@ -76,7 +76,7 @@ function Questionnaire() {
   }
   return (
     <div className={styles.div}>
-      <h1 className={styles.h1}>C'est terminé !!!</h1>
+      <h1 className={styles.h1}>C'est terminé !</h1>
       <p>Merci d’avoir prit le temps de répondre au questionnaire.</p>
       {/* code pour verifier que tout marche
       <p>Score total: {cmp}</p>
