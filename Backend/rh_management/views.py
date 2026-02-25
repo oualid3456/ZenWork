@@ -1,3 +1,15 @@
 from django.shortcuts import render
+from .models import Planning
 
-# Create your views here.
+
+def dashboard_rh(request):
+    plannings_to_approve = Planning.objects.filter(
+        type_planning='CONGE',
+        source='DEMANDE'
+    )
+
+
+    return render(request, 'rh/dashboard.html', {
+        'plannings': plannings_to_approve
+    }
+    )
