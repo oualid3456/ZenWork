@@ -1,15 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import EmployeeLogin from "./EmployeeLogin.jsx";
 import RhLogin from "./RhLogin.jsx";
 import Register from "./Register.jsx";
 import styles from "./login.module.css";
 
-function App() {
+function Login() {
   const [space, setSpace] = useState("employee");
   const DarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const [showRegister, setShowRegister] = useState(false);
+  const navigate = useNavigate();
   if (showRegister) {
-    return <Register />;
+    navigate("/register");
   }  
   return (
     <div className={styles.loginWrapper}>
@@ -52,4 +54,4 @@ function App() {
   );
 }
 
-export default App;
+export default Login;

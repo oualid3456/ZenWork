@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient.js";
-import App from "./App.jsx";
+import Login from "./Login.jsx";
 import styles from "./register.module.css";
 
 function Register() {
@@ -10,9 +11,10 @@ function Register() {
   const [message, setMessage] = useState("");
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
-  const [showApp, setShowApp] = useState(false);
-  if (showApp) {
-    return <App />;
+  const [showLogin, setShowLogin] = useState(false);
+  const navigate = useNavigate();
+  if (showLogin) {
+    navigate("/");
   }
 
   const handleRegister = async (e) => {
@@ -92,7 +94,7 @@ function Register() {
 
           <button className={styles.button} type="submit">Créer le compte</button>
         </form>
-        <p className={styles.login} onClick={() => setShowApp(true)}>
+        <p className={styles.login} onClick={() => setShowLogin(true)}>
           Retourner a l'espace de connexion
         </p>
         <p className={styles.p}>{message}</p>

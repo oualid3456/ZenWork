@@ -50,7 +50,7 @@ function Questionnaire() {
           d'évalué votre santé mentale afin de pouvoir vous aidé si besoin.<br />
           Il vous sera demandé de répondre avec honeteté afin de ne pas fausser<br />
           le questionnaire qui pourrait vous aider.</p>
-          <p className={styles.p}>Il s'agit d'un questionnaire complet et détaillé basé sur de nombreux questionnaires fiables.</p>
+          <p className={styles.p}>Il s'agit d'un questionnaire complet et détaillé basé sur de nombreux<br />questionnaires fiables.</p>
         </div>
       </div>
     );

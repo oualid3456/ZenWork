@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import styles from "./login.module.css";
 
@@ -7,6 +8,7 @@ function RhLogin() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
       e.preventDefault();
@@ -38,6 +40,7 @@ function RhLogin() {
   
       setMessage("Connexion réussie !");
       console.log("User connecté :", data.user);
+      navigate("/questionnaire");
     };
 
   return (
