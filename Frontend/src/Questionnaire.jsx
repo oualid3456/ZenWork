@@ -6,45 +6,38 @@ function Questionnaire() {
   // commence ou non et agir en consequence
   const [started, setStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [cmp, setCmp] = useState(0);
   // un tableau contenant l'ensemble des questions dans l'ordre
   const questions = [
-    "Je me sens fatigué(e).",
-    "Je me sens déprimé(e).",
-    "Je passe de bonnes journées.",
-    "Je suis physiquement épuisé(e).",
-    "Je suis émotionnellement vidé(e).",
-    'Je me sens "heureux(se)".',
-    "Je me sens déprimé(e).",
-    'Je me sens "lessivé(e)".',
-    'Je me sens "à bout".',
-    "Je me sens malheureux(se).",
-    'Je me sens "vidé(e)".',
-    'Je me sens "à plat".'
+    // questions a propose de l'etat psychologique de la personne
+    'À quel point vous sentez-vous "heureux(se)" ?',
+    'À quel point vous sentez-vous fatigué(e) ?',
+    'À quel point vous sentez-vous déprimé(e) ?',
+    'À quel point vous passez-vous journées ?',
+    'À quel point vous sentez-vous épuisé(e) ?',
+    'À quel point vous sentez-vous émotionnellement vidé(e) ?',
+    'À quel point vous sentez-vous malheureux(se) ?',
+    'À quel point vous sentez-vous "à bout" ?',
+    // questions a propos de l'equilibre entre la vie professionelle et la vie eprsonelle
+    'À quel point avez-vous des difficultés a dormir.',
+    'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
+    "À quel point l'énergie drainée par votre travail a un effet négatif sur votre vie privée.",
+    'À quel point vous occupez-vous de vos tâches liées au travail en dehors de vos horraires de travail.',
+    // questions a propos de l'environnement de travail
+    'À quel point les employées peuvent faire confiance aux informations provenant de la direction ?',
+    "À quel point puis-je m'organiser librement dans ma façon de réalisé mon travail ?",
+    "À quel point entretenez vous de bonne relation avec vos collègues de travail ?",
+    'À quel point êtes vous satisfait de votre travail ?',
+    'À quel point les conflits sont-ils résolus équitablement ?',
+    'À quel point le travail est-il réparti équitablement ?',
+    'À quel point votre travail est-il reconnu et apprécié par la direction ?',
+    "À quel point ête vous serein(e) par rapport à l'avenir de votre emploi ?"
   ];
   // on utilise des emojis comme reponse, cela parait
-  // plus intuitif. On utilise egalemnt un dictionnaire pour
-  // associer a chaque reponse un certain nombre de points
-  // qui une fois le questionnaire finit donnerais une mini
-  // estimation plus ou moins fiable de la situation mentale
-  // de la personne (ce n'est pas cela qui determinera le
-  // diagnostique en soi)
-  const ratings = {
-    "😟": 0,
-    "🙁": 1,
-    "😐": 2,
-    "🙂": 3,
-    "😃": 4
-  };
+  // plus intuitif.
+  const ratings = ["😟", "🙁", "😐", "🙂", "😃"];
   // un dictionnaire auquel on va associer a chaque question
   // l'emoji auquel l'employe a repondu
-  const empty_answers = {
-    "Question 1 ?": null,
-    "Question 2 ?": null,
-    "Question 3 ?": null,
-    "Question 4 ?": null,
-    "Question 5 ?": null
-  };
+  const empty_answers = {};
   const [answers, setAnswers] = useState(empty_answers);
   const progression = Math.floor((currentQuestion / questions.length) * 100);
   if (!started) {
@@ -57,7 +50,7 @@ function Questionnaire() {
         <div className={styles.div}>
           <h1 className={styles.h1}>Voulez vous procédé au test ?</h1>
           <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-          <p className={styles.p}>Il s'agit d'un questionnaire anonyme de X questions ayant pour but<br />
+          <p className={styles.p}>Il s'agit d'un questionnaire anonyme de 20 questions ayant pour but<br />
           d'évalué votre santé mentale afin de pouvoir vous aidé si besoin.<br />
           Il vous sera demandé de répondre avec honeteté afin de ne pas fausser<br />
           le questionnaire qui pourrait vous aider.</p>
@@ -79,9 +72,8 @@ function Questionnaire() {
               </div>
             </div>
             <div className={styles.div}>
-              {Object.keys(ratings).map((emoji) => (
+              {ratings.map((emoji) => (
                 <button className={styles.emoji_button} key={emoji} onClick={() => {
-                  setCmp(cmp + ratings[emoji]);
                   setAnswers({...answers, [questions[currentQuestion]]: emoji});
                   setCurrentQuestion(currentQuestion + 1)}}>
                   {emoji}
@@ -92,9 +84,6 @@ function Questionnaire() {
                 if (currentQuestion > 0) {
                   setCurrentQuestion(currentQuestion - 1);
                   const lastAnswer = answers[questions[currentQuestion - 1]];
-                  if (lastAnswer != null) {
-                    setCmp(cmp - ratings[lastAnswer]);
-                  }
                 }
               }}>
               Retour
@@ -109,7 +98,6 @@ function Questionnaire() {
       <h1 className={styles.h1}>C'est terminé !</h1>
       <p>Merci d’avoir prit le temps de répondre au questionnaire.</p>
       {/* code pour verifier que tout marche
-      <p>Score total: {cmp}</p>
       <h3>Réponses:</h3>
       <ol>
         {Object.entries(answers).map(([question, emoji]) => (
