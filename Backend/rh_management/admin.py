@@ -1,20 +1,24 @@
 from django.contrib import admin
-from .models import Leave, Schedule, Profile
+from .models import Profile, Planning, PlanningEmployee
 
-@admin.register(Leave)
-class LeaveAdmin(admin.ModelAdmin):
-    # On affiche le nom de l'employé (via le profil) et le service
-    list_display = ('get_employee_nom', 'get_employee_service', 'type', 'start_date', 'status')
-    list_filter = ('status', 'type')
 
-    def get_employee_nom(self, obj):
-        return obj.employee.nom
-    get_employee_nom.short_description = 'Nom Employé'
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('prenom', 'nom', 'service', 'role')
 
-    def get_employee_service(self, obj):
-        return obj.employee.service
-    get_employee_service.short_description = 'Service'
 
-admin.site.register(Schedule)
-# On enregistre Profile en lecture seule si tu veux juste vérifier les infos
-admin.site.register(Profile)
+@admin.register(Planning)
+class PlanningAdmin(admin.ModelAdmin):
+    list_display = (
+        'utilisateur',
+        'type_planning',
+        'date_debut',
+        'date_fin',
+        'source'
+    )
+    list_filter = ('type_planning', 'source')
+
+
+@admin.register(PlanningEmployee)
+class PlanningEmployeeAdmin(admin.ModelAdmin):
+    list_display = ('planning', 'utilisateur')
