@@ -1,6 +1,7 @@
 import Register from "./register.jsx";
 import Login from "./login.jsx";
 
+
 function Apptest() {
   return (
     <div>
@@ -8,6 +9,8 @@ function Apptest() {
       <Register />
       <hr />
       <Login />
+      <hr />
+
     </div>
   );
 }
