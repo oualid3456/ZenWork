@@ -1,20 +1,24 @@
 from django.contrib import admin
-from .models import Leave, Schedule
+from .models import Profile, Planning, PlanningEmployee
 
-admin.site.site_header = "Gestion RH - Administration"
 
-@admin.register(Leave)
-class LeaveAdmin(admin.ModelAdmin):
-    # Colonnes du tableau (on utilise les champs sûrs)
-    list_display = ('user', 'type', 'start_date', 'status')
-    # Filtres sur le côté
-    list_filter = ('status', 'type')
-    # Barre de recherche
-    search_fields = ('user__username',)
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('prenom', 'nom', 'service', 'role')
 
-@admin.register(Schedule)
-class ScheduleAdmin(admin.ModelAdmin):
-    # Colonnes du tableau pour le planning
-    list_display = ('user', 'start_time', 'end_time')
-    # Barre de recherche
-    search_fields = ('user__username',)
+
+@admin.register(Planning)
+class PlanningAdmin(admin.ModelAdmin):
+    list_display = (
+        'utilisateur',
+        'type_planning',
+        'date_debut',
+        'date_fin',
+        'source'
+    )
+    list_filter = ('type_planning', 'source')
+
+
+@admin.register(PlanningEmployee)
+class PlanningEmployeeAdmin(admin.ModelAdmin):
+    list_display = ('planning', 'utilisateur')
