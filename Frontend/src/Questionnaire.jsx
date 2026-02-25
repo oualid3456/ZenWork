@@ -42,15 +42,11 @@ function Questionnaire() {
   const progression = Math.floor((currentQuestion / questions.length) * 100);
   if (!started) {
     return (
-      <div className={styles.div}>
-        <div className={styles.navigation}>
-          <div className={styles.div}>Page d'accueil</div>
-          <div className={styles.div}>Forum</div>  
-        </div>
-        <div className={styles.div}>
-          <h1 className={styles.h1}>Voulez vous procédé au test ?</h1>
+      <div className={styles.questionnaireWrapper}>
+        <div className={styles.welcome}>
+          <h1 className={styles.h1}>Voulez vous procédé au <br />questionnaire ?</h1>
           <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-          <p className={styles.p}>Il s'agit d'un questionnaire anonyme de 20 questions ayant pour but<br />
+          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de 20 questions ayant pour but<br />
           d'évalué votre santé mentale afin de pouvoir vous aidé si besoin.<br />
           Il vous sera demandé de répondre avec honeteté afin de ne pas fausser<br />
           le questionnaire qui pourrait vous aider.</p>
@@ -61,50 +57,54 @@ function Questionnaire() {
   }
   if (currentQuestion < questions.length) {
     return (
-      <div className={styles.container}>
-        <div className={styles.middle}>
-          <div className={styles.title}>
-            <h2 className={styles.h2}>{questions[currentQuestion]}</h2>
-          </div>
-          <div className={styles.answer}>
-            <div className={styles.progression_container}>
-              <div className={styles.bar} style={{ width: `${progression}%` }}>
+      <div className={styles.questionnaireWrapper}>
+        <div className={styles.container}>
+          <div className={styles.middle}>
+            <div className={styles.title}>
+              <h2 className={styles.h2}>{questions[currentQuestion]}</h2>
+            </div>
+            <div className={styles.answer}>
+              <div className={styles.progression_container}>
+                <div className={styles.bar} style={{ width: `${progression}%` }}>
+                </div>
               </div>
+              <div className={styles.div}>
+                {ratings.map((emoji) => (
+                  <button className={styles.emoji_button} key={emoji} onClick={() => {
+                    setAnswers({...answers, [questions[currentQuestion]]: emoji});
+                    setCurrentQuestion(currentQuestion + 1)}}>
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              <button className={styles.retour} onClick={() => {
+                  if (currentQuestion > 0) {
+                    setCurrentQuestion(currentQuestion - 1);
+                    const lastAnswer = answers[questions[currentQuestion - 1]];
+                  }
+                }}>
+                Retour
+              </button>
             </div>
-            <div className={styles.div}>
-              {ratings.map((emoji) => (
-                <button className={styles.emoji_button} key={emoji} onClick={() => {
-                  setAnswers({...answers, [questions[currentQuestion]]: emoji});
-                  setCurrentQuestion(currentQuestion + 1)}}>
-                  {emoji}
-                </button>
-              ))}
-            </div>
-            <button className={styles.retour} onClick={() => {
-                if (currentQuestion > 0) {
-                  setCurrentQuestion(currentQuestion - 1);
-                  const lastAnswer = answers[questions[currentQuestion - 1]];
-                }
-              }}>
-              Retour
-            </button>
           </div>
         </div>
       </div>
     );
   }
   return (
-    <div className={styles.div}>
-      <h1 className={styles.h1}>C'est terminé !</h1>
-      <p>Merci d’avoir prit le temps de répondre au questionnaire.</p>
-      {/* code pour verifier que tout marche
-      <h3>Réponses:</h3>
-      <ol>
-        {Object.entries(answers).map(([question, emoji]) => (
-          <li key={question}>{question} : {emoji}</li>
-        ))}
-      </ol>
-      */}
+    <div className={styles.questionnaireWrapper}>
+      <div className={styles.finish}>
+        <h1 className={styles.h1}>C'est terminé !</h1>
+        <p className={styles.p}>Merci d’avoir prit le temps de répondre au questionnaire.</p>
+        {/* code pour verifier que tout marche
+        <h3>Réponses:</h3>
+        <ol>
+          {Object.entries(answers).map(([question, emoji]) => (
+            <li key={question}>{question} : {emoji}</li>
+          ))}
+        </ol>
+        */}
+      </div>
     </div>
   );
 }

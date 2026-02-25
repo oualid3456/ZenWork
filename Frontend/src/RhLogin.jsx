@@ -41,21 +41,23 @@ function RhLogin() {
     };
 
   return (
-    <div className={styles.div}>
-      <form className={styles.form} onSubmit={handleLogin}>
-        <label className={styles.label}>Email
+    <div className={styles.loginWrapper}>
+      <div className={styles.div}>
+        <form className={styles.form} onSubmit={handleLogin}>
+          <label className={styles.label}>Email
+            <br />
+            <input className={styles.input}  type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          </label>
           <br />
-          <input className={styles.input}  type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-        </label>
-        <br />
-        <label className={styles.label} >Mot de passe
+          <label className={styles.label} >Mot de passe
+            <br />
+            <input className={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+          </label>
           <br />
-          <input className={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-        </label>
-        <br />
-        <button className={styles.button}>Se connecter</button>
-      </form>
-      {errorMessage  && <p className={styles.errorMessage}>{errorMessage}</p>}
+          <button className={styles.button}>Se connecter</button>
+        </form>
+        {errorMessage  && <p className={styles.errorMessage}>{errorMessage}</p>}
+      </div>
     </div>
   );
 }
