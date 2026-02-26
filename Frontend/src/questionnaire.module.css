@@ -15,7 +15,6 @@
   justify-content: center;
   font-family: 'Arial', sans-serif;
   text-align: center;
-  background: linear-gradient(to bottom, rgb(222, 242, 249) 50%, white 50%);
 }
 
 .welcome .button {
@@ -40,7 +39,6 @@
   align-items: center;
   justify-content: center;
   font-family: 'Arial', sans-serif;
-  background: linear-gradient(to bottom, rgb(222, 242, 249) 50%, white 50%);
 }
 
 .middle {
@@ -123,5 +121,134 @@
   justify-content: center;
   font-family: 'Arial', sans-serif;
   text-align: center;
-  background: linear-gradient(to bottom, rgb(222, 242, 249) 50%, white 50%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .questionnaireWrapper {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  }
+
+  .welcome {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background: #043962;
+  }
+
+  .welcome .button {
+    margin-top: 50px;
+    background-color: blue;
+    transition: transform 0.1s ease;
+    border:  1px solid darkblue;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+  }
+
+  .welcome .button:hover {
+    transform: scale(1.05);
+  }
+
+  .container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial', sans-serif;
+    background: #043962;
+  }
+
+  .middle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    width: 400px;
+    height: 175px;
+    text-shadow: 2px 2px 4px rgba(2, 2, 2, 0.3);
+    background-color: #064572;
+    padding: 0;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+  }
+
+  .answer {
+    width: 400px;
+    padding-top: 15px;
+    background-color: #064e86;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+
+  .progression_container {
+    width: 350px;
+    height: 20px;
+    background-color: rgb(65, 88, 95);
+    border: 4px solid rgb(140, 139, 139);
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+
+  .bar {
+    height: 100%;
+    background-color: rgb(13, 13, 141);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .emoji_button {
+    background-color: #085794;
+    transition: transform 0.1s ease;
+    margin-bottom: 15px;
+  }
+
+  .emoji_button:hover {
+    transform: scale(1.05);
+  }
+
+  .retour {
+    background-color: #085794;
+    transition: transform 0.1s ease;
+    margin-bottom: 15px;
+  }
+
+  .retour:hover {
+    transform: scale(1.05);
+  }
+
+  .finish {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background: #043962;
+  }
 }
