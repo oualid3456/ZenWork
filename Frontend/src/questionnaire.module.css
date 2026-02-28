@@ -6,6 +6,36 @@
   align-items: center;
 }
 
+.finalInput {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  width: 100%;
+}
+.finalInput input, .finalInput textarea {
+  width: 100%;
+}
+
+.finalInput .button {
+  margin-bottom: 15px;
+  background-color: rgb(233, 241, 253);
+  transition: transform 0.1s ease;
+  margin-bottom: 15px;
+}
+
+.finalInput .button:hover {
+  transform: scale(1.05);
+}
+
+.textarea {
+  width: 100%;
+  height: 150px;
+  resize: none;
+  font-size: 14px;
+}
+
 .welcome {
   height: 100vh;
   width: 100vw;
@@ -130,6 +160,36 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  }
+
+  .finalInput {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+  }
+  .finalInput input, .finalInput textarea {
+    width: 100%;
+  }
+
+  .finalInput .button {
+    margin-bottom: 15px;
+    background-color: #085794;
+    transition: transform 0.1s ease;
+    margin-bottom: 15px;
+  }
+
+  .finalInput .button:hover {
+    transform: scale(1.05);
+  }
+
+  .textarea {
+    width: 100%;
+    height: 150px;
+    resize: none;
+    font-size: 14px;
   }
 
   .welcome {

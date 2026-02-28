@@ -32,7 +32,9 @@ function Questionnaire({ user }) {
     'À quel point les conflits sont-ils résolus équitablement ?',
     'À quel point le travail est-il réparti équitablement ?',
     'À quel point votre travail est-il reconnu et apprécié par la direction ?',
-    "À quel point ête vous serein(e) par rapport à l'avenir de votre emploi ?"
+    "À quel point ête vous serein(e) par rapport à l'avenir de votre emploi ?",
+    'Veuillez-indiquer votre niveau de stress de 1 a 10',
+    'Commentaires libres (facultatif)'
   ];
   // on utilise des emojis comme reponse, cela parait
   // plus intuitif.
@@ -42,13 +44,73 @@ function Questionnaire({ user }) {
   const empty_answers = {};
   const [answers, setAnswers] = useState(empty_answers);
   const progression = Math.floor((currentQuestion / questions.length) * 100);
+  
+  function AnswerInput(question) {
+    if (question === 'Veuillez-indiquer votre niveau de stress de 1 a 10') {
+      return (
+        <div className={styles.finalInput}>
+          <input
+            className={styles.input}
+            type="number"
+            min={1}
+            max={10}
+            step={1}
+            value={answers[question] || ""}
+            onChange={(event) => setAnswers({ ...answers, [question]: Number(event.target.value) })}
+            pattern="[1-9]|10"
+          />
+          <button
+            className={styles.button}
+            onClick={() => {
+              const value = answers[question];
+              if (Number.isInteger(value) && value >= 1 && value <= 10) {
+                setCurrentQuestion(currentQuestion + 1);
+              }
+            }}
+          >
+            Suivant
+          </button>
+        </div>
+      );
+    }
+    else if (question === 'Commentaires libres (facultatif)') {
+      return (
+        <div className={styles.finalInput}>
+          <textarea className={styles.textarea}
+            value = {answers[question] || ""}
+            maxLength={150}
+            onChange={(event) => setAnswers({ ...answers, [question]: event.target.value })}
+          />
+          <button className={styles.button}
+            onClick={() => setCurrentQuestion(currentQuestion + 1)}
+          >
+            Suivant
+          </button>
+        </div>
+      );
+    }
+    else {
+      return ratings.map((emoji) => (
+        <button className={styles.emoji_button}
+          key={emoji}
+          onClick={() => {
+            setAnswers({ ...answers, [question]: emoji });
+            setCurrentQuestion(currentQuestion + 1);
+          }}
+        >
+          {emoji}
+        </button>
+      ));
+    }
+  }
+
   if (!started) {
     return (
       <div className={styles.questionnaireWrapper}>
         <div className={styles.welcome}>
           <h1 className={styles.h1}>Voulez vous procédé au <br />questionnaire ?</h1>
           <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de 20 questions ayant pour but<br />
+          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de 22 questions ayant pour but<br />
           d'évalué votre santé mentale afin de pouvoir vous aidé si besoin.<br />
           Il vous sera demandé de répondre avec honeteté afin de ne pas fausser<br />
           le questionnaire qui pourrait vous aider.</p>
@@ -71,13 +133,7 @@ function Questionnaire({ user }) {
                 </div>
               </div>
               <div className={styles.div}>
-                {ratings.map((emoji) => (
-                  <button className={styles.emoji_button} key={emoji} onClick={() => {
-                    setAnswers({...answers, [questions[currentQuestion]]: emoji});
-                    setCurrentQuestion(currentQuestion + 1)}}>
-                    {emoji}
-                  </button>
-                ))}
+                {AnswerInput(questions[currentQuestion])}
               </div>
               <button className={styles.retour} onClick={() => {
                   if (currentQuestion > 0) {
@@ -97,7 +153,7 @@ function Questionnaire({ user }) {
     <div className={styles.questionnaireWrapper}>
       <div className={styles.finish}>
         <h1 className={styles.h1}>C'est terminé !</h1>
-        <p className={styles.p}>Merci d’avoir prit le temps de répondre au questionnaire.</p>
+        <p className={styles.p}>Merci d'avoir prit le temps de répondre au questionnaire.</p>
         {/* code pour verifier que tout marche
         <h3>Réponses:</h3>
         <ol>
