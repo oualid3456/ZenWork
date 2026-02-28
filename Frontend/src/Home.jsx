@@ -2,25 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
-function Home() {
-  const [user, setUser] = useState(null);
-  const [prenom, setPrenom] = useState("");
+function Home({ user }) {
   const navigate = useNavigate();
-  useEffect(() => {
-    async function fetchUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/");
-        return;
-      }
-      setUser(user);
-      setPrenom(user.user_metadata?.prenom);
-    }
-    fetchUser();
-  }, [navigate]);
-  if (!user) {
-    return <p>Loading</p>;
-  }
+  const prenom = user.user_metadata?.prenom;
   return (
     <div>
       <h1>Hi {prenom} ! 👋</h1>

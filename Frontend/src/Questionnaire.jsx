@@ -2,7 +2,7 @@ import { useState } from "react";
 import styles from "./questionnaire.module.css";
 import { useParams } from "react-router-dom";
 
-function Questionnaire() {
+function Questionnaire({ user }) {
   // on a besoin de cela pour savoir si le questionnaire a
   // commence ou non et agir en consequence
   const { id } = useParams();

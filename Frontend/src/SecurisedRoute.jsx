@@ -1,6 +1,8 @@
-import { Navigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { useEffect, useState } from "react";
+import Error from "./Error.jsx";
+import React from "react";
 
 function SecurisedRoute({ children }) {
   const { id } = useParams();
@@ -30,10 +32,13 @@ function SecurisedRoute({ children }) {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
-  if (loading) return null;
-  // on renvoit null si c'est pas le bon id (a ameliorer avec une page d'erreur specifique)
-  if (!user || user.id !== id) return null;
-  return children;
+  if (loading) {
+    return <p>Loading</p>;
+  }
+  if (!user || user.id !== id) {
+    return <Error />
+  }
+  return children ? React.cloneElement(children, { user }) : null;
 }
 
 export default SecurisedRoute;
