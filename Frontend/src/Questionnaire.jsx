@@ -1,9 +1,11 @@
 import { useState } from "react";
 import styles from "./questionnaire.module.css";
+import { useParams } from "react-router-dom";
 
 function Questionnaire() {
   // on a besoin de cela pour savoir si le questionnaire a
   // commence ou non et agir en consequence
+  const { id } = useParams();
   const [started, setStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   // un tableau contenant l'ensemble des questions dans l'ordre

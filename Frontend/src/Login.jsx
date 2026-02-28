@@ -8,11 +8,7 @@ import styles from "./login.module.css";
 function Login() {
   const [space, setSpace] = useState("employee");
   const DarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const [showRegister, setShowRegister] = useState(false);
   const navigate = useNavigate();
-  if (showRegister) {
-    navigate("/register");
-  }  
   return (
     <div className={styles.loginWrapper}>
       <div className={styles.container}>
@@ -45,7 +41,7 @@ function Login() {
           </div>
           {space === "employee" && <EmployeeLogin />}
           {space === "rh" && <RhLogin />}
-          <p className={styles.register} onClick={() => setShowRegister(true)}>
+          <p className={styles.register} onClick={() => navigate("/register")}>
             Créer un compte
           </p>
         </div>
