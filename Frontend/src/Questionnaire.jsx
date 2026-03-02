@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./questionnaire.module.css";
-import { useParams } from "react-router-dom";
+import { supabase } from "./supabaseClient";
+import { useParams, useNavigate  } from "react-router-dom";
+import Error from "./Error.jsx";
 
 function Questionnaire({ user }) {
   // on a besoin de cela pour savoir si le questionnaire a
   // commence ou non et agir en consequence
-  const { id } = useParams();
+  const { userId, questionnaireId } = useParams();
+  const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [finish, setFinish] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   // un tableau contenant l'ensemble des questions dans l'ordre
   const questions = [
     // questions a propose de l'etat psychologique de la personne
@@ -44,7 +49,100 @@ function Questionnaire({ user }) {
   const empty_answers = {};
   const [answers, setAnswers] = useState(empty_answers);
   const progression = Math.floor((currentQuestion / questions.length) * 100);
+  const [questionnaireClosed, setQuestionnaireClosed] = useState(false);
+  const [loadingQuestionnaire, setLoadingQuestionnaire] = useState(true);
   
+  useEffect(() => {
+    async function fetchUser() {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Erreur getUser:", error.message);
+        return;
+      }
+      if (data?.user) {
+        setCurrentUser(data.user);
+      }
+    }
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    let interval;
+
+    const checkQuestionnaire = async () => {
+      const { data: questionnaire, error } = await supabase
+        .from("questionnaire")
+        .select("active")
+        .eq("id", questionnaireId)
+        .single();
+
+      if (error || !questionnaire || !questionnaire.active) {
+        setQuestionnaireClosed(true);
+        clearInterval(interval);
+      }
+      setLoadingQuestionnaire(false);
+    };
+
+    checkQuestionnaire();
+    interval = setInterval(checkQuestionnaire, 5000);
+
+    return () => clearInterval(interval);
+  }, [questionnaireId]);
+
+  if (loadingQuestionnaire) {
+    return <p>Loading</p>;
+  }
+
+  if (questionnaireClosed) {
+    return <Error />;
+  }
+
+  useEffect(() => {
+    if (!currentUser) return;
+    async function checkFinish() {
+      const { data, error } = await supabase
+        .from("reponse_questionnaire")
+        .select("id")
+        .eq("questionnaire_id", questionnaireId)
+        .eq("utilisateur_id", currentUser?.id)
+        .maybeSingle();
+      if (data) {
+        setFinish(true);
+      }
+    }
+    checkFinish();
+  }, [questionnaireId, currentUser]);
+
+  async function sendAnswers() {
+    if (finish) {
+      return;
+    }
+    const { error } = await supabase
+      .from("reponse_questionnaire")
+      .insert([
+        {
+          utilisateur_id: currentUser.id,
+          questionnaire_id: questionnaireId,
+          reponse_json: JSON.stringify(answers),
+        },
+      ]);
+    if (error) {
+      console.error("Echec de l'envoie des réponses :", error.message);
+    } else {
+      setFinish(true);
+    }
+  }
+
+  useEffect(() => {
+    if (currentQuestion === questions.length && !finish) {
+      sendAnswers();
+    }
+  }, [currentQuestion, finish]);
+
+  if (!currentUser) {
+    return <p>Loading</p>;
+  }
+
   function AnswerInput(question) {
     if (question === 'Veuillez-indiquer votre niveau de stress de 1 a 10') {
       return (
@@ -145,26 +243,37 @@ function Questionnaire({ user }) {
               </button>
             </div>
           </div>
+          {finish && (
+          <p className={styles.cantAnswers}>
+            Vous avez déjà envoyé vos réponses. Les modifications ne seront pas enregistrées.
+          </p>
+        )}
+        </div>
+      </div>
+    );
+  } else {
+    return (
+      <div className={styles.questionnaireWrapper}>
+        <div className={styles.finish}>
+          <h1 className={styles.h1}>C'est terminé !</h1>
+          <button className={styles.goHome}
+            onClick={() => navigate(`/home/${userId}`)}
+          >
+            Retour à l'accueil
+          </button>
+          <p className={styles.p}>Merci d'avoir prit le temps de répondre au questionnaire.</p>
+          {/* code pour verifier que tout marche
+          <h3>Réponses:</h3>
+          <ol>
+            {Object.entries(answers).map(([question, emoji]) => (
+              <li key={question}>{question} : {emoji}</li>
+            ))}
+          </ol>
+          */}
         </div>
       </div>
     );
   }
-  return (
-    <div className={styles.questionnaireWrapper}>
-      <div className={styles.finish}>
-        <h1 className={styles.h1}>C'est terminé !</h1>
-        <p className={styles.p}>Merci d'avoir prit le temps de répondre au questionnaire.</p>
-        {/* code pour verifier que tout marche
-        <h3>Réponses:</h3>
-        <ol>
-          {Object.entries(answers).map(([question, emoji]) => (
-            <li key={question}>{question} : {emoji}</li>
-          ))}
-        </ol>
-        */}
-      </div>
-    </div>
-  );
 }
 
 export default Questionnaire;

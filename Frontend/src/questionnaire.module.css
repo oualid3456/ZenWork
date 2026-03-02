@@ -153,6 +153,24 @@
   text-align: center;
 }
 
+.goHome {
+  background-color: blue;
+  transition: transform 0.1s ease;
+  border:  1px solid darkblue;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+}
+
+.goHome:hover {
+  transform: scale(1.05);
+}
+
+.cantAnswers {
+  color: red;
+  font-family: Arial, sans-serif;
+}
+
 @media (prefers-color-scheme: dark) {
   .questionnaireWrapper {
   height: 100%;
@@ -310,5 +328,23 @@
     font-family: 'Arial', sans-serif;
     text-align: center;
     background: #043962;
+  }
+
+  .goHome {
+    background-color: blue;
+    transition: transform 0.1s ease;
+    border:  1px solid darkblue;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+  }
+
+  .goHome:hover {
+    transform: scale(1.05);
+  }
+
+  .cantAnswers {
+    color: red;
+    font-family: Arial, sans-serif;
   }
 }

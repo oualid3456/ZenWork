@@ -5,7 +5,8 @@ import Error from "./Error.jsx";
 import React from "react";
 
 function SecurisedRoute({ children }) {
-  const { id } = useParams();
+  const params = useParams();
+  const routeUserId = params.id || params.userId;
   const [user, setUser] = useState(null);
   // loading car l'operation peut potentiellement prendre du temps
   const [loading, setLoading] = useState(true);
@@ -35,7 +36,10 @@ function SecurisedRoute({ children }) {
   if (loading) {
     return <p>Loading</p>;
   }
-  if (!user || user.id !== id) {
+  if (!user) {
+    return <Error />;
+  }
+  if (routeUserId  && user.id !== routeUserId) {
     return <Error />
   }
   return children ? React.cloneElement(children, { user }) : null;
