@@ -89,14 +89,6 @@ function Questionnaire({ user }) {
     return () => clearInterval(interval);
   }, [questionnaireId]);
 
-  if (loadingQuestionnaire) {
-    return <p>Loading</p>;
-  }
-
-  if (questionnaireClosed) {
-    return <Error />;
-  }
-
   useEffect(() => {
     if (!currentUser) return;
     async function checkFinish() {
@@ -141,6 +133,14 @@ function Questionnaire({ user }) {
 
   if (!currentUser) {
     return <p>Loading</p>;
+  }
+
+  if (loadingQuestionnaire) {
+    return <p>Loading</p>;
+  }
+
+  if (questionnaireClosed) {
+    return <Error />;
   }
 
   function AnswerInput(question) {
