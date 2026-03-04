@@ -5,7 +5,7 @@ import "./index.css";
 import App from "./App.jsx";
 import Home from "./Home.jsx";
 import Register from "./register.jsx";
-
+import Alert from "./alerte.jsx"
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -15,6 +15,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/login" element={<App />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/alerte" element={<Alert />} />
+
       </Routes>
     </BrowserRouter>
   </StrictMode>,
