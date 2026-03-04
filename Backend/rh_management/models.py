@@ -1,14 +1,73 @@
 from django.db import models
+import uuid
 from django.contrib.auth.models import User
 
-#Gestion des congés
-class Leave(models.Model):
-    TYPES = [('CP', 'Congés Payés'), ('RTT', 'RTT'), ('SICK', 'Maladie')]
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    type = models.CharField(max_length=10, choices=TYPES)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    status = models.CharField(max_length=20, default='En attente')
+# =========================
+# PROFILE (table: profiles)
+# =========================
+import uuid
+
+class Profile(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+
+    nom = models.CharField(max_length=100)
+    prenom = models.CharField(max_length=100)
+    service = models.CharField(max_length=100)
+    role = models.CharField(max_length=100)
+
+    date_embauche = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'profiles'
+# =========================
+# PLANNING (table: planning)
+# =========================
+class Planning(models.Model):
+
+    TYPE_CHOICES = [
+        ('TRAVAIL', 'Travail'),
+        ('CONGE', 'Congé'),
+        ('REPOS', 'Repos'),
+        ('ABSENT', 'Absent'),
+    ]
+
+    SOURCE_CHOICES = [
+        ('MANUEL', 'Manuel'),
+        ('DEMANDE', 'Demande'),
+    ]
+
+    id = models.BigAutoField(primary_key=True)
+
+    utilisateur = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        db_column='utilisateur_id',
+        related_name='plannings'
+    )
+
+    date_debut = models.DateTimeField()
+    date_fin = models.DateTimeField()
+    commentaire = models.TextField(null=True, blank=True)
+
+    type_planning = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES
+    )
+
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES
+    )
+
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     def __str__(self):
         # Affiche nom employé et type de congé

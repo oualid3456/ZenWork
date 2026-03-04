@@ -1,44 +1,66 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "./supabaseClient";
+import styles from "./login.module.css";
 
-function RhLogin({onSuccess}) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+function RhLogin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
-  const fetchLogin = (event) => {
-    event.preventDefault();
-    console.log("CLICK OK");
-    fetch('http://127.0.0.1:8000/login/', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username, password, role: 'rh'})
-    })
-    .then(resultat => resultat.json())
-    .then(data => {
-      if (data.success) {
-        alert('Connexion réussie')
-        if (onSuccess) onSuccess();
-      } else {
-        alert('Identifiants incorrects');
+  const handleLogin = async (e) => {
+      e.preventDefault();
+  
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+  
+      if (error) {
+        setMessage(error.message);
+        // message pour l'utilisateur (pour le moment pas opti
+        // car ne distingue pas s'il s'agit de l'utilisateur
+        // qui s'est trompé ou si l'erreur viens de la base)
+        setErrorMessage("Email ou mot de passe incorrect");
+        return;
       }
-    })
-    .catch(e => console.error('Erreur réseau :', e));
-  };
+
+      const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
+      if (profileError || profile.role !== "RH") {
+        setErrorMessage("Email ou mot de passe incorrect");
+        return;
+      }
+  
+      setMessage("Connexion réussie !");
+      console.log("User connecté :", data.user);
+      navigate(`/home/${data.user.id}`);
+    };
 
   return (
-    <div>
-      <form onSubmit={fetchLogin}>
-        <label>Email
+    <div className={styles.loginWrapper}>
+      <div className={styles.div}>
+        <form className={styles.form} onSubmit={handleLogin}>
+          <label className={styles.label}>Email
+            <br />
+            <input className={styles.input}  type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          </label>
           <br />
-          <input type="email" value={username} onChange={e => setUsername(e.target.value)} required />
-        </label>
-        <br />
-        <label>Mot de passe
+          <label className={styles.label} >Mot de passe
+            <br />
+            <input className={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+          </label>
           <br />
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-        </label>
-        <br />
-        <button>Se connecter</button>
-      </form>
+          <button className={styles.button}>Se connecter</button>
+        </form>
+        {errorMessage  && <p className={styles.errorMessage}>{errorMessage}</p>}
+      </div>
     </div>
   );
 }

@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rh_management',
+    'psychobot',  
 ]
+
+GEMINI_API_KEY = "AIzaSyCAMOuEhHToFmH9jpc2r7LuhG7r6ILXG90"
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,9 +79,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.jefgjiihtfkwbizbdmvq',
+        'PASSWORD': 'ZXOX4rB4buWX1SZQ',
+        'HOST': 'aws-1-eu-west-3.pooler.supabase.com',
+        'PORT': '6543',
     }
+    
 }
 
 
