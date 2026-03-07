@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "./supabaseClient";
+import { supabase } from "./supabaseClient.js";
+import Login from "./Login.jsx";
 import styles from "./register.module.css";
 
-export default function Register() {
-  const navigate = useNavigate();
+function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("EMPLOYE");
   const [message, setMessage] = useState("");
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
+  const navigate = useNavigate();
+  if (showLogin) {
+    navigate("/");
+  }
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -77,7 +82,7 @@ export default function Register() {
 
           <input className={styles.input}
             type="text"
-            placeholder="Prenom"
+            placeholder="Prénom"
             required
             onChange={(e) => setPrenom(e.target.value)}
           />
@@ -87,7 +92,7 @@ export default function Register() {
             <option className={styles.option} value="RH">RH</option>
           </select>
 
-          <button className={styles.button} type="submit">Creer le compte</button>
+          <button className={styles.button} type="submit">Créer le compte</button>
         </form>
         <p className={styles.login} onClick={() => navigate("/login")}>
           Retourner a l'espace de connexion
@@ -97,3 +102,5 @@ export default function Register() {
     </div>
   );
 }
+
+export default Register;
