@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import styles from "./questionnaire.module.css";
-import { supabase } from "./supabaseClient";
+import { supabase } from "../supabaseClient.js";
 import { useParams, useNavigate  } from "react-router-dom";
-import Error from "./Error.jsx";
+import Error from "../Error/Error.jsx";
+import AnswerInput  from "./AnswerInput.jsx";
 
 function Questionnaire({ user }) {
   // on a besoin de cela pour savoir si le questionnaire a
@@ -143,65 +144,6 @@ function Questionnaire({ user }) {
     return <Error />;
   }
 
-  function AnswerInput(question) {
-    if (question === 'Veuillez-indiquer votre niveau de stress de 1 a 10') {
-      return (
-        <div className={styles.finalInput}>
-          <input
-            className={styles.input}
-            type="number"
-            min={1}
-            max={10}
-            step={1}
-            value={answers[question] || ""}
-            onChange={(event) => setAnswers({ ...answers, [question]: Number(event.target.value) })}
-            pattern="[1-9]|10"
-          />
-          <button
-            className={styles.button}
-            onClick={() => {
-              const value = answers[question];
-              if (Number.isInteger(value) && value >= 1 && value <= 10) {
-                setCurrentQuestion(currentQuestion + 1);
-              }
-            }}
-          >
-            Suivant
-          </button>
-        </div>
-      );
-    }
-    else if (question === 'Commentaires libres (facultatif)') {
-      return (
-        <div className={styles.finalInput}>
-          <textarea className={styles.textarea}
-            value = {answers[question] || ""}
-            maxLength={150}
-            onChange={(event) => setAnswers({ ...answers, [question]: event.target.value })}
-          />
-          <button className={styles.button}
-            onClick={() => setCurrentQuestion(currentQuestion + 1)}
-          >
-            Suivant
-          </button>
-        </div>
-      );
-    }
-    else {
-      return ratings.map((emoji) => (
-        <button className={styles.emoji_button}
-          key={emoji}
-          onClick={() => {
-            setAnswers({ ...answers, [question]: emoji });
-            setCurrentQuestion(currentQuestion + 1);
-          }}
-        >
-          {emoji}
-        </button>
-      ));
-    }
-  }
-
   if (!started) {
     return (
       <div className={styles.questionnaireWrapper}>
@@ -231,7 +173,14 @@ function Questionnaire({ user }) {
                 </div>
               </div>
               <div className={styles.div}>
-                {AnswerInput(questions[currentQuestion])}
+                <AnswerInput
+                  question={questions[currentQuestion]}
+                  answers={answers}
+                  setAnswers={setAnswers}
+                  currentQuestion={currentQuestion}
+                  setCurrentQuestion={setCurrentQuestion}
+                  ratings={ratings}
+                />
               </div>
               <button className={styles.retour} onClick={() => {
                   if (currentQuestion > 0) {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import EmployeeLogin from "./EmployeeLogin.jsx";
 import RhLogin from "./RhLogin.jsx";
-import Register from "./Register.jsx";
+import Register from "../Register/Register.jsx";
 import styles from "./login.module.css";
 
 function Login() {
