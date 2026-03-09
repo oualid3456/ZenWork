@@ -5,6 +5,7 @@ import { useParams, useNavigate  } from "react-router-dom";
 import Error from "../Error/Error.jsx";
 import AnswerInput  from "./AnswerInput.jsx";
 import Loading  from "../Loading/Loading.jsx";
+import NoQuestionnaire  from "./NoQuestionnaire.jsx";
 
 function Questionnaire({ user }) {
   // on a besoin de cela pour savoir si le questionnaire a
@@ -23,16 +24,16 @@ function Questionnaire({ user }) {
     'À quel point vous sentez-vous déprimé(e) ?',
     'À quel point vous sentez-vous "à bout" ?',
     'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
-    "À quel point entretenez vous de bonne relation avec vos collègues de travail ?",
-    'À quel point êtes vous satisfait de votre travail ?',
+    "À quel point entretenez-vous de bonnes relation avec vos collègues de travail ?",
+    'À quel point êtes-vous satisfait de votre travail ?',
     // de 1 a 10
-    "Veuillez-indiquer votre niveau de stress de 1 a 10",
-    "Veuillez-indiquer votre charge de travail de 1 a 10",
+    "Veuillez-indiquer votre niveau de stress de 1 à 10",
+    "Veuillez-indiquer votre charge de travail de 1 à 10",
     // oui ou non
-    "Vous sentez-vous isolez ?",
+    "Vous sentez-vous isolé(e) ?",
     // texte
     "Qu'est-ce qui vous cause le plus de stress au travail ?",
-    'Commentaires libres (facultatif)'
+    "Commentaires libres (facultatif)"
   ];
   // on utilise des emojis comme reponse, cela parait
   // plus intuitif.
@@ -44,7 +45,8 @@ function Questionnaire({ user }) {
   const progression = Math.floor((currentQuestion / questions.length) * 100);
   const [questionnaireClosed, setQuestionnaireClosed] = useState(false);
   const [loadingQuestionnaire, setLoadingQuestionnaire] = useState(true);
-  
+  const [loadingFinish, setLoadingFinish] = useState(true);
+
   useEffect(() => {
     async function fetchUser() {
       const { data, error } = await supabase.auth.getUser();
@@ -83,20 +85,25 @@ function Questionnaire({ user }) {
   }, [questionnaireId]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      return;
+    }
     async function checkFinish() {
-      const { data, error } = await supabase
+      setLoadingFinish(true);
+      const { data } = await supabase
         .from("reponse_questionnaire")
         .select("id")
         .eq("questionnaire_id", questionnaireId)
-        .eq("utilisateur_id", currentUser?.id)
+        .eq("utilisateur_id", currentUser.id)
         .maybeSingle();
+
       if (data) {
         setFinish(true);
-      }
+      }  
+      setLoadingFinish(false);
     }
     checkFinish();
-  }, [questionnaireId, currentUser]);
+  }, [currentUser, questionnaireId]);
 
   async function sendAnswers() {
     if (finish) {
@@ -124,16 +131,27 @@ function Questionnaire({ user }) {
     }
   }, [currentQuestion, finish, questions.length]);
 
-  if (!currentUser) {
+  if (!currentUser || loadingQuestionnaire || loadingFinish) {
     return <Loading />;
   }
-
-  if (loadingQuestionnaire) {
-    return <Loading />;
+  if (questionnaireClosed || !questionnaireId) {
+    return <NoQuestionnaire />;
   }
 
-  if (questionnaireClosed) {
-    return <Error />;
+  if (finish) {
+    return (
+      <div className={styles.questionnaireWrapper}>
+        <div className={styles.finish}>
+          <h1 className={styles.h1}>C'est terminé !</h1>
+          <button className={styles.goHome}
+            onClick={() => navigate(`/home/${userId}`)}
+          >
+            Retour à l'accueil
+          </button>
+          <p className={styles.p}>Merci d'avoir pris le temps de répondre au questionnaire.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!started) {
@@ -142,9 +160,9 @@ function Questionnaire({ user }) {
         <div className={styles.welcome}>
           <h1 className={styles.h1}>Voulez vous procédé au <br />questionnaire ?</h1>
           <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de 22 questions ayant pour but<br />
-          d'évalué votre santé mentale afin de pouvoir vous aidé si besoin.<br />
-          Il vous sera demandé de répondre avec honeteté afin de ne pas fausser<br />
+          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de 12 questions ayant pour but<br />
+          d'évaluer votre santé mentale afin de pouvoir vous aider si besoin.<br />
+          Il vous sera demandé de répondre avec honnêteté afin de ne pas fausser<br />
           le questionnaire qui pourrait vous aider.</p>
           <p className={styles.p}>Il s'agit d'un questionnaire complet et détaillé basé sur de nombreux<br />questionnaires fiables.</p>
         </div>
@@ -184,33 +202,6 @@ function Questionnaire({ user }) {
               </button>
             </div>
           </div>
-          {finish && (
-          <p className={styles.cantAnswers}>
-            Vous avez déjà envoyé vos réponses. Les modifications ne seront pas enregistrées.
-          </p>
-          )}
-        </div>
-      </div>
-    );
-  } else {
-    return (
-      <div className={styles.questionnaireWrapper}>
-        <div className={styles.finish}>
-          <h1 className={styles.h1}>C'est terminé !</h1>
-          <button className={styles.goHome}
-            onClick={() => navigate(`/home/${userId}`)}
-          >
-            Retour à l'accueil
-          </button>
-          <p className={styles.p}>Merci d'avoir prit le temps de répondre au questionnaire.</p>
-          {/* code pour verifier que tout marche
-          <h3>Réponses:</h3>
-          <ol>
-            {Object.entries(answers).map(([question, emoji]) => (
-              <li key={question}>{question} : {emoji}</li>
-            ))}
-          </ol>
-          */}
         </div>
       </div>
     );

@@ -1,9 +1,9 @@
 import React from "react";
 import styles from "./questionnaire.module.css";
 
-function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurrentQuestion, ratings }) {
-  if (question === 'Veuillez-indiquer votre niveau de stress de 1 a 10'
-    || question === "Veuillez-indiquer votre charge de travail de 1 a 10"
+function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurrentQuestion, ratings }) {  
+  if (question === "Veuillez-indiquer votre niveau de stress de 1 à 10"
+    || question === "Veuillez-indiquer votre charge de travail de 1 à 10"
   ) {
     return (
       <div className={styles.finalInput}>
@@ -33,7 +33,7 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
       </div>
     );
   }
-  else if (question === "Vous sentez-vous isolez ?") {
+  else if (question === "Vous sentez-vous isolé(e) ?") {
     return (
         <>
         <button
@@ -82,7 +82,7 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
       </div>
     );
   }
-  else if (question === 'Commentaires libres (facultatif)') {
+  else if (question === "Commentaires libres (facultatif)") {
     return (
       <div className={styles.finalInput}>
         <textarea

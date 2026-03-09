@@ -166,11 +166,6 @@
   transform: scale(1.05);
 }
 
-.cantAnswers {
-  color: red;
-  font-family: Arial, sans-serif;
-}
-
 @media (prefers-color-scheme: dark) {
   .questionnaireWrapper {
   height: 100%;
@@ -341,10 +336,5 @@
 
   .goHome:hover {
     transform: scale(1.05);
-  }
-
-  .cantAnswers {
-    color: red;
-    font-family: Arial, sans-serif;
   }
 }
