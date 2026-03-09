@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import styles from "./startQuestionnaire.module.css";
+import Loading from "../Loading/Loading.jsx";
 
 function StartQuestionnaire({ user }) {
   const [questionnaireId, setQuestionnaireId] = useState(null);
@@ -96,7 +97,7 @@ function StartQuestionnaire({ user }) {
   };
 
   if (fetchLoading) {
-    return <p>Loading</p>;
+    return <Loading />;
   }
 
   if (questionnaireId == null) {

@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient.js";
 import { useParams, useNavigate  } from "react-router-dom";
 import Error from "../Error/Error.jsx";
 import AnswerInput  from "./AnswerInput.jsx";
+import Loading  from "../Loading/Loading.jsx";
 
 function Questionnaire({ user }) {
   // on a besoin de cela pour savoir si le questionnaire a
@@ -121,14 +122,14 @@ function Questionnaire({ user }) {
     if (currentQuestion === questions.length && !finish) {
       sendAnswers();
     }
-  }, [currentQuestion, finish]);
+  }, [currentQuestion, finish, questions.length]);
 
   if (!currentUser) {
-    return <p>Loading</p>;
+    return <Loading />;
   }
 
   if (loadingQuestionnaire) {
-    return <p>Loading</p>;
+    return <Loading />;
   }
 
   if (questionnaireClosed) {
