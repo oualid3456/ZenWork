@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { useEffect, useState } from "react";
-import Error from "./Error.jsx";
+import Error from "./Error/Error.jsx";
 import React from "react";
 
 function SecurisedRoute({ children }) {

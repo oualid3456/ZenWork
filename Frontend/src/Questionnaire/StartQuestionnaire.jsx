@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "./supabaseClient";
+import { supabase } from "../supabaseClient";
 import styles from "./startQuestionnaire.module.css";
+import Loading from "../Loading/Loading.jsx";
 
 function StartQuestionnaire({ user }) {
   const [questionnaireId, setQuestionnaireId] = useState(null);
@@ -10,30 +11,21 @@ function StartQuestionnaire({ user }) {
   const [fetchLoading, setFetchLoading] = useState(true);
   // un tableau contenant l'ensemble des questions dans l'ordre
   const questions = [
-    // questions a propose de l'etat psychologique de la personne
+    // emojis
     'À quel point vous sentez-vous "heureux(se)" ?',
     'À quel point vous sentez-vous fatigué(e) ?',
     'À quel point vous sentez-vous déprimé(e) ?',
-    'À quel point vous passez-vous journées ?',
-    'À quel point vous sentez-vous épuisé(e) ?',
-    'À quel point vous sentez-vous émotionnellement vidé(e) ?',
-    'À quel point vous sentez-vous malheureux(se) ?',
     'À quel point vous sentez-vous "à bout" ?',
-    // questions a propos de l'equilibre entre la vie professionelle et la vie eprsonelle
-    'À quel point avez-vous des difficultés a dormir.',
     'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
-    "À quel point l'énergie drainée par votre travail a un effet négatif sur votre vie privée.",
-    'À quel point vous occupez-vous de vos tâches liées au travail en dehors de vos horraires de travail.',
-    // questions a propos de l'environnement de travail
-    'À quel point les employées peuvent faire confiance aux informations provenant de la direction ?',
-    "À quel point puis-je m'organiser librement dans ma façon de réalisé mon travail ?",
     "À quel point entretenez vous de bonne relation avec vos collègues de travail ?",
     'À quel point êtes vous satisfait de votre travail ?',
-    'À quel point les conflits sont-ils résolus équitablement ?',
-    'À quel point le travail est-il réparti équitablement ?',
-    'À quel point votre travail est-il reconnu et apprécié par la direction ?',
-    "À quel point ête vous serein(e) par rapport à l'avenir de votre emploi ?",
-    'Veuillez-indiquer votre niveau de stress de 1 a 10',
+    // de 1 a 10
+    "Veuillez-indiquer votre niveau de stress de 1 a 10",
+    "Veuillez-indiquer votre charge de travail de 1 a 10",
+    // oui ou non
+    "Vous sentez-vous isolez ?",
+    // texte
+    "Qu'est-ce qui vous cause le plus de stress au travail ?",
     'Commentaires libres (facultatif)'
   ];
 
@@ -105,7 +97,7 @@ function StartQuestionnaire({ user }) {
   };
 
   if (fetchLoading) {
-    return <p>Loading</p>;
+    return <Loading />;
   }
 
   if (questionnaireId == null) {

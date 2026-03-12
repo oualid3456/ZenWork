@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "./supabaseClient";
+import { supabase } from "../supabaseClient";
+import Loading from "../Loading/Loading.jsx";
 
 function Home({ user }) {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ function Home({ user }) {
     }
   }, [role]);
   if (!role) {
-    return <p>Loading</p>;
+    return <Loading />;
   }
   return (
     <div>
@@ -62,7 +63,7 @@ function Home({ user }) {
       )}
 
       {role !== "RH" && !latestQuestionnaireId && (
-        <p>Loading</p>
+        <Loading />
       )}
       <br />
       <button onClick={async () => {

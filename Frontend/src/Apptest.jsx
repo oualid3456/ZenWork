@@ -1,6 +1,5 @@
-import Register from "./Register.jsx";
+import Register from "./Register/Register.jsx";
 import Login from "./Login.jsx";
-
 
 function Apptest() {
   return (
