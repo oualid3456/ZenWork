@@ -28,6 +28,11 @@ function StartQuestionnaire({ user }) {
     "Qu'est-ce qui vous cause le plus de stress au travail ?",
     'Commentaires libres (facultatif)'
   ];
+  const [mode, setMode] = useState(true);
+  // true pour le questionnaire de base
+  // false pour si l'on veut créer son questionnaire
+  const [customQuestions, setCustomQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   useEffect(() => {
     async function fetchActiveQuestionnaire() {
@@ -100,6 +105,19 @@ function StartQuestionnaire({ user }) {
     return <Loading />;
   }
 
+  function createQuestion(question, type, optional) {
+    return {
+      question: question,
+      type: type,
+      optional: optional
+    };
+  }
+
+  function addQuestion(question, type, optional) {
+    const newQuestion = createQuestion(question, type, optional);
+    setCustomQuestions([...customQuestions, newQuestion]);
+  }
+
   if (questionnaireId == null) {
     return (
       <div className={styles.startQuestionnaireWrapper}>
@@ -118,9 +136,16 @@ function StartQuestionnaire({ user }) {
             maxLength={125}
             onChange={(event) => setDescription(event.target.value)}
           />
-          <button className={styles.button} onClick={handleStartQuestionnaire} disabled={loading}>
-            {loading ? "Loading" : "Lancer le questionnaire"}
+          <button
+            className={styles.button}
+            onClick={() => setMode(false)}
+          >
+            Créer mon propre questionnaire
           </button>
+          <button className={styles.button} onClick={handleStartQuestionnaire} disabled={loading}>
+            {loading ? "Loading" : "Utiliser le questionnaire par défaut"}
+          </button>
+          
         </div>
       </div>
     );
