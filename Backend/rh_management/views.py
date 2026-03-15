@@ -1,7 +1,15 @@
 from django.shortcuts import render
-from .models import Leave
+from .models import Planning
+
 
 def dashboard_rh(request):
-    # Récupérer tous les congés "En attente" pour le manager RH
-    leaves_to_approve = Leave.objects.filter(status='En attente')
-    return render(request, 'rh/dashboard.html', {'leaves': leaves_to_approve})
+    plannings_to_approve = Planning.objects.filter(
+        type_planning='CONGE',
+        source='DEMANDE'
+    )
+
+
+    return render(request, 'rh/dashboard.html', {
+        'plannings': plannings_to_approve
+    }
+    )

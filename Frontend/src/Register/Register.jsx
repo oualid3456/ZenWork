@@ -1,19 +1,17 @@
 import { useState } from "react";
-import { supabase } from "./supabaseClient";
-import App from "./app.jsx";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient.js";
+import Login from "../Login/Login.jsx";
 import styles from "./register.module.css";
 
-export default function Register() {
+function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("EMPLOYE");
   const [message, setMessage] = useState("");
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
-  const [showApp, setShowApp] = useState(false);
-  if (showApp) {
-    return <App />;
-  }
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -80,7 +78,7 @@ export default function Register() {
 
           <input className={styles.input}
             type="text"
-            placeholder="Prenom"
+            placeholder="Prénom"
             required
             onChange={(e) => setPrenom(e.target.value)}
           />
@@ -90,9 +88,9 @@ export default function Register() {
             <option className={styles.option} value="RH">RH</option>
           </select>
 
-          <button className={styles.button} type="submit">Creer le compte</button>
+          <button className={styles.button} type="submit">Créer le compte</button>
         </form>
-        <p className={styles.login} onClick={() => setShowApp(true)}>
+        <p className={styles.login} onClick={() => navigate("/")}>
           Retourner a l'espace de connexion
         </p>
         <p className={styles.p}>{message}</p>
@@ -100,3 +98,5 @@ export default function Register() {
     </div>
   );
 }
+
+export default Register;

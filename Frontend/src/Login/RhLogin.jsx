@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "./supabaseClient";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 import styles from "./login.module.css";
 
 function RhLogin() {
@@ -7,6 +8,7 @@ function RhLogin() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
       e.preventDefault();
@@ -38,24 +40,27 @@ function RhLogin() {
   
       setMessage("Connexion réussie !");
       console.log("User connecté :", data.user);
+      navigate(`/home/${data.user.id}`);
     };
 
   return (
-    <div className={styles.div}>
-      <form className={styles.form} onSubmit={handleLogin}>
-        <label className={styles.label}>Email
+    <div className={styles.loginWrapper}>
+      <div className={styles.div}>
+        <form className={styles.form} onSubmit={handleLogin}>
+          <label className={styles.label}>Email
+            <br />
+            <input className={styles.input}  type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          </label>
           <br />
-          <input className={styles.input}  type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-        </label>
-        <br />
-        <label className={styles.label} >Mot de passe
+          <label className={styles.label} >Mot de passe
+            <br />
+            <input className={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+          </label>
           <br />
-          <input className={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
-        </label>
-        <br />
-        <button className={styles.button}>Se connecter</button>
-      </form>
-      {errorMessage  && <p className={styles.errorMessage}>{errorMessage}</p>}
+          <button className={styles.button}>Se connecter</button>
+        </form>
+        {errorMessage  && <p className={styles.errorMessage}>{errorMessage}</p>}
+      </div>
     </div>
   );
 }
