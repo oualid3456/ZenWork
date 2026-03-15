@@ -79,7 +79,7 @@ def analyze_questionnaire(request):
         return JsonResponse({"error": "Non authentifié (supabase_user_id manquant)"}, status=401)
     """
     utilisateur_id = "test-id-123"
-    
+
     data = json.loads(request.body)
     questionnaire_id = data.get("questionnaire_id")
 
@@ -112,11 +112,14 @@ def analyze_questionnaire(request):
 @require_POST
 def send_chat_message(request):
     """Gère l'échange en temps réel avec Gemini."""
+
+    """
     try:
         utilisateur_id = request.supabase_user_id
     except AttributeError:
         return JsonResponse({"error": "Non authentifié"}, status=401)
-
+    """
+    
     data = json.loads(request.body)
     history = data.get("history", [])
     user_message = data.get("message", "")

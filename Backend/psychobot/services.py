@@ -1,16 +1,15 @@
 """
-services.py — Logique Gemini pour PsychoBot.
-Contient : compute_burnout_score, chat_with_gemini,
+services.py — Logique Groq (Llama 3) pour PsychoBot.
+Contient : compute_burnout_score, chat_with_gemini (adapté),
            update_score_from_chat, determine_level, build_context_prefix
 """
 
 import json
-from django.conf import settings
-from google import genai
-from google.genai import types
+from groq import Groq
 
-GEMINI_MODEL = "gemini-2.0-flash"
-
+# --- CONFIGURATION GROQ ---
+GROQ_API_KEY = "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" 
+GROQ_MODEL = "llama-3.3-70b-versatile"
 # ─────────────────────────────────────────────
 # CLIENT SINGLETON
 # ─────────────────────────────────────────────
@@ -18,9 +17,10 @@ GEMINI_MODEL = "gemini-2.0-flash"
 _client = None
 
 def get_client():
+    """Initialise et retourne le client Groq une seule fois."""
     global _client
     if _client is None:
-        _client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        _client = Groq(api_key=GROQ_API_KEY)
     return _client
 
 
@@ -62,31 +62,40 @@ Réponses du questionnaire :
 
 def compute_burnout_score(reponses: dict) -> dict:
     """
-    Analyse les réponses du questionnaire via Gemini.
-    Retourne {"score": int, "raisons": list[str]}
+    Analyse le questionnaire avec Groq (Llama 3) et renvoie un JSON.
     """
     client = get_client()
+    
     prompt = ANALYSIS_PROMPT.format(
         reponses_json=json.dumps(reponses, ensure_ascii=False, indent=2)
     )
-
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-    )
-
-    raw = response.text.strip()
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
-
-    result  = json.loads(raw)
-    score   = max(0, min(100, int(result.get("score", 0))))
-    raisons = result.get("raisons", result.get("reasons", []))
-
-    return {"score": score, "raisons": raisons}
+    
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Tu es un expert qui renvoie UNIQUEMENT du JSON valide."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            model=GROQ_MODEL,
+            response_format={"type": "json_object"} # Force le format JSON
+        )
+        
+        raw_text = response.choices[0].message.content.strip()
+        result = json.loads(raw_text)
+        return {
+            "score": int(result.get("score", 0)),
+            "raisons": result.get("raisons", ["Analyse non disponible"])
+        }
+        
+    except Exception as e:
+        print("Erreur Groq (compute_burnout_score):", e)
+        return {"score": 50, "raisons": ["Erreur lors de l'analyse IA."]}
 
 
 # ─────────────────────────────────────────────
@@ -117,10 +126,9 @@ Exemple correct   : "Charge de travail perçue comme excessive"
 Exemple incorrect : "L'employé dit qu'il travaille 14h par jour sur le projet X"
 """
 
-
 def update_score_from_chat(history: list, initial_score: int, initial_raisons: list) -> dict:
     """
-    Relit l'historique du chat et affine le score de risque final.
+    Relit l'historique du chat et affine le score de risque final via Groq.
     Retourne {"score": int, "raisons": list[str]} avec raisons anonymisées.
     """
     client = get_client()
@@ -136,23 +144,33 @@ def update_score_from_chat(history: list, initial_score: int, initial_raisons: l
         historique        = historique_txt or "Aucun échange.",
     )
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-    )
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Tu es un expert qui renvoie UNIQUEMENT du JSON valide."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            model=GROQ_MODEL,
+            response_format={"type": "json_object"} # Force le format JSON
+        )
 
-    raw = response.text.strip()
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
+        raw_text = response.choices[0].message.content.strip()
+        result  = json.loads(raw_text)
+        
+        score   = max(0, min(100, int(result.get("score", initial_score))))
+        raisons = result.get("raisons", initial_raisons)
 
-    result  = json.loads(raw)
-    score   = max(0, min(100, int(result.get("score", initial_score))))
-    raisons = result.get("raisons", initial_raisons)
-
-    return {"score": score, "raisons": raisons}
+        return {"score": score, "raisons": raisons}
+        
+    except Exception as e:
+        print("Erreur Groq (update_score_from_chat):", e)
+        return {"score": initial_score, "raisons": initial_raisons}
 
 
 # ─────────────────────────────────────────────
@@ -173,40 +191,40 @@ Règles :
 - Réponses courtes et naturelles (2-4 phrases max)
 """
 
-
 def chat_with_gemini(history: list, user_message: str, prefix: str = "") -> str:
     """
-    Envoie un message à Gemini avec l'historique complet.
+    Envoie un message à Groq avec l'historique complet.
     history : liste de {"role": "user"|"assistant", "content": "..."}
-    Retourne la réponse texte de PsychoBot.
+    (Le nom est gardé 'chat_with_gemini' pour ne pas casser views.py)
     """
-    client   = get_client()
-    contents = []
+    client = get_client()
+    
+    # Message système pour définir la personnalité du bot
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
+    # Ajout de l'historique
     for msg in history:
-        role    = "user" if msg.get("role") == "user" else "model"
+        # Groq/OpenAI utilise 'assistant', pas 'model' comme Gemini
+        role = "user" if msg.get("role") == "user" else "assistant" 
         contenu = msg.get("content", msg.get("contenu", ""))
-        contents.append(types.Content(
-            role=role,
-            parts=[types.Part(text=contenu)]
-        ))
+        messages.append({"role": role, "content": contenu})
 
-    prompt = f"{prefix}{user_message}" if prefix else user_message
-    contents.append(types.Content(
-        role="user",
-        parts=[types.Part(text=prompt)]
-    ))
+    # Ajout du nouveau message de l'utilisateur avec l'éventuel contexte secret
+    final_prompt = f"{prefix}\n\n{user_message}" if prefix else user_message
+    messages.append({"role": "user", "content": final_prompt})
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=contents,
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=512,
-            temperature=0.7,
+    try:
+        response = client.chat.completions.create(
+            messages=messages,
+            model=GROQ_MODEL,
+            max_tokens=512,
+            temperature=0.7
         )
-    )
-    return response.text
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        print("Erreur Groq (chat_with_gemini):", e)
+        return "Je suis désolé, je rencontre une petite difficulté technique. Pouvons-nous reprendre dans un instant ?"
 
 
 # ─────────────────────────────────────────────
@@ -218,7 +236,6 @@ def determine_level(score: float):
     if score >= 45: return "medium"
     if score >= 20: return "low"
     return None
-
 
 def build_context_prefix(reponses: dict) -> str:
     """Contexte injecté discrètement sur le 1er message du chat."""
