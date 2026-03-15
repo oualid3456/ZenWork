@@ -13,6 +13,7 @@ import RhSecuredRoute from "./RhSecuredRoute.jsx";
 import Profile from "./Profile/Profile.jsx";
 import EmployeesList from "./Employees/EmployeesList.jsx";
 import ForumHome from "./Forum/ForumHome";
+import Ressources from "./Espace Ressource/Ressources.jsx";
 
 function EmployeesRoute({ user }) {
   return (
@@ -35,6 +36,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/employees" element={<SecurisedRoute><EmployeesRoute /></SecurisedRoute>} />
         <Route path="/ForumHome" element={<ForumHome />} />
         <Route path="*" element={<Error />} />
+        <Route path="/ressource" element={<Ressources/>}/>
+
       </Routes>
     </BrowserRouter>
   </StrictMode>,
