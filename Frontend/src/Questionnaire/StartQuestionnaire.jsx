@@ -28,11 +28,10 @@ function StartQuestionnaire({ user }) {
     "Qu'est-ce qui vous cause le plus de stress au travail ?",
     'Commentaires libres (facultatif)'
   ];
-  const [mode, setMode] = useState(true);
-  // true pour le questionnaire de base
-  // false pour si l'on veut créer son questionnaire
+  const [mode, setMode] = useState(null);
+  // basique pour le questionnaire de base
+  // custom pour si l'on veut créer son questionnaire
   const [customQuestions, setCustomQuestions] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   useEffect(() => {
     async function fetchActiveQuestionnaire() {
@@ -56,19 +55,22 @@ function StartQuestionnaire({ user }) {
   }, []);
 
   const handleStartQuestionnaire = async () => {
-  // si le titre ou la description sont vides, on arrête
+    // si le titre ou la description sont vides, on arrete
     if (title == "" || description == "") {
+      alert("Vous ne devez pas laisser de champ vide");
       return;
     }
     setLoading(true);
+    const q = mode === "custom" ? customQuestions : questions;
     const { data, error } = await supabase
       .from("questionnaire")
       .insert([
         {
           titre: title,
           description: description,
-          structure_json: JSON.stringify(questions),
+          structure_json: JSON.stringify(q),
           active: true,
+          default: mode === "basique",
         },
       ])
       .select("*")
@@ -109,20 +111,150 @@ function StartQuestionnaire({ user }) {
     return {
       question: question,
       type: type,
-      optional: optional
+      optional: optional,
+      validated: false,
     };
   }
 
-  function addQuestion(question, type, optional) {
-    const newQuestion = createQuestion(question, type, optional);
-    setCustomQuestions([...customQuestions, newQuestion]);
+  function addQuestion(question, type, optional, index, validated) {
+    const updated = [...customQuestions];
+    updated[index] = {
+      question,
+      type,
+      optional,
+      validated: validated ?? updated[index]?.validated ?? false,
+    };
+    setCustomQuestions(updated);
   }
 
-  if (questionnaireId == null) {
+  if (mode === "custom" && questionnaireId == null) {
     return (
       <div className={styles.startQuestionnaireWrapper}>
         <div className={styles.container}>
-          <h1 className={styles.h1}>Créer un questionnaire</h1>
+          <h2 className={styles.h2}>Créer votre questionnaire personnalisées</h2>
+          <input className={styles.input}
+            type="text"
+            placeholder="Titre du questionnaire"
+            value={title}
+            maxLength={50}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+          <textarea className={styles.textarea}
+            placeholder="Description du questionnaire"
+            value={description}
+            maxLength={125}
+            onChange={(event) => setDescription(event.target.value)}
+          />
+          {customQuestions.map((q, index) => (
+            <div key={index}>
+              <p>Question {index + 1}</p>
+              <input
+                type="text"
+                value={q.question}
+                onChange={(event) =>
+                  addQuestion(event.target.value, q.type, q.optional, index, true)
+                }
+                maxLength={80}
+              />
+              <div>
+                <label>
+                  <input
+                    type="radio"
+                    name={`type-${index}`}
+                    checked={q.type === "text"}
+                    onChange={() =>
+                      addQuestion(q.question, "text", q.optional, index, true)
+                    }
+                  />
+                  Texte
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={`type-${index}`}
+                    checked={q.type === "yes_no"}
+                    onChange={() =>
+                      addQuestion(q.question, "yes_no", q.optional, index, true)
+                    }
+                  />
+                  Oui/Non
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={`type-${index}`}
+                    checked={q.type === "1_to_10"}
+                    onChange={() =>
+                      addQuestion(q.question, "1_to_10", q.optional, index, true)
+                    }
+                  />
+                  1 à 10
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={`type-${index}`}
+                    checked={q.type === "emoji"}
+                    onChange={() =>
+                      addQuestion(q.question, "emoji", q.optional, index, true)
+                    }
+                  />
+                  Emoji
+                </label>
+              </div>
+              <label>
+                optional
+                <input
+                  type="checkbox"
+                  checked={q.optional}
+                  onChange={(e) =>
+                    addQuestion(q.question, q.type, e.target.checked, index, true)
+                  }
+                />
+              </label>
+              <button
+                onClick={() =>
+                  addQuestion(q.question, q.type, q.optional, index, true)
+                }
+              >
+              valider
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() =>
+              setCustomQuestions([
+                ...customQuestions,
+                createQuestion("", "text", false)
+              ])
+            }
+          >
+          ajouter une question
+          </button>      
+          <button
+            className={styles.button}
+            disabled={loading}
+            onClick={() => {
+              const validateQuestion = customQuestions.filter(q => q.validated).length;
+              if (validateQuestion < 5) {
+                alert("Vous devez valider au moins 5 questions");
+                return;
+              }
+              handleStartQuestionnaire();
+            }}
+          >
+          {loading ? "Loading" : "Lancer le questionnaire"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "basique" && questionnaireId == null) {
+    return (
+      <div className={styles.startQuestionnaireWrapper}>
+        <div className={styles.container}>
+          <h2 className={styles.h2}>Créer votre questionnaire personnalisées</h2>
           <input className={styles.input}
             type="text"
             placeholder="Titre du questionnaire"
@@ -138,12 +270,34 @@ function StartQuestionnaire({ user }) {
           />
           <button
             className={styles.button}
-            onClick={() => setMode(false)}
+            disabled={loading}
+            onClick={() => {
+              handleStartQuestionnaire();
+            }}
           >
-            Créer mon propre questionnaire
+          {loading ? "Loading" : "Lancer le questionnaire"}
           </button>
-          <button className={styles.button} onClick={handleStartQuestionnaire} disabled={loading}>
-            {loading ? "Loading" : "Utiliser le questionnaire par défaut"}
+        </div>
+      </div>
+    );
+  }
+
+  if (questionnaireId == null) {
+    return (
+      <div className={styles.startQuestionnaireWrapper}>
+        <div className={styles.container}>
+          <h1 className={styles.h1}>Créer un questionnaire</h1>
+          <button
+            className={styles.button}
+            onClick={() => setMode("custom")}
+          >
+          Créer mon propre questionnaire
+          </button>
+          <button
+            className={styles.button}
+            onClick={() => setMode("basique")}
+          >
+          Utilisé le questionnaire par défaut
           </button>
           
         </div>
@@ -157,7 +311,7 @@ function StartQuestionnaire({ user }) {
             <p className={styles.p}>ID du questionnaire : {questionnaireId}</p>
             <p className={styles.p}>Titre du questionnaire : {title}</p>
             <p className={styles.p}>Description du questionnaire : {description}</p>
-            <button className={styles.button} onClick={handleStopQuestionnaire}>Arrêter le questionnaire</button>
+            <button className={styles.button} onClick={() => {handleStopQuestionnaire(); setMode(null)}}>Arrêter le questionnaire</button>
           </div>
         </div>
       );
