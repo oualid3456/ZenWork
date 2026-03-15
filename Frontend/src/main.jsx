@@ -10,6 +10,7 @@ import Home from "./Home/Home.jsx";
 import Error from "./Error/Error.jsx";
 import SecurisedRoute from "./SecurisedRoute.jsx";
 import ForumHome from "./Forum/ForumHome";
+import Ressources from "./Espace Ressource/Ressources.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -22,6 +23,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/questionnaire/:userId/:questionnaireId" element={<SecurisedRoute><Questionnaire /></SecurisedRoute>} />
         <Route path="/ForumHome" element={<ForumHome />} />
         <Route path="*" element={<Error />} />
+        <Route path="/ressource" element={<Ressources/>}/>
+
       </Routes>
     </BrowserRouter>
   </StrictMode>,
