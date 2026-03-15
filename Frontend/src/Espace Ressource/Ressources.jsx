@@ -29,7 +29,24 @@ const Ressources = () => {
         </nav>
       </aside>
       <main className="main-content">
-        {/* je vais le remplir */}
+        <header className="floating-topbar">
+            <div className="topbar-left">
+              <div className="welcome-text">
+                <span className="user-greeting">Bonjour, Utilisateur ! 👋</span>
+                <span className="company-name">RH Bien-être IA</span>
+              </div>
+            </div>
+            <div className="topbar-center">
+              <div className="search-box">
+                <span className="search-icon">🔍</span>
+                <input type="text" placeholder="Rechercher une ressource..." />
+              </div>
+            </div>
+            <div className="topbar-right">
+              <img src="/notification.png" alt="Notification" className="sidebar-icon-img" />
+              <div className="user-avatar"></div>
+            </div>
+          </header>
       </main>
     </div>
   );
