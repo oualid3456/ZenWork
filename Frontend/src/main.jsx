@@ -11,6 +11,7 @@ import Error from "./Error/Error.jsx";
 import SecurisedRoute from "./SecurisedRoute.jsx";
 import ForumHome from "./Forum/ForumHome";
 import Ressources from "./Espace Ressource/Ressources.jsx";
+import Psychobot from './Psychobot/Psychobot';
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -24,6 +25,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/ForumHome" element={<ForumHome />} />
         <Route path="*" element={<Error />} />
         <Route path="/ressource" element={<Ressources/>}/>
+        <Route path="/psychobot" element={<Psychobot />} />
 
       </Routes>
     </BrowserRouter>
