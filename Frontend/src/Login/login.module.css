@@ -1,4 +1,4 @@
-html, body {
+.loginWrapper {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -114,7 +114,7 @@ html, body {
 }
 
 @media (prefers-color-scheme: dark) {
-  html, body {
+  .loginWrapper {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
