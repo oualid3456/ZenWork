@@ -5,7 +5,7 @@ import { supabase } from "../supabaseClient";
 import Loading from "../Loading/Loading.jsx";
 import styles from "./employees.module.css";
 
-function EmployeesList({ user }) {
+function EmployeesList({ user, embedded }) {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -205,15 +205,17 @@ function EmployeesList({ user }) {
           </tbody>
         </table>
       </div>
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={() => navigate(-1)}
-        >
-          Retour
-        </button>
-      </div>
+      {!embedded && (
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.backButton}
+            onClick={() => navigate(-1)}
+          >
+            Retour
+          </button>
+        </div>
+      )}
     </div>
   );
 }

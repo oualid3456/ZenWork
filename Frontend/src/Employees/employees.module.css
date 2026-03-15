@@ -1,22 +1,26 @@
+/* Purple & white design – aligned with Ressources dashboard */
 .page {
   max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 0;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color: #1A202C;
 }
 
 .title {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1.25rem 0;
   font-size: 1.5rem;
-  color: var(--text, #eee);
+  font-weight: 800;
+  color: #1A202C;
 }
 
 .tableWrap {
   overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid var(--border, #333);
-  background: var(--card-bg, #1e1e1e);
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  background: white;
   margin-bottom: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
 }
 
 .table {
@@ -27,51 +31,61 @@
 
 .table th,
 .table td {
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1.25rem;
   text-align: left;
-  border-bottom: 1px solid var(--border, #333);
+  border-bottom: 1px solid #E2E8F0;
+  color: #1A202C;
 }
 
 .table th {
-  background: var(--th-bg, #2a2a2a);
-  color: var(--text-muted, #aaa);
+  background: #F7F8FA;
+  color: #718096;
   font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.table td {
+  background: white;
 }
 
 .table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.table tbody tr:hover {
-  background: var(--row-hover, rgba(255, 255, 255, 0.03));
+.table tbody tr:hover td {
+  background: #F7F8FA;
 }
 
-.rowHighlight {
-  background: var(--row-edit, rgba(100, 108, 255, 0.12));
+.rowHighlight td {
+  background: #EEEBFB;
+  color: #1A202C;
 }
 
 .badge {
   display: inline-block;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 10px;
   font-size: 0.8rem;
-  font-weight: 500;
-  background: var(--badge-bg, #333);
-  color: var(--badge-text, #eee);
+  font-weight: 600;
+  background: #EEEBFB;
+  color: #6C5DD3;
 }
 
 .editBtn {
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #646cff;
-  background: #646cff;
+  padding: 0.4rem 0.9rem;
+  border-radius: 10px;
+  border: none;
+  background: #6C5DD3;
   color: white;
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .editBtn:hover:not(:disabled) {
-  background: #535bf2;
+  background: #5b4bc4;
 }
 
 .editBtn:disabled {
@@ -80,9 +94,10 @@
 }
 
 .editCell {
-  padding: 1rem !important;
-  background: var(--edit-form-bg, #252525);
-  border-bottom: 1px solid var(--border, #333);
+  padding: 1.25rem !important;
+  background: #F7F8FA;
+  border-bottom: 1px solid #E2E8F0;
+  color: #1A202C;
 }
 
 .editForm {
@@ -97,17 +112,25 @@
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.85rem;
-  color: var(--text-muted, #aaa);
+  font-weight: 500;
+  color: #718096;
 }
 
 .input,
 .select {
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--input-border, #444);
-  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
   font-size: 0.9rem;
-  background: var(--input-bg, #2a2a2a);
-  color: var(--text, #eee);
+  background: white;
+  color: #1A202C;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #6C5DD3;
+  box-shadow: 0 0 0 2px rgba(108, 93, 211, 0.15);
 }
 
 .formActions {
@@ -118,41 +141,44 @@
 }
 
 .saveBtn {
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  border: 1px solid #4caf50;
-  background: #4caf50;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: none;
+  background: #6C5DD3;
   color: white;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .saveBtn:hover {
-  background: #43a047;
+  background: #5b4bc4;
 }
 
 .cancelBtn {
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  border: 1px solid var(--input-border, #444);
-  background: transparent;
-  color: var(--text, #eee);
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #718096;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .cancelBtn:hover {
-  background: var(--row-hover, rgba(255, 255, 255, 0.05));
+  background: #F7F8FA;
+  color: #1A202C;
 }
 
 .error {
-  color: #e57373;
+  color: #E53E3E;
   margin: 0 0 0.5rem 0;
   font-size: 0.9rem;
 }
 
 .success {
-  color: #81c784;
+  color: #38A169;
   margin: 0 0 0.5rem 0;
   font-size: 0.9rem;
 }
@@ -163,65 +189,16 @@
 
 .backButton {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--input-border, #444);
-  background: transparent;
-  color: var(--text, #eee);
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  background: white;
+  color: #718096;
   cursor: pointer;
   font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .backButton:hover {
-  background: var(--card-bg, #333);
-}
-
-@media (prefers-color-scheme: light) {
-  .title {
-    --text: #213547;
-  }
-  .tableWrap {
-    --border: #e0e0e0;
-    --card-bg: #fff;
-  }
-  .table th {
-    --th-bg: #f5f5f5;
-    --text-muted: #555;
-  }
-  .table tbody tr:hover {
-    --row-hover: rgba(0, 0, 0, 0.04);
-  }
-  .rowHighlight {
-    --row-edit: rgba(100, 108, 255, 0.1);
-  }
-  .badge {
-    --badge-bg: #e0e0e0;
-    --badge-text: #333;
-  }
-  .editCell {
-    --edit-form-bg: #f9f9f9;
-    --border: #e0e0e0;
-  }
-  .label {
-    --text-muted: #555;
-  }
-  .input,
-  .select {
-    --input-border: #ccc;
-    --input-bg: #fff;
-    --text: #213547;
-  }
-  .cancelBtn {
-    --input-border: #ccc;
-    --text: #213547;
-  }
-  .cancelBtn:hover {
-    --row-hover: rgba(0, 0, 0, 0.06);
-  }
-  .backButton {
-    --input-border: #ccc;
-    --text: #213547;
-  }
-  .backButton:hover {
-    --card-bg: #eee;
-  }
+  background: #F7F8FA;
+  color: #1A202C;
 }

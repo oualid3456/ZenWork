@@ -4,7 +4,7 @@ import { supabase } from "../supabaseClient";
 import Loading from "../Loading/Loading.jsx";
 import styles from "./profile.module.css";
 
-function Profile({ user }) {
+function Profile({ user, embedded }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -206,15 +206,17 @@ function Profile({ user }) {
         )}
       </div>
 
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={() => navigate(-1)}
-        >
-          Retour
-        </button>
-      </div>
+      {!embedded && (
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.backButton}
+            onClick={() => navigate(-1)}
+          >
+            Retour
+          </button>
+        </div>
+      )}
     </div>
   );
 }

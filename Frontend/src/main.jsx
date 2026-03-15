@@ -36,7 +36,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/employees" element={<SecurisedRoute><EmployeesRoute /></SecurisedRoute>} />
         <Route path="/ForumHome" element={<ForumHome />} />
         <Route path="*" element={<Error />} />
-        <Route path="/ressource" element={<Ressources/>}/>
+        <Route path="/ressource" element={<SecurisedRoute><Ressources /></SecurisedRoute>} />
 
       </Routes>
     </BrowserRouter>
