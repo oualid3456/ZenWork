@@ -16,85 +16,7 @@ function Questionnaire({ user }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [finish, setFinish] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  // un tableau contenant l'ensemble des questions dans l'ordre
-  const [questions, setQuestions] = useState([
-    // emojis
-    {
-      question: 'À quel point vous sentez-vous "heureux(se)" ?',
-      type: "emoji",
-      optional: false,
-      validated: true
-    },
-    {
-      question: 'À quel point vous sentez-vous fatigué(e) ?',
-      type: "emoji",
-      optional: false,
-      validated: true
-    },
-    {
-      question: 'À quel point vous sentez-vous déprimé(e) ?',
-      type: "emoji",
-      optional: false,
-      validated: true
-    },
-    {
-      question: 'À quel point vous sentez-vous "à bout" ?',
-      type: "emoji",
-      optional: false,
-      validated: true
-    },
-    {
-      question: 'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
-      type: "emoji",
-      optional: false,
-      validated: true
-    },
-    {
-      question: "À quel point entretenez vous de bonne relation avec vos collègues de travail ?",
-      type: "emoji",
-      optional: false,
-      validated: true
-    },
-    {
-      question: 'À quel point êtes vous satisfait de votre travail ?',
-      type: "emoji",
-      optional: false,
-      validated: true
-    },
-    // de 1 a 10
-    {
-      question: "Veuillez-indiquer votre niveau de stress de 1 a 10",
-      type: "1_to_10",
-      optional: false,
-      validated: true
-    },
-    {
-      question: "Veuillez-indiquer votre charge de travail de 1 a 10",
-      type: "1_to_10",
-      optional: false,
-      validated: true
-    },
-    // oui ou non
-    {
-      question: "Vous sentez-vous isolez ?",
-      type: "yes_no",
-      optional: false,
-      validated: true
-    },
-    // texte
-    {
-      question: "Qu'est-ce qui vous cause le plus de stress au travail ?",
-      type: "text",
-      optional: false,
-      validated: true
-    },
-    {
-      question: 'Commentaires libres',
-      type: "text",
-      optional: true,
-      validated: true
-    }
-  ]);
+  const [questions, setQuestions] = useState([]);
   // on utilise des emojis comme reponse, cela parait
   // plus intuitif.
   const ratings = ["😟", "🙁", "😐", "🙂", "😃"];
@@ -162,7 +84,7 @@ function Questionnaire({ user }) {
   }, [currentUser, questionnaireId]);
 
   useEffect(() => {
-    async function fetchCustomQuestionnaire() {
+    async function fetchQuestionnaire() {
       if (!questionnaireId) return;
       const { data, error } = await supabase
         .from("questionnaire")
@@ -173,10 +95,10 @@ function Questionnaire({ user }) {
         console.error("Erreur dans la recherche du questionnaire", error.message);
         return;
       }
-      if (data && data.default === false && data.structure_json) {
+      if (data.structure_json) {
         try {
-          const customQuestions = JSON.parse(data.structure_json);
-          setQuestions(customQuestions);
+          const Questions = JSON.parse(data.structure_json);
+          setQuestions(Questions);
           setCurrentQuestion(0);
           setAnswers({});
         } catch (e) {
@@ -184,7 +106,7 @@ function Questionnaire({ user }) {
         }
       }
     }
-    fetchCustomQuestionnaire();
+    fetchQuestionnaire();
   }, [questionnaireId]);
 
   async function sendAnswers() {
@@ -242,7 +164,7 @@ function Questionnaire({ user }) {
         <div className={styles.welcome}>
           <h1 className={styles.h1}>Voulez vous procédé au <br />questionnaire ?</h1>
           <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de 12 questions ayant pour but<br />
+          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de {questions.length} questions ayant pour but<br />
           d'évaluer votre santé mentale afin de pouvoir vous aider si besoin.<br />
           Il vous sera demandé de répondre avec honnêteté afin de ne pas fausser<br />
           le questionnaire qui pourrait vous aider.</p>
@@ -259,7 +181,8 @@ function Questionnaire({ user }) {
             <div className={styles.title}>
               <h2 className={styles.h2}>
               {questions[currentQuestion].question}
-               {questions[currentQuestion].optional ? " (facultatif)" : ""}
+              {questions[currentQuestion].optional ? " (facultatif)" : ""}
+              {questions[currentQuestion].type == "1_to_10" ? " (de 1 à 10)" : ""}
               </h2>
             </div>
             <div className={styles.answer}>

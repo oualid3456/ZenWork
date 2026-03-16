@@ -29,17 +29,6 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
         >
         Suivant
         </button>
-        {question.optional && (
-          <button
-            className={styles.skip}
-            onClick={() => {
-              setAnswers({ ...answers, [question.question]: null });
-              setCurrentQuestion(currentQuestion + 1);
-            }}
-          >
-            Passer
-          </button>
-        )}
       </div>
     );
   }
@@ -66,16 +55,12 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
         >
         Non
         </button>
-
         {question.optional && (
           <button
-            className={styles.skip}
-            onClick={() => {
-              setAnswers({ ...answers, [question.question]: null });
-              setCurrentQuestion(currentQuestion + 1);
-            }}
+            className={styles.button}
+            onClick={() => setCurrentQuestion(currentQuestion + 1)}
           >
-            Passer
+          Suivant
           </button>
         )}
       </>
@@ -103,24 +88,16 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
           className={styles.button}
           onClick={() => {
             const value = answers[question.question];
-            if (Number.isInteger(value) && value >= 1 && value <= 10) {
-              setCurrentQuestion(currentQuestion + 1);
+            if (!question.optional) {
+              if (!Number.isInteger(value) || value < 1 || value > 10) {
+                return;
+              }
             }
+            setCurrentQuestion(currentQuestion + 1);
           }}
         >
         Suivant
         </button>
-        {question.optional && (
-          <button
-            className={styles.skip}
-            onClick={() => {
-              setAnswers({ ...answers, [question.question]: null });
-              setCurrentQuestion(currentQuestion + 1);
-            }}
-          >
-            Passer
-          </button>
-        )}
       </div>
     );
   }
@@ -145,13 +122,10 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
         ))}
         {question.optional && (
           <button
-            className={styles.skip}
-            onClick={() => {
-              setAnswers({ ...answers, [question.question]: null });
-              setCurrentQuestion(currentQuestion + 1);
-            }}
+            className={styles.button}
+            onClick={() => setCurrentQuestion(currentQuestion + 1)}
           >
-            Passer
+            Suivant
           </button>
         )}
       </>

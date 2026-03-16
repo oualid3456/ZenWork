@@ -56,13 +56,13 @@ function StartQuestionnaire({ user }) {
     },
     // de 1 a 10
     {
-      question: "Veuillez-indiquer votre niveau de stress de 1 a 10",
+      question: "Veuillez-indiquer votre niveau de stress",
       type: "1_to_10",
       optional: false,
       validated: true
     },
     {
-      question: "Veuillez-indiquer votre charge de travail de 1 a 10",
+      question: "Veuillez-indiquer votre charge de travail",
       type: "1_to_10",
       optional: false,
       validated: true
@@ -308,6 +308,18 @@ function StartQuestionnaire({ user }) {
               const validateQuestion = customQuestions.filter(q => q.validated).length;
               if (validateQuestion < 5) {
                 alert("Vous devez valider au moins 5 questions");
+                return;
+              }
+              for (let q of customQuestions) {
+                if (!q.question || q.question.trim() === "") {
+                  alert("Une des questions est vide");
+                  return;
+                }
+              }
+              const AllQuestions = customQuestions.map(q => q.question.trim().toLowerCase());
+              const uniqueQuestions = new Set(AllQuestions);
+              if (uniqueQuestions.size !== AllQuestions.length) {
+                alert("Vous ne pouvez pas avoir deux questions identiques");
                 return;
               }
               handleStartQuestionnaire();
