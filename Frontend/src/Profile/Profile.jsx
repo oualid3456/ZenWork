@@ -110,19 +110,7 @@ function Profile({ user, embedded }) {
       <div className={styles.section}>
         <h2 className={styles.title}>Mon compte</h2>
         <p className={styles.label}>Email actuel : <strong>{user.email}</strong></p>
-        <form className={styles.form} onSubmit={handleUpdateEmail}>
-          <label className={styles.label}>
-            Nouvel email
-            <input
-              className={styles.input}
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="nouveau@email.com"
-            />
-          </label>
-          <button type="submit" className={styles.button}>Changer l&apos;email</button>
-        </form>
+
         <form className={styles.form} onSubmit={handleUpdatePassword}>
           <label className={styles.label}>
             Nouveau mot de passe
