@@ -11,7 +11,10 @@ import Home from "./Home/Home.jsx";
 import Error from "./Error/Error.jsx";
 import SecurisedRoute from "./SecurisedRoute.jsx";
 import ForumHome from "./Forum/ForumHome.jsx";
-import Ressources from "./Espace Ressource/Ressources.jsx";
+import DashboardLayout from "./Layout/DashboardLayout.jsx";
+import EmployeesList from "./Employees/EmployeesList.jsx";
+import Profile from "./Profile/Profile.jsx";
+
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -46,6 +49,10 @@ createRoot(document.getElementById("root")).render(
             </SecurisedRoute>
           }
         />
+        <Route path="/dashboard" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
+        <Route path="/ressource" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
+        <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
+        <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
 
         <Route
           path="/forum/:userId"

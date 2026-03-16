@@ -26,7 +26,7 @@ function Home({ user }) {
   }, [user.id]);
 
   useEffect(() => {
-    if (role !== "rh") {
+    if (role !== "RH") {
       async function fetchLatestQuestionnaireId() {
         const { data, error } = await supabase
           .from("questionnaire")
@@ -56,11 +56,18 @@ function Home({ user }) {
   return (
     <div>
       <h1>Hi {prenom} ! 👋</h1>
-
-      {role === "rh" && (
-        <button onClick={() => navigate(`/start_questionnaire/${user.id}`)}>
-          Lancer un questionnaire
-        </button>
+      <button onClick={() => navigate(`/profile/${user.id}`)}>
+        Mon profil
+      </button>
+      {role === "RH" && (
+        <>
+          <button onClick={() => navigate(`/employees`)}>
+            Liste des employés
+          </button>
+          <button onClick={() => navigate(`/start_questionnaire/${user.id}`)}>
+            Lancer un questionnaire
+          </button>
+        </>
       )}
 
       {role !== "rh" && latestQuestionnaireId && (
