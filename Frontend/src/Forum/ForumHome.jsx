@@ -38,11 +38,26 @@ export default function ForumHome({ user }) {
       </div>
 
       <div className="forum-tabs">
-        <button onClick={() => setTab("feed")}>Fil d’actualité</button>
-        <button onClick={() => setTab("employees")}>
+        <button
+          className={tab === "feed" ? "active-tab" : ""}
+          onClick={() => setTab("feed")}
+        >
+          Fil d’actualité
+        </button>
+
+        <button
+          className={tab === "employees" ? "active-tab" : ""}
+          onClick={() => setTab("employees")}
+        >
           Discussion entre employés
         </button>
-        <button onClick={() => setTab("secure")}>Espace sécurisé</button>
+
+        <button
+          className={tab === "secure" ? "active-tab" : ""}
+          onClick={() => setTab("secure")}
+        >
+          Espace sécurisé
+        </button>
       </div>
 
       <div className="forum-content">

@@ -7,7 +7,6 @@ function Home({ user }) {
   const navigate = useNavigate();
   const [latestQuestionnaireId, setLatestQuestionnaireId] = useState(null);
   const [role, setRole] = useState(null);
-
   const prenom = user?.user_metadata?.prenom || "Utilisateur";
 
   useEffect(() => {
@@ -20,8 +19,6 @@ function Home({ user }) {
 
       if (!error && data) {
         setRole(data.role);
-      } else {
-        console.error("Erreur récupération rôle :", error?.message);
       }
     }
 
@@ -29,7 +26,7 @@ function Home({ user }) {
   }, [user.id]);
 
   useEffect(() => {
-    if (role !== "RH") {
+    if (role !== "rh") {
       async function fetchLatestQuestionnaireId() {
         const { data, error } = await supabase
           .from("questionnaire")
@@ -43,7 +40,6 @@ function Home({ user }) {
             "Echec dans la récupération du questionnaire :",
             error.message
           );
-          setLatestQuestionnaireId(null);
         } else {
           setLatestQuestionnaireId(data?.id ?? null);
         }
@@ -61,13 +57,13 @@ function Home({ user }) {
     <div>
       <h1>Hi {prenom} ! 👋</h1>
 
-      {role === "RH" && (
+      {role === "rh" && (
         <button onClick={() => navigate(`/start_questionnaire/${user.id}`)}>
           Lancer un questionnaire
         </button>
       )}
 
-      {role !== "RH" && latestQuestionnaireId && (
+      {role !== "rh" && latestQuestionnaireId && (
         <button
           onClick={() =>
             navigate(`/questionnaire/${user.id}/${latestQuestionnaireId}`)
@@ -77,12 +73,11 @@ function Home({ user }) {
         </button>
       )}
 
-      {role !== "RH" && !latestQuestionnaireId && <Loading />}
+      {role !== "rh" && !latestQuestionnaireId && <Loading />}
 
       <br />
       <br />
 
-      {/* NOUVEAU BOUTON FORUM */}
       <button onClick={() => navigate(`/forum/${user.id}`)}>
         Accéder au forum
       </button>

@@ -90,6 +90,7 @@ export default function Post({ post, user, refreshPosts }) {
       <p>
         <strong>{post.author_name}</strong>
       </p>
+
       <p>{post.content}</p>
 
       <button className="like-btn" onClick={toggleLike}>

@@ -57,11 +57,13 @@ function EmployeeDiscussion({ mode, user }) {
     <div>
       <div className="post-box">
         <h3>Nouvelle publication ({mode})</h3>
+
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Écris ton message..."
         />
+
         <button onClick={addPost}>Publier</button>
       </div>
 
