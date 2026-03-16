@@ -51,10 +51,18 @@ function Home({ user }) {
   return (
     <div>
       <h1>Hi {prenom} ! 👋</h1>
+      <button onClick={() => navigate(`/profile/${user.id}`)}>
+        Mon profil
+      </button>
       {role === "RH" && (
-        <button onClick={() => navigate(`/start_questionnaire/${user.id}`)}>
-          Lancer un questionnaire
-        </button>
+        <>
+          <button onClick={() => navigate(`/employees`)}>
+            Liste des employés
+          </button>
+          <button onClick={() => navigate(`/start_questionnaire/${user.id}`)}>
+            Lancer un questionnaire
+          </button>
+        </>
       )}
       {role !== "RH" && latestQuestionnaireId && (
         <button onClick={() => navigate(`/questionnaire/${user.id}/${latestQuestionnaireId}`)}>
