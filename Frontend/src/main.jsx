@@ -14,6 +14,7 @@ import ForumHome from "./Forum/ForumHome.jsx";
 import DashboardLayout from "./Layout/DashboardLayout.jsx";
 import EmployeesList from "./Employees/EmployeesList.jsx";
 import Profile from "./Profile/Profile.jsx";
+import Ressources from "./Espace Ressource/Ressources.jsx";
 
 
 createRoot(document.getElementById("root")).render(
@@ -50,7 +51,16 @@ createRoot(document.getElementById("root")).render(
           }
         />
         <Route path="/dashboard" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
-        <Route path="/ressource" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
+        <Route
+          path="/ressource"
+          element={
+            <SecurisedRoute>
+              <DashboardLayout>
+                <Ressources />
+              </DashboardLayout>
+            </SecurisedRoute>
+          }
+        />        
         <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
         <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
 
@@ -62,8 +72,6 @@ createRoot(document.getElementById("root")).render(
             </SecurisedRoute>
           }
         />
-
-        <Route path="/ressource" element={<Ressources />} />
         <Route path="*" element={<Error />} />
       </Routes>
     </BrowserRouter>
