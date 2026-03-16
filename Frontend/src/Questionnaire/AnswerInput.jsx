@@ -2,7 +2,6 @@ import React from "react";
 import styles from "./questionnaire.module.css";
 
 function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurrentQuestion, ratings }) {
-  // texte
   if (question.type === "text") {
     return (
       <div className={styles.finalInput}>
@@ -30,10 +29,21 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
         >
         Suivant
         </button>
+        {question.optional && (
+          <button
+            className={styles.skip}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: null });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+            Passer
+          </button>
+        )}
       </div>
     );
   }
-  // oui/non
+
   if (question.type === "yes_no") {
     return (
       <>
@@ -56,10 +66,22 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
         >
         Non
         </button>
+
+        {question.optional && (
+          <button
+            className={styles.skip}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: null });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+            Passer
+          </button>
+        )}
       </>
     );
   }
-  // 1 à 10
+
   if (question.type === "1_to_10") {
     return (
       <div className={styles.finalInput}>
@@ -88,10 +110,21 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
         >
         Suivant
         </button>
+        {question.optional && (
+          <button
+            className={styles.skip}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: null });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+            Passer
+          </button>
+        )}
       </div>
     );
   }
-  // emoji
+
   if (question.type === "emoji") {
     return (
       <>
@@ -110,6 +143,17 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
           {emoji}
           </button>
         ))}
+        {question.optional && (
+          <button
+            className={styles.skip}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: null });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+            Passer
+          </button>
+        )}
       </>
     );
   }
