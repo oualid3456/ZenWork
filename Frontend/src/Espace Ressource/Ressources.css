@@ -160,3 +160,30 @@ html, body, #root {
   align-items: center;
   gap: 20px;
 }
+
+.menu-item {
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.user-avatar-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.ressources-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.ressources-placeholder {
+  flex: 1;
+}

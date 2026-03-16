@@ -10,7 +10,10 @@ import Home from "./Home/Home.jsx";
 import Error from "./Error/Error.jsx";
 import SecurisedRoute from "./SecurisedRoute.jsx";
 import ForumHome from "./Forum/ForumHome";
-import Ressources from "./Espace Ressource/Ressources.jsx";
+import DashboardLayout from "./Layout/DashboardLayout.jsx";
+import EmployeesList from "./Employees/EmployeesList.jsx";
+import Profile from "./Profile/Profile.jsx";
+
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -21,10 +24,12 @@ createRoot(document.getElementById("root")).render(
         <Route path="/home/:id" element={<SecurisedRoute><Home /></SecurisedRoute>} />
         <Route path="/start_questionnaire/:id" element={<SecurisedRoute><StartQuestionnaire /></SecurisedRoute>} />
         <Route path="/questionnaire/:userId/:questionnaireId" element={<SecurisedRoute><Questionnaire /></SecurisedRoute>} />
+        <Route path="/dashboard" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
+        <Route path="/ressource" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
+        <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
+        <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
         <Route path="/ForumHome" element={<ForumHome />} />
         <Route path="*" element={<Error />} />
-        <Route path="/ressource" element={<Ressources/>}/>
-
       </Routes>
     </BrowserRouter>
   </StrictMode>,
