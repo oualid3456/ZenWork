@@ -10,24 +10,84 @@ function StartQuestionnaire({ user }) {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   // un tableau contenant l'ensemble des questions dans l'ordre
-  const questions = [
-    // emojis
-    'À quel point vous sentez-vous "heureux(se)" ?',
-    'À quel point vous sentez-vous fatigué(e) ?',
-    'À quel point vous sentez-vous déprimé(e) ?',
-    'À quel point vous sentez-vous "à bout" ?',
-    'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
-    "À quel point entretenez vous de bonne relation avec vos collègues de travail ?",
-    'À quel point êtes vous satisfait de votre travail ?',
-    // de 1 a 10
-    "Veuillez-indiquer votre niveau de stress de 1 a 10",
-    "Veuillez-indiquer votre charge de travail de 1 a 10",
-    // oui ou non
-    "Vous sentez-vous isolez ?",
-    // texte
-    "Qu'est-ce qui vous cause le plus de stress au travail ?",
-    'Commentaires libres (facultatif)'
-  ];
+const questions = [
+  // emojis
+  {
+    question: 'À quel point vous sentez-vous "heureux(se)" ?',
+    type: "emoji",
+    optional: false,
+    validated: true
+  },
+  {
+    question: 'À quel point vous sentez-vous fatigué(e) ?',
+    type: "emoji",
+    optional: false,
+    validated: true
+  },
+  {
+    question: 'À quel point vous sentez-vous déprimé(e) ?',
+    type: "emoji",
+    optional: false,
+    validated: true
+  },
+  {
+    question: 'À quel point vous sentez-vous "à bout" ?',
+    type: "emoji",
+    optional: false,
+    validated: true
+  },
+  {
+    question: 'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
+    type: "emoji",
+    optional: false,
+    validated: true
+  },
+  {
+    question: "À quel point entretenez vous de bonne relation avec vos collègues de travail ?",
+    type: "emoji",
+    optional: false,
+    validated: true
+  },
+  {
+    question: 'À quel point êtes vous satisfait de votre travail ?',
+    type: "emoji",
+    optional: false,
+    validated: true
+  },
+  // de 1 a 10
+  {
+    question: "Veuillez-indiquer votre niveau de stress de 1 a 10",
+    type: "1_to_10",
+    optional: false,
+    validated: true
+  },
+  {
+    question: "Veuillez-indiquer votre charge de travail de 1 a 10",
+    type: "1_to_10",
+    optional: false,
+    validated: true
+  },
+  // oui ou non
+  {
+    question: "Vous sentez-vous isolez ?",
+    type: "yes_no",
+    optional: false,
+    validated: true
+  },
+  // texte
+  {
+    question: "Qu'est-ce qui vous cause le plus de stress au travail ?",
+    type: "text",
+    optional: false,
+    validated: true
+  },
+  {
+    question: 'Commentaires libres (facultatif)',
+    type: "text",
+    optional: true,
+    validated: true
+  }
+];
   const [mode, setMode] = useState(null);
   // basique pour le questionnaire de base
   // custom pour si l'on veut créer son questionnaire
@@ -222,15 +282,25 @@ function StartQuestionnaire({ user }) {
             </div>
           ))}
           <button
-            onClick={() =>
+            onClick={() => {
+              if (customQuestions.length >= 30) return;
               setCustomQuestions([
                 ...customQuestions,
                 createQuestion("", "text", false)
               ])
             }
+            }
           >
           ajouter une question
-          </button>      
+          </button>   
+          <button
+          onClick={() => {
+              if (customQuestions.length === 0) return;
+              setCustomQuestions(customQuestions.slice(0, -1));
+            }}
+          >
+            Supprimer la dernière question
+          </button>   
           <button
             className={styles.button}
             disabled={loading}
