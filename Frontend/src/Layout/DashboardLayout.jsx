@@ -5,7 +5,6 @@ import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
 import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
-import "../Espace Ressource/Ressources.css";
 import "./Layout.css";
 
 const TAB_DASHBOARD = "dashboard";
