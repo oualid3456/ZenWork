@@ -26,8 +26,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/questionnaire/:userId/:questionnaireId" element={<SecurisedRoute><Questionnaire /></SecurisedRoute>} />
         <Route path="/dashboard" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
         <Route path="/ressource" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
-        <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
         <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
+        <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
         <Route path="/ForumHome" element={<ForumHome />} />
         <Route path="*" element={<Error />} />
       </Routes>

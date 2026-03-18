@@ -1,5 +1,5 @@
 import React, { useState, useEffect, cloneElement } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
@@ -61,6 +61,7 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
 
 export default function DashboardLayout({ user, children }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(TAB_DASHBOARD);
@@ -70,6 +71,7 @@ export default function DashboardLayout({ user, children }) {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
+    else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
     else setTab(TAB_DASHBOARD);
   }, [pathname]);
 
