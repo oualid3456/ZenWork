@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'psychobot',  
 ]
 
-GEMINI_API_KEY = "AIzaSyCAMOuEhHToFmH9jpc2r7LuhG7r6ILXG90"
+GEMINI_API_KEY = "AIzaSyAjzc8S7d3TF7bBH_p2fZVzc6lf84bffmk"
 
 
 MIDDLEWARE = [

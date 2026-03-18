@@ -18,27 +18,21 @@ from .services import (
 # ─────────────────────────────────────────────
 
 def _get_reponses_questionnaire(questionnaire_id):
-    """Va chercher les réponses de l'employé directement dans la table psychobot_questionnaireresponse."""
+
     with connection.cursor() as cursor:
-        # Note : adapte la clause WHERE selon comment est lié ton questionnaire_id à cette table
+        # On interroge LA BONNE TABLE (celle avec le JSON)
         cursor.execute(
             """
-            SELECT niveau_stress_sur_10, qualite_sommeil, charge_de_travail, 
-                   sentiment_isolement, commentaire_libre
-            FROM psychobot_questionnaireresponse
-            WHERE id = %s 
+            SELECT reponse_json 
+            FROM reponse_questionnaire 
+            WHERE id = %s
             """,
             [questionnaire_id]
         )
         row = cursor.fetchone()
+        
         if row:
-            return {
-                "niveau_stress_sur_10": row[0],
-                "qualite_sommeil": row[1],
-                "charge_de_travail": row[2],
-                "sentiment_isolement": row[3],
-                "commentaire_libre": row[4]
-            }
+            return row[0] # Renvoie le dictionnaire JSON à l'IA
         return None
 
 def _upsert_alerte_burnout(questionnaire_id, niveau, score, raisons):
@@ -77,10 +71,14 @@ def analyze_questionnaire(request):
     2. Récupère les données en BDD.
     3. Calcule le score IA initial et génère l'alerte en BDD.
     """
+
+    """
     try:
         utilisateur_id = request.supabase_user_id
     except AttributeError:
         return JsonResponse({"error": "Non authentifié (supabase_user_id manquant)"}, status=401)
+    """
+    utilisateur_id = "test-id-123"
 
     data = json.loads(request.body)
     questionnaire_id = data.get("questionnaire_id")
@@ -114,11 +112,14 @@ def analyze_questionnaire(request):
 @require_POST
 def send_chat_message(request):
     """Gère l'échange en temps réel avec Gemini."""
+
+    """
     try:
         utilisateur_id = request.supabase_user_id
     except AttributeError:
         return JsonResponse({"error": "Non authentifié"}, status=401)
-
+    """
+    
     data = json.loads(request.body)
     history = data.get("history", [])
     user_message = data.get("message", "")
