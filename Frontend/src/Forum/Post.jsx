@@ -25,6 +25,7 @@ export default function Post({
   const [comments, setComments] = useState([]);
   const [commentProfiles, setCommentProfiles] = useState({});
   const [commentText, setCommentText] = useState("");
+  const [showComments, setShowComments] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
@@ -199,167 +200,171 @@ export default function Post({
         <button
           type="button"
           className="start-btn"
-          style={{ width: "180px" }}
+          style={{ width: "160px" }}
           onClick={handleToggleLike}
         >
-          {hasLiked ? "💙 Je n’aime plus" : "👍 J’aime"} ({likes})
+          {hasLiked ? "❤️ Like" : "🤍 Like"} ({likes})
         </button>
+
         <button
           type="button"
           className="start-btn"
-          style={{ width: "180px" }}
+          style={{ width: "190px" }}
+          onClick={() => setShowComments((prev) => !prev)}
         >
-          {comments.length} commentaire(s)
+          💬 Commentaire ({comments.length})
         </button>
       </div>
 
-      <div className="video-body">
-        <h3>Commentaires</h3>
+      {showComments && (
+        <div className="video-body">
+          <h3>Commentaires</h3>
 
-        {comments.length === 0 ? (
-          <p>Aucun commentaire pour le moment.</p>
-        ) : (
-          comments.map((comment) => {
-            const profile = commentProfiles[comment.user_id];
-            const label =
-              [profile?.prenom, profile?.nom].filter(Boolean).join(" ") ||
-              comment.author_name ||
-              "Utilisateur";
+          {comments.length === 0 ? (
+            <p>Aucun commentaire pour le moment.</p>
+          ) : (
+            comments.map((comment) => {
+              const profile = commentProfiles[comment.user_id];
+              const label =
+                [profile?.prenom, profile?.nom].filter(Boolean).join(" ") ||
+                comment.author_name ||
+                "Utilisateur";
 
-            const canManageComment =
-              comment.user_id === user.id || isAdminLike(role);
+              const canManageComment =
+                comment.user_id === user.id || isAdminLike(role);
 
-            return (
-              <div
-                key={comment.id}
-                style={{
-                  background: "#F7F8FA",
-                  borderRadius: 12,
-                  padding: 12,
-                  marginBottom: 10,
-                }}
-              >
-                {editingCommentId === comment.id ? (
-                  <>
-                    <div className="search-box" style={{ width: "100%", marginBottom: 12 }}>
-                      <textarea
-                        value={editingCommentText}
-                        onChange={(e) => setEditingCommentText(e.target.value)}
-                        rows={3}
-                        style={{
-                          width: "100%",
-                          border: "none",
-                          outline: "none",
-                          background: "transparent",
-                          resize: "vertical",
-                          fontFamily: "inherit",
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        type="button"
-                        className="start-btn"
-                        style={{ width: "140px" }}
-                        onClick={() => saveCommentEdit(comment.id)}
-                      >
-                        Enregistrer
-                      </button>
-                      <button
-                        type="button"
-                        className="start-btn"
-                        style={{ width: "140px" }}
-                        onClick={() => {
-                          setEditingCommentId(null);
-                          setEditingCommentText("");
-                        }}
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div>
-                        {comment.user_id ? (
-                          <strong>
-                            <Link to={`/profile/${comment.user_id}`}>{label}</Link>
-                          </strong>
-                        ) : (
-                          <strong>{label}</strong>
-                        )}
-                        <p style={{ margin: "4px 0 0 0", color: "#808191", fontSize: 13 }}>
-                          {formatDate(comment.created_at)}
-                        </p>
+              return (
+                <div
+                  key={comment.id}
+                  style={{
+                    background: "#F7F8FA",
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 10,
+                  }}
+                >
+                  {editingCommentId === comment.id ? (
+                    <>
+                      <div className="search-box" style={{ width: "100%", marginBottom: 12 }}>
+                        <textarea
+                          value={editingCommentText}
+                          onChange={(e) => setEditingCommentText(e.target.value)}
+                          rows={3}
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            outline: "none",
+                            background: "transparent",
+                            resize: "vertical",
+                            fontFamily: "inherit",
+                          }}
+                        />
                       </div>
 
-                      {canManageComment && (
-                        <div style={{ display: "flex", gap: 8 }}>
-                          {comment.user_id === user.id && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          type="button"
+                          className="start-btn"
+                          style={{ width: "140px" }}
+                          onClick={() => saveCommentEdit(comment.id)}
+                        >
+                          Enregistrer
+                        </button>
+                        <button
+                          type="button"
+                          className="start-btn"
+                          style={{ width: "140px" }}
+                          onClick={() => {
+                            setEditingCommentId(null);
+                            setEditingCommentText("");
+                          }}
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          marginBottom: 8,
+                        }}
+                      >
+                        <div>
+                          {comment.user_id ? (
+                            <strong>
+                              <Link to={`/profile/${comment.user_id}`}>{label}</Link>
+                            </strong>
+                          ) : (
+                            <strong>{label}</strong>
+                          )}
+                          <p style={{ margin: "4px 0 0 0", color: "#808191", fontSize: 13 }}>
+                            {formatDate(comment.created_at)}
+                          </p>
+                        </div>
+
+                        {canManageComment && (
+                          <div style={{ display: "flex", gap: 8 }}>
+                            {comment.user_id === user.id && (
+                              <button
+                                type="button"
+                                className="start-btn"
+                                style={{ width: "120px" }}
+                                onClick={() => startEditComment(comment)}
+                              >
+                                Modifier
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="start-btn"
                               style={{ width: "120px" }}
-                              onClick={() => startEditComment(comment)}
+                              onClick={() => removeComment(comment)}
                             >
-                              Modifier
+                              Supprimer
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            className="start-btn"
-                            style={{ width: "120px" }}
-                            onClick={() => removeComment(comment)}
-                          >
-                            Supprimer
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        )}
+                      </div>
 
-                    <p style={{ margin: 0 }}>{comment.content}</p>
-                  </>
-                )}
-              </div>
-            );
-          })
-        )}
+                      <p style={{ margin: 0 }}>{comment.content}</p>
+                    </>
+                  )}
+                </div>
+              );
+            })
+          )}
 
-        <div className="search-box" style={{ width: "100%", marginTop: 16 }}>
-          <textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Ajouter un commentaire..."
-            rows={3}
-            style={{
-              width: "100%",
-              border: "none",
-              outline: "none",
-              background: "transparent",
-              resize: "vertical",
-              fontFamily: "inherit",
-            }}
-          />
+          <div className="search-box" style={{ width: "100%", marginTop: 16 }}>
+            <textarea
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Ajouter un commentaire..."
+              rows={3}
+              style={{
+                width: "100%",
+                border: "none",
+                outline: "none",
+                background: "transparent",
+                resize: "vertical",
+                fontFamily: "inherit",
+              }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="start-btn"
+            style={{ width: "160px", marginTop: 12 }}
+            onClick={addComment}
+          >
+            Envoyer
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="start-btn"
-          style={{ width: "160px", marginTop: 12 }}
-          onClick={addComment}
-        >
-          Envoyer
-        </button>
-      </div>
+      )}
     </div>
   );
 }
