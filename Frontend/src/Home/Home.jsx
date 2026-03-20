@@ -70,7 +70,7 @@ function Home({ user }) {
         </>
       )}
 
-      {role !== "rh" && latestQuestionnaireId && (
+      {role !== "RH" && latestQuestionnaireId && (
         <button
           onClick={() =>
             navigate(`/questionnaire/${user.id}/${latestQuestionnaireId}`)
@@ -80,7 +80,7 @@ function Home({ user }) {
         </button>
       )}
 
-      {role !== "rh" && !latestQuestionnaireId && <Loading />}
+      {role !== "RH" && !latestQuestionnaireId && <Loading />}
 
       <br />
       <br />

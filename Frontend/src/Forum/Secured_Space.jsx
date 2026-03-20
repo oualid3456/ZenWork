@@ -1,32 +1,34 @@
 import EmployeeDiscussion from "./EmployeeDiscussion";
+import { isAdminLike, normalizeRole } from "./forumUtils";
 
 export default function Secured_Space({ role, user }) {
-  if (!role) return <p>Chargement...</p>;
+  const normalizedRole = normalizeRole(role);
+
+  if (!normalizedRole) {
+    return <p>Chargement...</p>;
+  }
 
   return (
-    <div className="post-box">
-      <h3>Espace sécurisé</h3>
+    <section className="forum-card">
+      <h4>Espace sécurisé</h4>
 
-      {role === "employee" && (
-        <>
-          <p>💬 Discussion privée avec le RH ou la direction.</p>
-          <EmployeeDiscussion mode="secure_employee" user={user} />
-        </>
+      {normalizedRole === "employee" && (
+        <p>💬 Discussion privée avec le RH ou la direction.</p>
       )}
 
-      {role === "rh" && (
-        <>
-          <p>📁 Espace RH : messages des employés.</p>
-          <EmployeeDiscussion mode="secure_rh" user={user} />
-        </>
+      {normalizedRole === "rh" && (
+        <p>📁 Espace RH : messages et échanges sensibles avec les employés.</p>
       )}
 
-      {role === "direction" && (
-        <>
-          <p>📂 Interface direction.</p>
-          <EmployeeDiscussion mode="secure_direction" user={user} />
-        </>
+      {normalizedRole === "direction" && (
+        <p>📂 Interface direction : supervision et échanges restreints.</p>
       )}
-    </div>
+
+      {isAdminLike(normalizedRole) || normalizedRole === "employee" ? (
+        <EmployeeDiscussion mode="secure" user={user} role={normalizedRole} />
+      ) : (
+        <p>Vous n’avez pas accès à cet espace.</p>
+      )}
+    </section>
   );
 }

@@ -1,40 +1,71 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  createComment,
+  deleteComment,
+  fetchComments,
+  fetchLikes,
+  fetchProfilesByIds,
+  toggleLike,
+  updateComment,
+} from "./forumService";
+import { formatDate, isAdminLike } from "./forumUtils";
 
-export default function Post({ post, user, refreshPosts }) {
+export default function Post({
+  post,
+  user,
+  role,
+  authorProfile,
+  refreshPosts,
+  onEditPost,
+  onDeletePost,
+  canManagePost,
+}) {
   const [likes, setLikes] = useState(0);
   const [comments, setComments] = useState([]);
+  const [commentProfiles, setCommentProfiles] = useState({});
   const [commentText, setCommentText] = useState("");
   const [hasLiked, setHasLiked] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
 
   useEffect(() => {
     fetchLikes();
     fetchComments();
   }, [post.id]);
 
-  async function fetchLikes() {
-    const { data, error } = await supabase
-      .from("forum_likes")
-      .select("*")
-      .eq("post_id", post.id);
-
-    if (!error && data) {
+  async function loadLikes() {
+    try {
+      const data = await fetchLikes(post.id);
       setLikes(data.length);
       setHasLiked(data.some((like) => like.user_id === user.id));
+    } catch (error) {
+      console.error("Erreur chargement likes :", error.message);
     }
   }
 
-  async function fetchComments() {
-    const { data, error } = await supabase
-      .from("forum_comments")
-      .select("*")
-      .eq("post_id", post.id)
-      .order("created_at", { ascending: true });
 
-    if (!error && data) {
+  async function loadComments() {
+    try {
+      const data = await fetchComments(post.id);
       setComments(data);
+
+      const ids = [...new Set(data.map((comment) => comment.user_id).filter(Boolean))];
+      const profiles = await fetchProfilesByIds(ids);
+
+      const map = {};
+      profiles.forEach((profile) => {
+        map[profile.id] = profile;
+      });
+
+      setCommentProfiles(map);
+    } catch (error) {
+      console.error("Erreur chargement commentaires :", error.message);
+      setComments([]);
+      setCommentProfiles({});
     }
   }
+
 
   async function toggleLike() {
     if (hasLiked) {
@@ -67,7 +98,9 @@ export default function Post({ post, user, refreshPosts }) {
     if (!commentText.trim()) return;
 
     const authorName =
-      user?.user_metadata?.prenom || user?.email || "Utilisateur";
+      user?.user_metadata?.prenom ||
+      user?.email ||
+      "Utilisateur";
 
     const { error } = await supabase.from("forum_comments").insert([
       {
@@ -80,41 +113,182 @@ export default function Post({ post, user, refreshPosts }) {
 
     if (!error) {
       setCommentText("");
-      fetchComments();
+      await fetchComments();
       refreshPosts?.();
     }
   }
 
+  function startEditComment(comment) {
+    if (comment.user_id !== user.id) return;
+    setEditingCommentId(comment.id);
+    setEditingCommentText(comment.content || "");
+  }
+
+  async function saveCommentEdit(commentId) {
+    if (!editingCommentText.trim()) return;
+
+    const { error } = await supabase
+      .from("forum_comments")
+      .update({ content: editingCommentText.trim() })
+      .eq("id", commentId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Erreur modification commentaire :", error.message);
+      return;
+    }
+
+    setEditingCommentId(null);
+    setEditingCommentText("");
+    fetchComments();
+  }
+
+  async function deleteComment(comment) {
+    const canDelete =
+      comment.user_id === user.id || isAdminLike(role);
+
+    if (!canDelete) return;
+
+    const { error } = await supabase
+      .from("forum_comments")
+      .delete()
+      .eq("id", comment.id);
+
+    if (error) {
+      console.error("Erreur suppression commentaire :", error.message);
+      return;
+    }
+
+    fetchComments();
+  }
+
+  const authorName =
+    [authorProfile?.prenom, authorProfile?.nom].filter(Boolean).join(" ") ||
+    post.author_name ||
+    "Utilisateur";
+
   return (
-    <div className="post">
-      <p>
-        <strong>{post.author_name}</strong>
-      </p>
+    <article className="forum-card forum-post">
+      <header className="forum-post-header">
+        <div>
+          {post.user_id ? (
+            <Link to={`/profile/${post.user_id}`}>
+              <strong>{authorName}</strong>
+            </Link>
+          ) : (
+            <strong>{authorName}</strong>
+          )}
+
+          <p className="forum-post-meta">
+            {authorProfile?.role ? `${authorProfile.role} • ` : ""}
+            {formatDate(post.created_at)}
+          </p>
+        </div>
+
+        {canManagePost && (
+          <div className="inline-actions">
+            {post.user_id === user.id && (
+              <button onClick={onEditPost}>Modifier</button>
+            )}
+            <button onClick={onDeletePost}>Supprimer</button>
+          </div>
+        )}
+      </header>
 
       <p>{post.content}</p>
 
-      <button className="like-btn" onClick={toggleLike}>
-        {hasLiked ? "💙" : "👍"} {likes}
-      </button>
+      <div className="forum-post-actions">
+        <button onClick={toggleLike}>
+          {hasLiked ? "💙 Je n’aime plus" : "👍 J’aime"} ({likes})
+        </button>
+        <span>{comments.length} commentaire(s)</span>
+      </div>
 
-      <div className="comment-section">
-        <h4>Commentaires</h4>
+      <section className="forum-comments">
+        <h5>Commentaires</h5>
 
-        {comments.map((c) => (
-          <p key={c.id}>
-            • <strong>{c.author_name}</strong> : {c.content}
-          </p>
-        ))}
+        {comments.length === 0 ? (
+          <p>Aucun commentaire pour le moment.</p>
+        ) : (
+          comments.map((comment) => {
+            const profile = commentProfiles[comment.user_id];
+            const label =
+              [profile?.prenom, profile?.nom].filter(Boolean).join(" ") ||
+              comment.author_name ||
+              "Utilisateur";
 
-        <div className="comment-box">
-          <input
-            placeholder="Ajouter un commentaire..."
+            const canManageComment =
+              comment.user_id === user.id || isAdminLike(role);
+
+            return (
+              <div key={comment.id} className="forum-comment">
+                {editingCommentId === comment.id ? (
+                  <>
+                    <textarea
+                      value={editingCommentText}
+                      onChange={(e) => setEditingCommentText(e.target.value)}
+                    />
+                    <div className="inline-actions">
+                      <button onClick={() => saveCommentEdit(comment.id)}>
+                        Enregistrer
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingCommentId(null);
+                          setEditingCommentText("");
+                        }}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="forum-comment-header">
+                      <div>
+                        {comment.user_id ? (
+                          <Link to={`/profile/${comment.user_id}`}>
+                            <strong>{label}</strong>
+                          </Link>
+                        ) : (
+                          <strong>{label}</strong>
+                        )}
+                        <p className="forum-post-meta">
+                          {formatDate(comment.created_at)}
+                        </p>
+                      </div>
+
+                      {canManageComment && (
+                        <div className="inline-actions">
+                          {comment.user_id === user.id && (
+                            <button onClick={() => startEditComment(comment)}>
+                              Modifier
+                            </button>
+                          )}
+                          <button onClick={() => deleteComment(comment)}>
+                            Supprimer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <p>{comment.content}</p>
+                  </>
+                )}
+              </div>
+            );
+          })
+        )}
+
+        <div className="forum-comment-composer">
+          <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
+            placeholder="Ajouter un commentaire..."
           />
           <button onClick={addComment}>Envoyer</button>
         </div>
-      </div>
-    </div>
+      </section>
+    </article>
   );
 }
