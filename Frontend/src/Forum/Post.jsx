@@ -30,8 +30,8 @@ export default function Post({
   const [editingCommentText, setEditingCommentText] = useState("");
 
   useEffect(() => {
-    fetchLikes();
-    fetchComments();
+    loadLikes();
+    loadComments();
   }, [post.id]);
 
   async function loadLikes() {

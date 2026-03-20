@@ -5,10 +5,9 @@ import EmployeeDiscussion from "./EmployeeDiscussion";
 import Secured_Space from "./Secured_Space";
 import ForumSidebar from "./ForumSidebar";
 import PrivateMessages from "./PrivateMessages";
-import { normalizeRole } from "./forumUtils";
 import "./forum.css";
 
-export default function ForumHome({ user }) {
+export default function ForumHome({ user, embedded = false }) {
   const [tab, setTab] = useState("feed");
   const [role, setRole] = useState(null);
   const [selectedContact, setSelectedContact] = useState(null);
@@ -36,13 +35,15 @@ export default function ForumHome({ user }) {
   }
 
   return (
-    <div className="forum-page">
-      <div className="forum-header">
-        <h2>Forum</h2>
-        <button onClick={() => navigate(`/home/${user.id}`)}>
-          Retour à l’accueil
-        </button>
-      </div>
+    <div className={`forum-page ${embedded ? "forum-page-embedded" : ""}`}>
+      {!embedded && (
+        <div className="forum-header">
+          <h2>Forum</h2>
+          <button onClick={() => navigate(`/home/${user.id}`)}>
+            Retour à l’accueil
+          </button>
+        </div>
+      )}
 
       <div className="forum-layout">
         <ForumSidebar user={user} onOpenMessages={openMessagesWith} />

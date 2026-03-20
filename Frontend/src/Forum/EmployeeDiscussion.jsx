@@ -31,61 +31,41 @@ function EmployeeDiscussion({ mode, user, role }) {
   async function fetchPosts() {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("forum_posts")
-      .select("*")
-      .eq("mode", mode)
-      .order("created_at", { ascending: false });
+    try {
+      const safePosts = await fetchPostsByMode(mode);
+      setPosts(safePosts);
 
-    if (error) {
+      const userIds = [...new Set(safePosts.map((post) => post.user_id).filter(Boolean))];
+      const profilesData = await fetchProfilesByIds(userIds);
+
+      const map = {};
+      profilesData.forEach((profile) => {
+        map[profile.id] = profile;
+      });
+
+      setProfilesMap(map);
+    } catch (error) {
       console.error("Erreur chargement posts :", error.message);
       setPosts([]);
       setProfilesMap({});
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const safePosts = data || [];
-    setPosts(safePosts);
-
-    const userIds = [...new Set(safePosts.map((post) => post.user_id).filter(Boolean))];
-
-    if (userIds.length === 0) {
-      setProfilesMap({});
-      setLoading(false);
-      return;
-    }
-
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("id, nom, prenom, role, email, avatar_url")
-      .in("id", userIds);
-
-    const map = {};
-    (profilesData || []).forEach((profile) => {
-      map[profile.id] = profile;
-    });
-
-    setProfilesMap(map);
-    setLoading(false);
   }
-
   async function addPost() {
     if (!text.trim()) return;
 
-    const authorProfile = profilesMap[user.id] || null;
-    const authorName = getUserDisplayName(user, authorProfile);
+    const authorName =
+      user?.user_metadata?.prenom || user?.email || "Utilisateur";
 
-    const { error } = await supabase.from("forum_posts").insert([
-      {
-        user_id: user.id,
-        author_name: authorName,
+    try {
+      await createPost({
+        userId: user.id,
+        authorName,
         content: text.trim(),
         mode,
-      },
-    ]);
-
-    if (error) {
+      });
+    } catch (error) {
       console.error("Erreur ajout post :", error.message);
       return;
     }

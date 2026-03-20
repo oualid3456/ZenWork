@@ -59,7 +59,9 @@ createRoot(document.getElementById("root")).render(
           path="/forum/:userId"
           element={
             <SecurisedRoute>
-              <ForumHome />
+              <DashboardLayout>
+                <ForumHome />
+              </DashboardLayout>
             </SecurisedRoute>
           }
         />
