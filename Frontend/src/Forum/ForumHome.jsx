@@ -3,9 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchCurrentUserRole } from "./forumService";
 import EmployeeDiscussion from "./EmployeeDiscussion";
 import Secured_Space from "./Secured_Space";
-import ForumSidebar from "./ForumSidebar";
 import PrivateMessages from "./PrivateMessages";
-import "./forum.css";
 
 export default function ForumHome({ user, embedded = false }) {
   const [tab, setTab] = useState("feed");
@@ -16,7 +14,7 @@ export default function ForumHome({ user, embedded = false }) {
   useEffect(() => {
     if (!user?.id) return;
 
-    async function fetchRole() {
+    async function loadRole() {
       try {
         const currentRole = await fetchCurrentUserRole(user.id);
         setRole(currentRole);
@@ -26,7 +24,7 @@ export default function ForumHome({ user, embedded = false }) {
       }
     }
 
-    fetchRole();
+    loadRole();
   }, [user?.id]);
 
   function openMessagesWith(member) {
@@ -35,50 +33,67 @@ export default function ForumHome({ user, embedded = false }) {
   }
 
   return (
-    <div className={`forum-page ${embedded ? "forum-page-embedded" : ""}`}>
+    <div>
       {!embedded && (
-        <div className="forum-header">
-          <h2>Forum</h2>
-          <button onClick={() => navigate(`/home/${user.id}`)}>
-            Retour à l’accueil
-          </button>
-        </div>
-      )}
-
-      <div className="forum-layout">
-        <ForumSidebar user={user} onOpenMessages={openMessagesWith} />
-
-        <main className="forum-main">
-          <div className="forum-tabs">
-            <button
-              className={tab === "feed" ? "active-tab" : ""}
-              onClick={() => setTab("feed")}
-            >
-              Fil d’actualité
-            </button>
-
-            <button
-              className={tab === "employees" ? "active-tab" : ""}
-              onClick={() => setTab("employees")}
-            >
-              Discussion entre employés
-            </button>
-
-            <button
-              className={tab === "secure" ? "active-tab" : ""}
-              onClick={() => setTab("secure")}
-            >
-              Espace sécurisé
-            </button>
-
-            <button
-              className={tab === "messages" ? "active-tab" : ""}
-              onClick={() => setTab("messages")}
-            >
-              Messagerie privée
-            </button>
+        <header className="floating-topbar">
+          <div className="topbar-left">
+            <div className="welcome-text">
+              <span className="user-greeting">Forum interne</span>
+              <span className="company-name">
+                Publications, échanges et messagerie
+              </span>
+            </div>
           </div>
 
+          <div className="topbar-right">
+            <button
+              type="button"
+              className="start-btn"
+              onClick={() => navigate(`/home/${user.id}`)}
+              style={{ width: "auto", padding: "10px 16px" }}
+            >
+              Retour à l’accueil
+            </button>
+          </div>
+        </header>
+      )}
+
+      <div className="filter-container">
+        <button
+          type="button"
+          className={`filter-chip ${tab === "feed" ? "active" : ""}`}
+          onClick={() => setTab("feed")}
+        >
+          Fil d’actualité
+        </button>
+
+        <button
+          type="button"
+          className={`filter-chip ${tab === "employees" ? "active" : ""}`}
+          onClick={() => setTab("employees")}
+        >
+          Discussion employés
+        </button>
+
+        <button
+          type="button"
+          className={`filter-chip ${tab === "secure" ? "active" : ""}`}
+          onClick={() => setTab("secure")}
+        >
+          Espace sécurisé
+        </button>
+
+        <button
+          type="button"
+          className={`filter-chip ${tab === "messages" ? "active" : ""}`}
+          onClick={() => setTab("messages")}
+        >
+          Messagerie privée
+        </button>
+      </div>
+
+      <div className="video-grid" style={{ gridTemplateColumns: "1fr" }}>
+        <div className="video-card">
           {tab === "feed" && (
             <EmployeeDiscussion mode="feed" user={user} role={role} />
           )}
@@ -88,7 +103,11 @@ export default function ForumHome({ user, embedded = false }) {
           )}
 
           {tab === "secure" && (
-            <Secured_Space role={role} user={user} />
+            <Secured_Space
+              role={role}
+              user={user}
+              onOpenMessages={openMessagesWith}
+            />
           )}
 
           {tab === "messages" && (
@@ -97,7 +116,7 @@ export default function ForumHome({ user, embedded = false }) {
               preselectedUser={selectedContact}
             />
           )}
-        </main>
+        </div>
       </div>
     </div>
   );

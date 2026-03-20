@@ -9,26 +9,28 @@ export default function Secured_Space({ role, user }) {
   }
 
   return (
-    <section className="forum-card">
-      <h4>Espace sécurisé</h4>
+    <div>
+      <div className="video-body" style={{ marginBottom: 20 }}>
+        <h3>Espace sécurisé</h3>
 
-      {normalizedRole === "employee" && (
-        <p>💬 Discussion privée avec le RH ou la direction.</p>
-      )}
+        {normalizedRole === "employee" && (
+          <p>Discussion privée avec le RH ou la direction.</p>
+        )}
 
-      {normalizedRole === "rh" && (
-        <p>📁 Espace RH : messages et échanges sensibles avec les employés.</p>
-      )}
+        {normalizedRole === "rh" && (
+          <p>Espace RH : échanges sensibles avec les employés.</p>
+        )}
 
-      {normalizedRole === "direction" && (
-        <p>📂 Interface direction : supervision et échanges restreints.</p>
-      )}
+        {normalizedRole === "direction" && (
+          <p>Interface direction : échanges restreints.</p>
+        )}
+      </div>
 
       {isAdminLike(normalizedRole) || normalizedRole === "employee" ? (
         <EmployeeDiscussion mode="secure" user={user} role={normalizedRole} />
       ) : (
         <p>Vous n’avez pas accès à cet espace.</p>
       )}
-    </section>
+    </div>
   );
 }

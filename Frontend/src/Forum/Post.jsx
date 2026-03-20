@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   createComment,
-  deleteComment,
+  deleteComment as deleteCommentAction,
   fetchComments,
   fetchLikes,
   fetchProfilesByIds,
-  toggleLike,
-  updateComment,
+  toggleLike as toggleLikeAction,
+  updateComment as updateCommentAction,
 } from "./forumService";
 import { formatDate, isAdminLike } from "./forumUtils";
 
@@ -44,7 +44,6 @@ export default function Post({
     }
   }
 
-
   async function loadComments() {
     try {
       const data = await fetchComments(post.id);
@@ -66,31 +65,18 @@ export default function Post({
     }
   }
 
+  async function handleToggleLike() {
+    try {
+      const result = await toggleLikeAction({
+        postId: post.id,
+        userId: user.id,
+        hasLiked,
+      });
 
-  async function toggleLike() {
-    if (hasLiked) {
-      const { error } = await supabase
-        .from("forum_likes")
-        .delete()
-        .eq("post_id", post.id)
-        .eq("user_id", user.id);
-
-      if (!error) {
-        setHasLiked(false);
-        setLikes((prev) => prev - 1);
-      }
-    } else {
-      const { error } = await supabase.from("forum_likes").insert([
-        {
-          post_id: post.id,
-          user_id: user.id,
-        },
-      ]);
-
-      if (!error) {
-        setHasLiked(true);
-        setLikes((prev) => prev + 1);
-      }
+      setHasLiked(result.liked);
+      setLikes((prev) => (result.liked ? prev + 1 : prev - 1));
+    } catch (error) {
+      console.error("Erreur like :", error.message);
     }
   }
 
@@ -98,23 +84,21 @@ export default function Post({
     if (!commentText.trim()) return;
 
     const authorName =
-      user?.user_metadata?.prenom ||
-      user?.email ||
-      "Utilisateur";
+      user?.user_metadata?.prenom || user?.email || "Utilisateur";
 
-    const { error } = await supabase.from("forum_comments").insert([
-      {
-        post_id: post.id,
-        user_id: user.id,
-        author_name: authorName,
+    try {
+      await createComment({
+        postId: post.id,
+        userId: user.id,
+        authorName,
         content: commentText.trim(),
-      },
-    ]);
+      });
 
-    if (!error) {
       setCommentText("");
-      await fetchComments();
+      await loadComments();
       refreshPosts?.();
+    } catch (error) {
+      console.error("Erreur ajout commentaire :", error.message);
     }
   }
 
@@ -127,39 +111,31 @@ export default function Post({
   async function saveCommentEdit(commentId) {
     if (!editingCommentText.trim()) return;
 
-    const { error } = await supabase
-      .from("forum_comments")
-      .update({ content: editingCommentText.trim() })
-      .eq("id", commentId)
-      .eq("user_id", user.id);
+    try {
+      await updateCommentAction({
+        commentId,
+        userId: user.id,
+        content: editingCommentText.trim(),
+      });
 
-    if (error) {
+      setEditingCommentId(null);
+      setEditingCommentText("");
+      loadComments();
+    } catch (error) {
       console.error("Erreur modification commentaire :", error.message);
-      return;
     }
-
-    setEditingCommentId(null);
-    setEditingCommentText("");
-    fetchComments();
   }
 
-  async function deleteComment(comment) {
-    const canDelete =
-      comment.user_id === user.id || isAdminLike(role);
-
+  async function removeComment(comment) {
+    const canDelete = comment.user_id === user.id || isAdminLike(role);
     if (!canDelete) return;
 
-    const { error } = await supabase
-      .from("forum_comments")
-      .delete()
-      .eq("id", comment.id);
-
-    if (error) {
+    try {
+      await deleteCommentAction(comment.id);
+      loadComments();
+    } catch (error) {
       console.error("Erreur suppression commentaire :", error.message);
-      return;
     }
-
-    fetchComments();
   }
 
   const authorName =
@@ -168,44 +144,77 @@ export default function Post({
     "Utilisateur";
 
   return (
-    <article className="forum-card forum-post">
-      <header className="forum-post-header">
-        <div>
+    <div className="video-card">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 16,
+          marginBottom: 12,
+        }}
+      >
+        <div className="video-body">
           {post.user_id ? (
-            <Link to={`/profile/${post.user_id}`}>
-              <strong>{authorName}</strong>
-            </Link>
+            <h3 style={{ margin: 0 }}>
+              <Link to={`/profile/${post.user_id}`}>{authorName}</Link>
+            </h3>
           ) : (
-            <strong>{authorName}</strong>
+            <h3 style={{ margin: 0 }}>{authorName}</h3>
           )}
-
-          <p className="forum-post-meta">
+          <p style={{ marginTop: 6 }}>
             {authorProfile?.role ? `${authorProfile.role} • ` : ""}
             {formatDate(post.created_at)}
           </p>
         </div>
 
         {canManagePost && (
-          <div className="inline-actions">
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
             {post.user_id === user.id && (
-              <button onClick={onEditPost}>Modifier</button>
+              <button
+                type="button"
+                className="start-btn"
+                style={{ width: "120px" }}
+                onClick={onEditPost}
+              >
+                Modifier
+              </button>
             )}
-            <button onClick={onDeletePost}>Supprimer</button>
+            <button
+              type="button"
+              className="start-btn"
+              style={{ width: "120px" }}
+              onClick={onDeletePost}
+            >
+              Supprimer
+            </button>
           </div>
         )}
-      </header>
-
-      <p>{post.content}</p>
-
-      <div className="forum-post-actions">
-        <button onClick={toggleLike}>
-          {hasLiked ? "💙 Je n’aime plus" : "👍 J’aime"} ({likes})
-        </button>
-        <span>{comments.length} commentaire(s)</span>
       </div>
 
-      <section className="forum-comments">
-        <h5>Commentaires</h5>
+      <div className="video-body" style={{ marginBottom: 16 }}>
+        <p style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}>{post.content}</p>
+      </div>
+
+      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+        <button
+          type="button"
+          className="start-btn"
+          style={{ width: "180px" }}
+          onClick={handleToggleLike}
+        >
+          {hasLiked ? "💙 Je n’aime plus" : "👍 J’aime"} ({likes})
+        </button>
+        <button
+          type="button"
+          className="start-btn"
+          style={{ width: "180px" }}
+        >
+          {comments.length} commentaire(s)
+        </button>
+      </div>
+
+      <div className="video-body">
+        <h3>Commentaires</h3>
 
         {comments.length === 0 ? (
           <p>Aucun commentaire pour le moment.</p>
@@ -221,18 +230,46 @@ export default function Post({
               comment.user_id === user.id || isAdminLike(role);
 
             return (
-              <div key={comment.id} className="forum-comment">
+              <div
+                key={comment.id}
+                style={{
+                  background: "#F7F8FA",
+                  borderRadius: 12,
+                  padding: 12,
+                  marginBottom: 10,
+                }}
+              >
                 {editingCommentId === comment.id ? (
                   <>
-                    <textarea
-                      value={editingCommentText}
-                      onChange={(e) => setEditingCommentText(e.target.value)}
-                    />
-                    <div className="inline-actions">
-                      <button onClick={() => saveCommentEdit(comment.id)}>
+                    <div className="search-box" style={{ width: "100%", marginBottom: 12 }}>
+                      <textarea
+                        value={editingCommentText}
+                        onChange={(e) => setEditingCommentText(e.target.value)}
+                        rows={3}
+                        style={{
+                          width: "100%",
+                          border: "none",
+                          outline: "none",
+                          background: "transparent",
+                          resize: "vertical",
+                          fontFamily: "inherit",
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        className="start-btn"
+                        style={{ width: "140px" }}
+                        onClick={() => saveCommentEdit(comment.id)}
+                      >
                         Enregistrer
                       </button>
                       <button
+                        type="button"
+                        className="start-btn"
+                        style={{ width: "140px" }}
                         onClick={() => {
                           setEditingCommentId(null);
                           setEditingCommentText("");
@@ -244,35 +281,52 @@ export default function Post({
                   </>
                 ) : (
                   <>
-                    <div className="forum-comment-header">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        marginBottom: 8,
+                      }}
+                    >
                       <div>
                         {comment.user_id ? (
-                          <Link to={`/profile/${comment.user_id}`}>
-                            <strong>{label}</strong>
-                          </Link>
+                          <strong>
+                            <Link to={`/profile/${comment.user_id}`}>{label}</Link>
+                          </strong>
                         ) : (
                           <strong>{label}</strong>
                         )}
-                        <p className="forum-post-meta">
+                        <p style={{ margin: "4px 0 0 0", color: "#808191", fontSize: 13 }}>
                           {formatDate(comment.created_at)}
                         </p>
                       </div>
 
                       {canManageComment && (
-                        <div className="inline-actions">
+                        <div style={{ display: "flex", gap: 8 }}>
                           {comment.user_id === user.id && (
-                            <button onClick={() => startEditComment(comment)}>
+                            <button
+                              type="button"
+                              className="start-btn"
+                              style={{ width: "120px" }}
+                              onClick={() => startEditComment(comment)}
+                            >
                               Modifier
                             </button>
                           )}
-                          <button onClick={() => deleteComment(comment)}>
+                          <button
+                            type="button"
+                            className="start-btn"
+                            style={{ width: "120px" }}
+                            onClick={() => removeComment(comment)}
+                          >
                             Supprimer
                           </button>
                         </div>
                       )}
                     </div>
 
-                    <p>{comment.content}</p>
+                    <p style={{ margin: 0 }}>{comment.content}</p>
                   </>
                 )}
               </div>
@@ -280,15 +334,32 @@ export default function Post({
           })
         )}
 
-        <div className="forum-comment-composer">
+        <div className="search-box" style={{ width: "100%", marginTop: 16 }}>
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Ajouter un commentaire..."
+            rows={3}
+            style={{
+              width: "100%",
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              resize: "vertical",
+              fontFamily: "inherit",
+            }}
           />
-          <button onClick={addComment}>Envoyer</button>
         </div>
-      </section>
-    </article>
+
+        <button
+          type="button"
+          className="start-btn"
+          style={{ width: "160px", marginTop: 12 }}
+          onClick={addComment}
+        >
+          Envoyer
+        </button>
+      </div>
+    </div>
   );
 }
