@@ -196,3 +196,28 @@
   0%, 80%, 100% { transform: translateY(0);     background: #c4b5fd; }
   40%           { transform: translateY(-6px);  background: #7c6ff7; }
 }
+@media (prefers-color-scheme: dark) {
+  .psycho-page        { background: #0d0f14; }
+  .psycho-header      { background: #13161e; border-color: #252a38; }
+  .psycho-header h2   { color: #e8eaf0; }
+  .psycho-header p    { color: #6b7280; }
+  .psycho-status      { background: #34d399; box-shadow: 0 0 0 2px #064e3b; }
+
+  .msg-row.assistant .bubble {
+    background: #13161e;
+    color: #e8eaf0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .msg-row.user .bubble  { background: #4f46e5; }
+  .msg-row.user .msg-icon { background: #1e1b4b; }
+
+  .typing              { background: #13161e; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+  .psycho-input-zone   { background: #13161e; border-color: #252a38; }
+  .psycho-textarea     { background: #0d0f14; border-color: #252a38; color: #e8eaf0; }
+  .psycho-textarea::placeholder { color: #4b5563; }
+  .psycho-textarea:focus { border-color: #7c6ff7; }
+  .psycho-hint         { color: #4b5563; }
+
+  .psycho-messages::-webkit-scrollbar-thumb { background: #252a38; }
+}

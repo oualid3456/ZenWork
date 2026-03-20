@@ -13,6 +13,8 @@ import ForumHome from "./Forum/ForumHome";
 import DashboardLayout from "./Layout/DashboardLayout.jsx";
 import EmployeesList from "./Employees/EmployeesList.jsx";
 import Profile from "./Profile/Profile.jsx";
+import PsychoBot from "./Psychobot/Psychobot.jsx";
+
 
 
 createRoot(document.getElementById("root")).render(
@@ -29,8 +31,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
         <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
         <Route path="/ForumHome" element={<ForumHome />} />
+        <Route path="/psychobot" element={<SecurisedRoute><PsychoBot /></SecurisedRoute>} />
         <Route path="*" element={<Error />} />
-        <Route path="/ressource" element={<Ressources/>}/>
 
       </Routes>
     </BrowserRouter>

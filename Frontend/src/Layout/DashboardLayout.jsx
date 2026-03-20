@@ -7,7 +7,9 @@ import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
 import "../Espace Ressource/Ressources.css";
 import "./Layout.css";
+import PsychoBot from "../Psychobot/Psychobot.jsx";
 
+const TAB_PSYCHOBOT = "psychobot";
 const TAB_DASHBOARD = "dashboard";
 const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
@@ -130,7 +132,9 @@ export default function DashboardLayout({ user, children }) {
               <span className="label">Employés</span>
             </button>
           )}
-          <button type="button" className="menu-item">
+         <button type="button"
+            className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
+            onClick={() => setTab(TAB_PSYCHOBOT)}>
             <img src="/bot.png" alt="Psychobot" className="sidebar-icon-img" />
             <span className="label">Psychobot</span>
           </button>
@@ -183,6 +187,7 @@ export default function DashboardLayout({ user, children }) {
               ? cloneElement(children, { user, embedded: true })
               : <Profile user={user} embedded />
           )}
+          {tab === TAB_PSYCHOBOT && <PsychoBot />}
         </div>
       </main>
       {popupOpen && (
