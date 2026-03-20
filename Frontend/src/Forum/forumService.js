@@ -18,7 +18,7 @@ export async function fetchCurrentUserRole(userId) {
 export async function fetchProfileById(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, nom, prenom, role, email, avatar_url, created_at")
+    .select("id, nom, prenom, role")
     .eq("id", userId)
     .single();
 
@@ -29,7 +29,7 @@ export async function fetchProfileById(userId) {
 export async function fetchMembersExcept(userId) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, nom, prenom, role, email, avatar_url")
+    .select("id, nom, prenom, role")
     .neq("id", userId)
     .order("prenom", { ascending: true });
 
@@ -42,7 +42,7 @@ export async function fetchProfilesByIds(ids = []) {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, nom, prenom, role, email, avatar_url")
+    .select("id, nom, prenom, role")
     .in("id", ids);
 
   if (error) throw error;

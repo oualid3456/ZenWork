@@ -97,11 +97,10 @@ export default function PrivateMessages({ user, preselectedUser = null }) {
 
   const selectedUserLabel = useMemo(() => {
     if (!selectedUser) return "Aucune conversation sélectionnée";
-    return (
-      [selectedUser.prenom, selectedUser.nom].filter(Boolean).join(" ") ||
-      selectedUser.email ||
-      "Utilisateur"
-    );
+      return (
+          [selectedUser.prenom, selectedUser.nom].filter(Boolean).join(" ") ||
+          "Utilisateur"
+      );
   }, [selectedUser]);
 
   return (
@@ -116,10 +115,9 @@ export default function PrivateMessages({ user, preselectedUser = null }) {
         ) : (
           <ul className="forum-member-list">
             {members.map((member) => {
-              const label =
-                [member.prenom, member.nom].filter(Boolean).join(" ") ||
-                member.email ||
-                "Utilisateur";
+                const label =
+                    [member.prenom, member.nom].filter(Boolean).join(" ") ||
+                    "Utilisateur";
 
               const active = selectedUser?.id === member.id;
 

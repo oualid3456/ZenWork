@@ -16,7 +16,6 @@ export function getUserDisplayName(user, profile = null) {
     profile?.prenom ||
     user?.user_metadata?.prenom ||
     user?.user_metadata?.full_name ||
-    user?.email ||
     "Utilisateur"
   );
 }
