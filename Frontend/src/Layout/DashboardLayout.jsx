@@ -78,7 +78,6 @@ export default function DashboardLayout({ user, children }) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
-  const [questionnaireId, setQuestionnaireId] = useState(null);
 
   useEffect(() => {
     async function fetchActiveQuestionnaire() {
@@ -106,8 +105,6 @@ export default function DashboardLayout({ user, children }) {
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
     else if (pathname.includes("/forum")) setTab(TAB_FORUM);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
-    else if (pathname.includes("/start_questionnaire")) setTab(TAB_START_QUESTIONNAIRE);
-    else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
     else setTab(TAB_DASHBOARD);
   }, [pathname]);

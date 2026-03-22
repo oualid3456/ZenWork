@@ -16,25 +16,7 @@ function Questionnaire({ user }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [finish, setFinish] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  // un tableau contenant l'ensemble des questions dans l'ordre
-  const questions = [
-    // emojis
-    'À quel point vous sentez-vous "heureux(se)" ?',
-    'À quel point vous sentez-vous fatigué(e) ?',
-    'À quel point vous sentez-vous déprimé(e) ?',
-    'À quel point vous sentez-vous "à bout" ?',
-    'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
-    "À quel point entretenez-vous de bonnes relation avec vos collègues de travail ?",
-    'À quel point êtes-vous satisfait de votre travail ?',
-    // de 1 a 10
-    "Veuillez-indiquer votre niveau de stress de 1 à 10",
-    "Veuillez-indiquer votre charge de travail de 1 à 10",
-    // oui ou non
-    "Vous sentez-vous isolé(e) ?",
-    // texte
-    "Qu'est-ce qui vous cause le plus de stress au travail ?",
-    "Commentaires libres (facultatif)"
-  ];
+  const [questions, setQuestions] = useState([]);
   // on utilise des emojis comme reponse, cela parait
   // plus intuitif.
   const ratings = ["😟", "🙁", "😐", "🙂", "😃"];
@@ -63,24 +45,20 @@ function Questionnaire({ user }) {
 
   useEffect(() => {
     let interval;
-
     const checkQuestionnaire = async () => {
       const { data: questionnaire, error } = await supabase
         .from("questionnaire")
         .select("active")
         .eq("id", questionnaireId)
         .single();
-
       if (error || !questionnaire || !questionnaire.active) {
         setQuestionnaireClosed(true);
         clearInterval(interval);
       }
       setLoadingQuestionnaire(false);
     };
-
     checkQuestionnaire();
     interval = setInterval(checkQuestionnaire, 5000);
-
     return () => clearInterval(interval);
   }, [questionnaireId]);
 
@@ -104,6 +82,32 @@ function Questionnaire({ user }) {
     }
     checkFinish();
   }, [currentUser, questionnaireId]);
+
+  useEffect(() => {
+    async function fetchQuestionnaire() {
+      if (!questionnaireId) return;
+      const { data, error } = await supabase
+        .from("questionnaire")
+        .select("structure_json, default")
+        .eq("id", questionnaireId)
+        .single();
+      if (error) {
+        console.error("Erreur dans la recherche du questionnaire", error.message);
+        return;
+      }
+      if (data.structure_json) {
+        try {
+          const Questions = JSON.parse(data.structure_json);
+          setQuestions(Questions);
+          setCurrentQuestion(0);
+          setAnswers({});
+        } catch (e) {
+          console.error("Erreur dans le parsing du JSON du questionnaire", e);
+        }
+      }
+    }
+    fetchQuestionnaire();
+  }, [questionnaireId]);
 
   async function sendAnswers() {
     if (finish) {
@@ -160,7 +164,7 @@ function Questionnaire({ user }) {
         <div className={styles.welcome}>
           <h1 className={styles.h1}>Voulez vous procédé au <br />questionnaire ?</h1>
           <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de 12 questions ayant pour but<br />
+          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de {questions.length} questions ayant pour but<br />
           d'évaluer votre santé mentale afin de pouvoir vous aider si besoin.<br />
           Il vous sera demandé de répondre avec honnêteté afin de ne pas fausser<br />
           le questionnaire qui pourrait vous aider.</p>
@@ -175,7 +179,11 @@ function Questionnaire({ user }) {
         <div className={styles.container}>
           <div className={styles.middle}>
             <div className={styles.title}>
-              <h2 className={styles.h2}>{questions[currentQuestion]}</h2>
+              <h2 className={styles.h2}>
+              {questions[currentQuestion].question}
+              {questions[currentQuestion].optional ? " (facultatif)" : ""}
+              {questions[currentQuestion].type == "1_to_10" ? " (de 1 à 10)" : ""}
+              </h2>
             </div>
             <div className={styles.answer}>
               <div className={styles.progression_container}>
@@ -195,7 +203,7 @@ function Questionnaire({ user }) {
               <button className={styles.retour} onClick={() => {
                   if (currentQuestion > 0) {
                     setCurrentQuestion(currentQuestion - 1);
-                    const lastAnswer = answers[questions[currentQuestion - 1]];
+                    const lastAnswer = answers[questions[currentQuestion - 1].question];
                   }
                 }}>
                 Retour
