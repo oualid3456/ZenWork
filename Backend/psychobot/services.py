@@ -6,9 +6,11 @@ Contient : compute_burnout_score, chat_with_gemini (adapté),
 
 import json
 from groq import Groq
+from django.conf import settings
 
 # --- CONFIGURATION GROQ ---
-GROQ_API_KEY = "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" 
+
+GROQ_API_KEY = settings.GROQ_API_KEY
 GROQ_MODEL = "llama-3.3-70b-versatile"
 # ─────────────────────────────────────────────
 # CLIENT SINGLETON
