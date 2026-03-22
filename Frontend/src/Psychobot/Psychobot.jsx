@@ -7,10 +7,12 @@ export default function PsychoBot() {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Bonjour ! Je suis PsychoBot. Comment vous sentez-vous aujourd'hui ?" }
   ]);
-  const [input, setInput]     = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
-  const bottomRef             = useRef(null);
+  const [input, setInput]           = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState(null);
+  const [sessionClosed, setSessionClosed] = useState(false);
+  const [sessionData, setSessionData]     = useState(null);
+  const bottomRef                   = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -18,7 +20,7 @@ export default function PsychoBot() {
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || sessionClosed) return;
 
     const newMessages = [...messages, { role: "user", content: text }];
     setMessages(newMessages);
@@ -40,6 +42,13 @@ export default function PsychoBot() {
 
       if (data.response) {
         setMessages([...newMessages, { role: "assistant", content: data.response }]);
+        // Stocke le score si retourné
+        if (data.score_initial !== undefined) {
+          setSessionData({
+            score_initial:     data.score_initial,
+            raisons_initiales: data.raisons || [],
+          });
+        }
       } else {
         setError(data.error || "Erreur inattendue.");
       }
@@ -61,6 +70,11 @@ export default function PsychoBot() {
           <p>Assistant bien-être — confidentiel</p>
         </div>
         <div className="psycho-status" />
+        {!sessionClosed && (
+          <button className="close-session-btn" onClick={closeSession} disabled={loading}>
+            Terminer la session
+          </button>
+        )}
       </div>
 
       {/* Messages */}
@@ -89,34 +103,42 @@ export default function PsychoBot() {
 
       {/* Input */}
       <div className="psycho-input-zone">
-        <div className="input-row">
-          <textarea
-            className="psycho-textarea"
-            value={input}
-            placeholder="Écrivez votre message…"
-            rows={1}
-            disabled={loading}
-            onChange={(e) => {
-              setInput(e.target.value);
-              e.target.style.height = "auto";
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-          />
-          <button
-            className="send-btn"
-            onClick={sendMessage}
-            disabled={loading || !input.trim()}
-          >
-            ➤
-          </button>
-        </div>
-        <p className="psycho-hint">Entrée pour envoyer · Maj+Entrée pour nouvelle ligne</p>
+        {sessionClosed ? (
+          <p style={{ textAlign: "center", color: "#9ca3af", fontSize: "13px", padding: "8px 0" }}>
+            Session terminée. Merci pour cet échange.
+          </p>
+        ) : (
+          <>
+            <div className="input-row">
+              <textarea
+                className="psycho-textarea"
+                value={input}
+                placeholder="Écrivez votre message..."
+                rows={1}
+                disabled={loading}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+              <button
+                className="send-btn"
+                onClick={sendMessage}
+                disabled={loading || !input.trim()}
+              >
+                ➤
+              </button>
+            </div>
+            <p className="psycho-hint">Entrée pour envoyer · Maj+Entrée pour nouvelle ligne</p>
+          </>
+        )}
       </div>
 
     </div>

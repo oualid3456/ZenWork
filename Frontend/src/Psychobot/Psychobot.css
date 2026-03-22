@@ -221,3 +221,17 @@
 
   .psycho-messages::-webkit-scrollbar-thumb { background: #252a38; }
 }
+.close-session-btn {
+  margin-left: auto;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.close-session-btn:hover    { opacity: 0.8; }
+.close-session-btn:disabled { opacity: 0.4; cursor: not-allowed; }
