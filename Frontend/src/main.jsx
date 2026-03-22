@@ -15,6 +15,8 @@ import DashboardLayout from "./Layout/DashboardLayout.jsx";
 import EmployeesList from "./Employees/EmployeesList.jsx";
 import Profile from "./Profile/Profile.jsx";
 import Ressources from "./Espace Ressource/Ressources.jsx";
+import PsychoBot from "./Psychobot/Psychobot.jsx";
+
 
 
 createRoot(document.getElementById("root")).render(
@@ -65,7 +67,10 @@ createRoot(document.getElementById("root")).render(
             </SecurisedRoute>
           }
         />
+        <Route path="/ForumHome" element={<ForumHome />} />
+        <Route path="/psychobot" element={<SecurisedRoute><PsychoBot /></SecurisedRoute>} />
         <Route path="*" element={<Error />} />
+
       </Routes>
     </BrowserRouter>
   </StrictMode>

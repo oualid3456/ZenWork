@@ -8,7 +8,8 @@ import RhLogin from "./RhLogin";
 import ForumHome from "./Forum/ForumHome";
 import './Forum/forum.css';
 import './login.css';
-import Resources from "./Espace Ressource/Ressources.jsx"; 
+import Resources from "./Espace Ressource/Ressources.jsx";
+import Psychobot from './Psychobot/Psychobot'; 
 
 
 function App() {
