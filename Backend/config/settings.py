@@ -51,6 +51,7 @@ GEMINI_API_KEY = "AIzaSyAjzc8S7d3TF7bBH_p2fZVzc6lf84bffmk"
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'psychobot.middleware.SupabaseAuthMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
