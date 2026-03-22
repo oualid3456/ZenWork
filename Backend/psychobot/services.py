@@ -251,3 +251,20 @@ def build_context_prefix(reponses: dict) -> str:
         "Utilise ces éléments subtilement pour personnaliser ta réponse empathique. "
         "Message de l'employé : "
     )
+def generate_commentaire_rh(score: int, raisons: list) -> str:
+    client = get_client()
+    
+    prompt = f"""
+Score burn-out : {score}/100. Signaux : {', '.join(raisons[:2])}.
+Écris UNE seule phrase courte et professionnelle pour alerter le RH. Maximum 15 mots.
+"""
+    try:
+        response = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model=GROQ_MODEL,
+            max_tokens=40,
+            temperature=0.3
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Employé à risque élevé, intervention recommandée."
