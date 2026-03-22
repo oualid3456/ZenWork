@@ -12,7 +12,7 @@
   font-size: 25px;
 }
 
-.button {
+.button, .start_button {
   /*
   background-color: blue;
   transition: transform 0.1s ease;
@@ -31,6 +31,10 @@
   width: 300px;
 }
 
+.start_button {
+  margin-bottom: 20px;
+}
+
 .question_button {
   transition: transform 0.1s ease;
   border: none;
@@ -42,11 +46,7 @@
   width: 300px;
 }
 
-.button:hover {
-  transform: scale(1.05);
-}
-
-.question_button:hover {
+.button:hover, .question_button:hover, .start_button:hover {
   transform: scale(1.05);
 }
 
@@ -75,7 +75,7 @@
 
 .textarea:focus {
   outline: none;
-  border-color: #4f46e5;
+  border-color: #6C5DD3;
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
@@ -91,8 +91,49 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.add_question input[type="radio"] {
+  accent-color: #6C5DD3;
+}
+
 .input:focus {
   outline: none;
-  border-color: #4f46e5;
+  border-color: #6C5DD3;
   box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.add_question {
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+  align-items: center;
+}
+
+.add_question .input {
+  width: 80%;
+}
+
+.add_question .optional {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.add_question .optional input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #6C5DD3;;
+  cursor: pointer;
+}
+
+.add_question input[type="radio"] {
+  width: auto;
+  height: auto;
+  margin-right: 5px;
 }
