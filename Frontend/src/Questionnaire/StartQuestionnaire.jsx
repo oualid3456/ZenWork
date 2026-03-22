@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef  } from "react";
 import { supabase } from "../supabaseClient";
 import styles from "./startQuestionnaire.module.css";
 import Loading from "../Loading/Loading.jsx";
@@ -9,6 +9,7 @@ function StartQuestionnaire({ user }) {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
+  const lastQuestionRef = useRef(null);
   // un tableau contenant l'ensemble des questions dans l'ordre
   const questions = [
     // emojis
@@ -206,9 +207,11 @@ function StartQuestionnaire({ user }) {
             onChange={(event) => setDescription(event.target.value)}
           />
           {customQuestions.map((q, index) => (
-            <div key={index}>
+            <div className={styles.add_question}
+              ref={index === customQuestions.length - 1 ? lastQuestionRef : null}
+              key={index}>
               <p>Question {index + 1}</p>
-              <input
+              <input className={styles.input}
                 type="text"
                 value={q.question}
                 onChange={(event) =>
@@ -217,53 +220,56 @@ function StartQuestionnaire({ user }) {
                 maxLength={80}
               />
               <div>
-                <label>
-                  <input
-                    type="radio"
-                    name={`type-${index}`}
-                    checked={q.type === "text"}
-                    onChange={() =>
-                      addQuestion(q.question, "text", q.optional, index, true)
-                    }
-                  />
-                  Texte
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={`type-${index}`}
-                    checked={q.type === "yes_no"}
-                    onChange={() =>
-                      addQuestion(q.question, "yes_no", q.optional, index, true)
-                    }
-                  />
-                  Oui/Non
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={`type-${index}`}
-                    checked={q.type === "1_to_10"}
-                    onChange={() =>
-                      addQuestion(q.question, "1_to_10", q.optional, index, true)
-                    }
-                  />
-                  1 à 10
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={`type-${index}`}
-                    checked={q.type === "emoji"}
-                    onChange={() =>
-                      addQuestion(q.question, "emoji", q.optional, index, true)
-                    }
-                  />
-                  Emoji
-                </label>
+                <div className="radio_group">
+                  <label className={styles.label}>
+                    <input className={styles.input}
+                      type="radio"
+                      name={`type-${index}`}
+                      checked={q.type === "text"}
+                      onChange={() =>
+                        addQuestion(q.question, "text", q.optional, index, true)
+                      }
+                    />
+                    Texte
+                  </label>
+                  <label className={styles.label}>
+                    <input className={styles.input}
+                      type="radio"
+                      name={`type-${index}`}
+                      checked={q.type === "yes_no"}
+                      onChange={() =>
+                        addQuestion(q.question, "yes_no", q.optional, index, true)
+                      }
+                    />
+                    Oui/Non
+                  </label >
+                  <label className={styles.label}>
+                    <input className={styles.input}
+                      type="radio"
+                      name={`type-${index}`}
+                      checked={q.type === "1_to_10"}
+                      onChange={() =>
+                        addQuestion(q.question, "1_to_10", q.optional, index, true)
+                      }
+                    />
+                    1 à 10
+                  </label>
+                  <label className={styles.label}>
+                    <input
+                      className={styles.input}
+                      type="radio"
+                      name={`type-${index}`}
+                      checked={q.type === "emoji"}
+                      onChange={() =>
+                        addQuestion(q.question, "emoji", q.optional, index, true)
+                      }
+                    />
+                    Emoji
+                  </label>
+                </div>
               </div>
-              <label className={styles.label}>
-                optional
+              <label className={styles.optional}>
+                Optionel
                 <input className={styles.input}
                   type="checkbox"
                   checked={q.optional}
@@ -272,12 +278,12 @@ function StartQuestionnaire({ user }) {
                   }
                 />
               </label>
-              <button
+              <button className={styles.question_button}
                 onClick={() =>
                   addQuestion(q.question, q.type, q.optional, index, true)
                 }
               >
-              valider
+              Valider
               </button>
             </div>
           ))}
@@ -288,11 +294,13 @@ function StartQuestionnaire({ user }) {
                 setCustomQuestions([
                   ...customQuestions,
                   createQuestion("", "text", false)
-                ])
-              }
-              }
+                ]);
+                setTimeout(() => {
+                lastQuestionRef.current?.scrollIntoView({ behavior: "smooth" });
+              }, 50);
+              }}
             >
-            ajouter une question
+              Ajouter une question
             </button>   
             <button className={styles.question_button}
             onClick={() => {
@@ -304,7 +312,7 @@ function StartQuestionnaire({ user }) {
             </button>
           </div>
           <button
-            className={styles.button}
+            className={styles.start_button}
             disabled={loading}
             onClick={() => {
               const validateQuestion = customQuestions.filter(q => q.validated).length;
