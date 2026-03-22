@@ -249,9 +249,9 @@ html, body, #root, .App {
 
 .play-overlay { font-size: 30px; color: white; }
 
-.cat-label { color: #6C5DD3; font-weight: 800; font-size: 11px; text-transform: uppercase; }
-.video-body h3 { font-size: 16px; margin: 8px 0; color: #1A202C; }
-.video-body p { font-size: 13px; color: #808191; margin-bottom: 15px; }
+.cat-label { color: #6C5DD3; font-weight: 800; font-size: 13px; text-transform: uppercase; }
+.video-body h3 { font-size: 20px; margin: 8px 0; color: #1A202C; }
+.video-body p { font-size: 15px; color: #080808; margin-bottom: 15px; }
 
 .start-btn {
   width: 100%;
