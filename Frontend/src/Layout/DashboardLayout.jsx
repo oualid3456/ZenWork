@@ -5,16 +5,12 @@ import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
 import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
-import Questionnaire from "../Questionnaire/Questionnaire.jsx";
-import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx";
 import "./Layout.css";
 
 const TAB_DASHBOARD = "dashboard";
 const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
-const TAB_START_QUESTIONNAIRE = "start_questionnaire";
-const TAB_QUESTIONNAIRE = "questionnaire";
 
 function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const navigate = useNavigate();
@@ -69,35 +65,11 @@ export default function DashboardLayout({ user, children }) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(TAB_DASHBOARD);
   const [popupOpen, setPopupOpen] = useState(false);
-  const [questionnaireId, setQuestionnaireId] = useState(null);
 
   useEffect(() => {
-    async function fetchActiveQuestionnaire() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("questionnaire")
-        .select("*")
-        .eq("active", true)
-        .order("created_at", { ascending: false })
-        .single();
-
-      if (data) {
-        setQuestionnaireId(data.id);
-        setTitle(data.titre);
-        setDescription(data.description);
-      }
-      setLoading(false);
-    }
-
-    fetchActiveQuestionnaire();
-  }, []);
-
-  useEffect(() => {
-    if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
-    else if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
+    if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
+    else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
-    else if (pathname.includes("/start_questionnaire")) setTab(TAB_START_QUESTIONNAIRE);
-    else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
     else setTab(TAB_DASHBOARD);
   }, [pathname]);
@@ -159,26 +131,6 @@ export default function DashboardLayout({ user, children }) {
               <span className="label">Employés</span>
             </button>
           )}
-          {isRH && user?.id && (
-            <button
-              type="button"
-              className={`menu-item ${tab === TAB_START_QUESTIONNAIRE ? "active" : ""}`}
-              onClick={() => setTab(TAB_START_QUESTIONNAIRE)} 
-            >
-              <img src="/questionnaire.png" alt="Start Questionnaire" className="sidebar-icon-img" />
-              <span className="label">Questionnaire</span>
-            </button>
-          )}
-          {!isRH && user?.id && (
-            <button
-              type="button"
-              className={`menu-item ${tab === TAB_QUESTIONNAIRE ? "active" : ""}`}
-              onClick={() => setTab(TAB_START_QUESTIONNAIRE)}
-            >
-              <img src="/questionnaire.png" alt="Questionnaire" className="sidebar-icon-img" />
-              <span className="label">Questionnaire</span>
-            </button>
-          )}
           <button type="button" className="menu-item">
             <img src="/bot.png" alt="Psychobot" className="sidebar-icon-img" />
             <span className="label">Psychobot</span>
@@ -219,27 +171,20 @@ export default function DashboardLayout({ user, children }) {
             </button>
           </div>
         </header>
-<div className="ressources-content">
-  {/* Dashboard */}
-  {tab === TAB_DASHBOARD && <div className="ressources-placeholder" />}
-
-  {/* Ressources */}
-  {tab === TAB_RESSOURCE && <div className="ressources-placeholder" />}
-
-  {/* Employees (RH) */}
-  {tab === TAB_EMPLOYEES && isRH && <EmployeesList user={user} embedded />}
-
-  {/* Paramètres */}
-  {tab === TAB_PARAMETRES && <Profile user={user} embedded />}
-
-  {/* Start Questionnaire (RH) */}
-  {tab === TAB_START_QUESTIONNAIRE && isRH && <StartQuestionnaire user={user} embedded />}
-
-  {/* Questionnaire (Employees) */}
-  {tab === TAB_QUESTIONNAIRE && !isRH && questionnaireId && (
-    <Questionnaire user={user} questionnaireId={questionnaireId} embedded />
-  )}
-</div>
+        <div className="ressources-content">
+          {tab === TAB_DASHBOARD && <div className="ressources-placeholder" />}
+          {tab === TAB_RESSOURCE && <div className="ressources-placeholder" />}
+          {tab === TAB_EMPLOYEES && isRH && (
+            children
+              ? <RhSecuredRoute user={user}>{cloneElement(children, { user, embedded: true })}</RhSecuredRoute>
+              : <RhSecuredRoute user={user}><EmployeesList user={user} embedded /></RhSecuredRoute>
+          )}
+          {tab === TAB_PARAMETRES && (
+            children
+              ? cloneElement(children, { user, embedded: true })
+              : <Profile user={user} embedded />
+          )}
+        </div>
       </main>
       {popupOpen && (
         <ProfilePopup
