@@ -1,6 +1,5 @@
 import React, { useState, useEffect, cloneElement } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
