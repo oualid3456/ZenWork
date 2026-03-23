@@ -36,32 +36,36 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
   if (question.type === "yes_no") {
     return (
       <>
-        <button
-          className={styles.emoji_button}
-          onClick={() => {
-            setAnswers({ ...answers, [question.question]: "oui" });
-            setCurrentQuestion(currentQuestion + 1);
-          }}
-        >
-        Oui
-        </button>
-
-        <button
-          className={styles.emoji_button}
-          onClick={() => {
-            setAnswers({ ...answers, [question.question]: "non" });
-            setCurrentQuestion(currentQuestion + 1);
-          }}
-        >
-        Non
-        </button>
-        {question.optional && (
+        <div className={styles.yesNoButtons}>
           <button
-            className={styles.button}
-            onClick={() => setCurrentQuestion(currentQuestion + 1)}
+            className={styles.yes_no_button}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: "oui" });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
           >
-          Suivant
+          Oui
           </button>
+
+          <button
+            className={styles.yes_no_button}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: "non" });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+          Non
+          </button>
+        </div>
+        {question.optional && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              className={styles.y_n_optianal}
+              onClick={() => setCurrentQuestion(currentQuestion + 1)}
+            >
+            Suivant
+            </button>
+          </div>
         )}
       </>
     );
@@ -121,12 +125,14 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
           </button>
         ))}
         {question.optional && (
-          <button
-            className={styles.button}
-            onClick={() => setCurrentQuestion(currentQuestion + 1)}
-          >
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              className={styles.y_n_optianal}
+              onClick={() => setCurrentQuestion(currentQuestion + 1)}
+            >
             Suivant
-          </button>
+            </button>
+          </div>
         )}
       </>
     );
