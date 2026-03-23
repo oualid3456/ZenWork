@@ -16,7 +16,8 @@ html, body, #root, .App {
 
 /* --- SIDEBAR EXTENSIBLE AU SURVOL --- */
 .sidebar {
-  width: 80px; /* Taille réduite par défaut */
+  width: 80px;
+  /* Taille réduite par défaut */
   background: white;
   border-right: 1px solid #E2E8F0;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -24,6 +25,11 @@ html, body, #root, .App {
   display: flex;
   flex-direction: column;
   z-index: 100;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .sidebar:hover {

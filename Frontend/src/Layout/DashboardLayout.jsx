@@ -1,5 +1,6 @@
 import React, { useState, useEffect, cloneElement } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
@@ -7,11 +8,14 @@ import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
 import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
 import "./Layout.css";
+import PsychoBot from "../Psychobot/Psychobot.jsx";
 
+const TAB_PSYCHOBOT = "psychobot";
 const TAB_DASHBOARD = "dashboard";
 const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
+const TAB_FORUM = "forum";
 
 function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const navigate = useNavigate();
@@ -25,6 +29,7 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const handleSettings = () => {
     onClose();
     onOpenSettings();
+    navigate(`/profile/${user.id}`);
   };
 
   return (
@@ -45,11 +50,23 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
           </div>
         </div>
         <div className="profile-popup-actions">
-          <button type="button" className="profile-popup-btn" onClick={handleSettings}>
-            <img src="/parametre.png" alt="" className="profile-popup-btn-icon" />
+          <button
+            type="button"
+            className="profile-popup-btn"
+            onClick={handleSettings}
+          >
+            <img
+              src="/parametre.png"
+              alt=""
+              className="profile-popup-btn-icon"
+            />
             Parametres
           </button>
-          <button type="button" className="profile-popup-btn profile-popup-btn-logout" onClick={handleLogout}>
+          <button
+            type="button"
+            className="profile-popup-btn profile-popup-btn-logout"
+            onClick={handleLogout}
+          >
             Deconnexion
           </button>
         </div>
@@ -69,12 +86,14 @@ export default function DashboardLayout({ user, children }) {
     if (!user?.id) {
       return;
     }
+
     (async () => {
       const { data } = await supabase
         .from("profiles")
         .select("nom, prenom, role")
         .eq("id", user.id)
         .single();
+
       setProfile(data || null);
       setLoading(false);
     })();
@@ -111,12 +130,13 @@ export default function DashboardLayout({ user, children }) {
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
-  const avatarInitials = (
+  const avatarInitials =
     [profile?.prenom?.[0], profile?.nom?.[0]]
       .filter(Boolean)
       .join("")
-      .toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"
-  );
+      .toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    "U";
 
   if (loading) {
     return <Loading />;
@@ -126,50 +146,95 @@ export default function DashboardLayout({ user, children }) {
     <div className="app-container">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img src="/zenwork-dessin.png" alt="Logo" className="sidebar-logo-img" />
+          <img
+            src="/zenwork-dessin.png"
+            alt="Logo"
+            className="sidebar-logo-img"
+          />
           <span className="sidebar-logo-text">ZenWork</span>
         </div>
+
         <nav className="menu">
           <button
             type="button"
             className={`menu-item ${tab === TAB_DASHBOARD ? "active" : ""}`}
             onClick={() => handleTabChange(TAB_DASHBOARD)}
           >
-            <img src="/tableau-de-bord.png" alt="Dashboard" className="sidebar-icon-img" />
+            <img
+              src="/tableau-de-bord.png"
+              alt="Dashboard"
+              className="sidebar-icon-img"
+            />
             <span className="label">Dashboard</span>
           </button>
+
+          <button
+            type="button"
+            className={`menu-item ${tab === TAB_FORUM ? "active" : ""}`}
+            onClick={() => {
+              setTab(TAB_FORUM);
+              navigate(`/forum/${user.id}`);
+            }}
+          >
+            <img
+              src="/tableau-de-bord.png"
+              alt="Forum"
+              className="sidebar-icon-img"
+            />
+            <span className="label">Forum</span>
+          </button>
+
           <button
             type="button"
             className={`menu-item ${tab === TAB_RESSOURCE ? "active" : ""}`}
             onClick={() => handleTabChange(TAB_RESSOURCE)}
           >
-            <img src="/ressource.png" alt="Ressources" className="sidebar-icon-img" />
+            <img
+              src="/ressource.png"
+              alt="Ressources"
+              className="sidebar-icon-img"
+            />
             <span className="label">Ressources</span>
           </button>
+
           {isRH && (
             <button
               type="button"
               className={`menu-item ${tab === TAB_EMPLOYEES ? "active" : ""}`}
               onClick={() => handleTabChange(TAB_EMPLOYEES)}
             >
-              <img src="/parametre.png" alt="Employes" className="sidebar-icon-img" />
+              <img
+                src="/parametre.png"
+                alt="Employes"
+                className="sidebar-icon-img"
+              />
               <span className="label">Employes</span>
             </button>
           )}
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
+            onClick={() => setTab(TAB_PSYCHOBOT)}
+          >
             <img src="/bot.png" alt="Psychobot" className="sidebar-icon-img" />
             <span className="label">Psychobot</span>
           </button>
+
           <button
             type="button"
             className={`menu-item ${tab === TAB_PARAMETRES ? "active" : ""}`}
             onClick={() => handleTabChange(TAB_PARAMETRES)}
           >
-            <img src="/parametre.png" alt="Parametres" className="sidebar-icon-img" />
+            <img
+              src="/parametre.png"
+              alt="Parametres"
+              className="sidebar-icon-img"
+            />
             <span className="label">Parametres</span>
           </button>
         </nav>
       </aside>
+
       <main className="main-content">
         <header className="floating-topbar">
           <div className="topbar-left">
@@ -178,14 +243,20 @@ export default function DashboardLayout({ user, children }) {
               <span className="company-name">RH Bien-etre IA</span>
             </div>
           </div>
+
           <div className="topbar-center">
             <div className="search-box">
               <span className="search-icon">🔍</span>
               <input type="text" placeholder="Rechercher une ressource..." />
             </div>
           </div>
+
           <div className="topbar-right">
-            <img src="/notification.png" alt="Notification" className="sidebar-icon-img" />
+            <img
+              src="/notification.png"
+              alt="Notification"
+              className="sidebar-icon-img"
+            />
             <button
               type="button"
               className="user-avatar-btn"
@@ -196,6 +267,7 @@ export default function DashboardLayout({ user, children }) {
             </button>
           </div>
         </header>
+
         <div className="ressources-content">
           {tab === TAB_DASHBOARD && (
             <DashboardOverview user={user} profile={profile} />
@@ -204,22 +276,40 @@ export default function DashboardLayout({ user, children }) {
             <div className="empty-state-card">
               <h2>Ressources bientot disponibles</h2>
               <p>
-                Cette section est reservee au catalogue de contenus de prevention.
+                Cette section est reservee au catalogue de contenus de
+                prevention.
               </p>
             </div>
           )}
-          {tab === TAB_EMPLOYEES && isRH && (
-            children
-              ? <RhSecuredRoute user={user}>{cloneElement(children, { user, embedded: true })}</RhSecuredRoute>
-              : <RhSecuredRoute user={user}><EmployeesList user={user} embedded /></RhSecuredRoute>
-          )}
-          {tab === TAB_PARAMETRES && (
-            children
-              ? cloneElement(children, { user, embedded: true })
-              : <Profile user={user} embedded />
-          )}
+          {tab === TAB_EMPLOYEES &&
+            isRH &&
+            (children ? (
+              <RhSecuredRoute user={user}>
+                {cloneElement(children, { user, embedded: true })}
+              </RhSecuredRoute>
+            ) : (
+              <RhSecuredRoute user={user}>
+                <EmployeesList user={user} embedded />
+              </RhSecuredRoute>
+            ))}
+
+          {tab === TAB_PARAMETRES &&
+            (children ? (
+              cloneElement(children, { user, embedded: true })
+            ) : (
+              <Profile user={user} embedded />
+            ))}
+
+          {tab === TAB_FORUM &&
+            (children ? (
+              cloneElement(children, { user, embedded: true })
+            ) : (
+              <ForumHome user={user} embedded />
+            ))}
+          {tab === TAB_PSYCHOBOT && <PsychoBot />}
         </div>
       </main>
+
       {popupOpen && (
         <ProfilePopup
           user={user}
