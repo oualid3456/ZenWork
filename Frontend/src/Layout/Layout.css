@@ -48,6 +48,11 @@ html, body, #root, .App {
   align-items: center;
   padding: 12px;
   border-radius: 12px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
   cursor: pointer;
   white-space: nowrap;
   color: #131314;
@@ -193,9 +198,15 @@ html, body, #root, .App {
 .user-avatar {
   width: 42px;
   height: 42px;
-  background: #CBD5E0;
+  background: linear-gradient(140deg, #6C5DD3, #8A7EE5);
   border-radius: 50%;
   border: 2px solid #6C5DD3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 /* --- FILTRES & GRILLE --- */
@@ -405,4 +416,32 @@ html, body, #root, .App {
 
 .profile-popup-btn-logout:hover {
   background: #FED7D7;
+}
+
+.user-avatar-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.empty-state-card {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+  padding: 1.25rem 1.5rem;
+  color: #1A202C;
+}
+
+.empty-state-card h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.empty-state-card p {
+  margin: 0.5rem 0 0;
+  color: #718096;
+  font-size: 0.95rem;
 }
