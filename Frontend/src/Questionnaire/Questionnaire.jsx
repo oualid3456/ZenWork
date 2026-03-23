@@ -5,7 +5,6 @@ import { useParams, useNavigate  } from "react-router-dom";
 import Error from "../Error/Error.jsx";
 import AnswerInput  from "./AnswerInput.jsx";
 import Loading  from "../Loading/Loading.jsx";
-import NoQuestionnaire  from "./NoQuestionnaire.jsx";
 
 function Questionnaire({ user }) {
   // on a besoin de cela pour savoir si le questionnaire a
