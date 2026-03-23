@@ -255,7 +255,7 @@ export default function DashboardLayout({ user, children }) {
         <div className="ressources-content">
           {tab === TAB_DASHBOARD && <div className="ressources-placeholder" />}
 
-          {tab === TAB_RESSOURCE && <div className="ressources-placeholder" />}
+          {tab === TAB_RESSOURCE && (children ? children : <div className="ressources-placeholder" />)}
 
           {tab === TAB_EMPLOYEES && isRH && (
             children ? (
