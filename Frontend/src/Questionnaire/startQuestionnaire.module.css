@@ -175,7 +175,7 @@
   }
 
   .textarea {
-    background-color: #1e1e1e;
+    background-color: #1a2023;
     color: white;
     border: 1px solid #333;
   }
@@ -185,7 +185,7 @@
   }
 
   .input {
-    background-color: #1e1e1e;
+    background-color: #1a2023;
     color: white;
     border: 1px solid #333;
   }
@@ -200,12 +200,12 @@
   }
 
   .add_question {
-    background-color: #1e1e1e;
+    background-color: #1a2023;
     border: 1px solid #333;
   }
 
   .current_questionnaire {
-    background-color: #1e1e1e;
+    background-color: #1a2023;
     border: 1px solid #333;
     box-shadow: none;
     color: white;
