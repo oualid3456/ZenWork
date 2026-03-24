@@ -134,7 +134,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_DASHBOARD ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_DASHBOARD);
-              navigate(`/dashboard/${user.id}`);
+              navigate(`/dashboard`);
             }}
           >
             <img
@@ -154,7 +154,7 @@ export default function DashboardLayout({ user, children }) {
             }}
           >
             <img
-              src="/tableau-de-bord.png"
+              src="/forum.png"
               alt="Forum"
               className="sidebar-icon-img"
             />
@@ -166,7 +166,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_RESSOURCE ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_RESSOURCE);
-              navigate(`/ressource/${user.id}`);
+              navigate(`/ressource`);
             }}
           >
             <img
