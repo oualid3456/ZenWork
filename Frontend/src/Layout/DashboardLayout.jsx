@@ -5,12 +5,15 @@ import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
 import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
+import Questionnaire from "../Questionnaire/Questionnaire.jsx";
+import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx";
 import "./Layout.css";
 
 const TAB_DASHBOARD = "dashboard";
 const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
+const TAB_QUESTIONNAIRE = "questionnaire";
 
 function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const navigate = useNavigate();
@@ -65,12 +68,15 @@ export default function DashboardLayout({ user, children }) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(TAB_DASHBOARD);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [questionnaireId, setQuestionnaireId] = useState(null);
 
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
+    else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
+    else if (pathname.includes("/start_questionnaire")) setTab(TAB_QUESTIONNAIRE);
     else setTab(TAB_DASHBOARD);
   }, [pathname]);
 
@@ -89,6 +95,23 @@ export default function DashboardLayout({ user, children }) {
       setLoading(false);
     })();
   }, [user?.id]);
+
+  useEffect(() => {
+    async function fetchActiveQuestionnaire() {
+      const { data } = await supabase
+        .from("questionnaire")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", { ascending: false })
+        .single();
+
+      if (data) {
+        setQuestionnaireId(data.id);
+      }
+    }
+
+    fetchActiveQuestionnaire();
+  }, []);
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
@@ -120,6 +143,24 @@ export default function DashboardLayout({ user, children }) {
           >
             <img src="/ressource.png" alt="Ressources" className="sidebar-icon-img" />
             <span className="label">Ressources</span>
+          </button>
+          <button
+            type="button"
+            className={`menu-item ${tab === TAB_QUESTIONNAIRE ? "active" : ""}`}
+            onClick={() => {
+              if (isRH) {
+                navigate(`/start_questionnaire/${user.id}`);
+              } else {
+                if (!questionnaireId) {
+                  alert("Aucun questionnaire actif");
+                  return;
+                }
+                navigate(`/questionnaire/${user.id}/${questionnaireId}`);
+              }
+            }}
+          >
+            <img src="/questionnaire.png" alt="Questionnaire" className="sidebar-icon-img" />
+            <span className="label">Questionnaire</span>
           </button>
           {isRH && (
             <button
