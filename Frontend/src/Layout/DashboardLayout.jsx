@@ -135,7 +135,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_DASHBOARD ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_DASHBOARD);
-              navigate(`/dashboard/${user.id}`);
+              navigate(`/dashboard`);
             }}
           >
             <img src="/tableau-de-bord.png" alt="Dashboard" className="sidebar-icon-img" />
