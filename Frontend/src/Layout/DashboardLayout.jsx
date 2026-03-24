@@ -134,7 +134,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_DASHBOARD ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_DASHBOARD);
-              navigate("/dashboard");
+              navigate(`/dashboard/${user.id}`);
             }}
           >
             <img
@@ -166,7 +166,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_RESSOURCE ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_RESSOURCE);
-              navigate("/ressource");
+              navigate(`/ressource/${user.id}`);
             }}
           >
             <img
@@ -183,7 +183,7 @@ export default function DashboardLayout({ user, children }) {
               className={`menu-item ${tab === TAB_EMPLOYEES ? "active" : ""}`}
               onClick={() => {
                 setTab(TAB_EMPLOYEES);
-                navigate("/employees");
+                navigate(`/employees/${user.id}`);
               }}
             >
               <img
