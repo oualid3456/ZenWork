@@ -106,6 +106,8 @@ export default function DashboardLayout({ user, children }) {
     else if (pathname.includes("/forum")) setTab(TAB_FORUM);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
+    else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
+    else if (pathname.includes("/start_questionnaire")) setTab(TAB_QUESTIONNAIRE);
     else setTab(TAB_DASHBOARD);
   }, [pathname]);
 
@@ -126,6 +128,23 @@ export default function DashboardLayout({ user, children }) {
       setLoading(false);
     })();
   }, [user?.id]);
+
+  useEffect(() => {
+    async function fetchActiveQuestionnaire() {
+      const { data } = await supabase
+        .from("questionnaire")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", { ascending: false })
+        .single();
+
+      if (data) {
+        setQuestionnaireId(data.id);
+      }
+    }
+
+    fetchActiveQuestionnaire();
+  }, []);
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
