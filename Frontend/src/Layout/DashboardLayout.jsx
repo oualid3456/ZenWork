@@ -135,7 +135,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_DASHBOARD ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_DASHBOARD);
-              navigate(`/dashboard`);
+              navigate(`/dashboard/${user.id}`);
             }}
           >
             <img src="/tableau-de-bord.png" alt="Dashboard" className="sidebar-icon-img" />
@@ -163,7 +163,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_RESSOURCE ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_RESSOURCE);
-              navigate(`/ressource`);
+              navigate(`/ressource/${user.id}`);
             }}
           >
             <img src="/ressource.png" alt="Ressources" className="sidebar-icon-img" />
@@ -186,7 +186,10 @@ export default function DashboardLayout({ user, children }) {
           <button
             type="button"
             className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
-            onClick={() => setTab(TAB_PSYCHOBOT)}
+            onClick={() => {
+              setTab(TAB_PSYCHOBOT);
+              navigate(`/psychobot/${user.id}`);
+            }}
           >
             <img src="/bot.png" alt="Psychobot" className="sidebar-icon-img" />
             <span className="label">Psychobot</span>

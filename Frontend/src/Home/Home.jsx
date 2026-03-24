@@ -95,7 +95,7 @@ function Home({ user }) {
       <button
         onClick={async () => {
           await supabase.auth.signOut();
-          navigate("/");
+          navigate("/:id");
         }}
       >
         Déconnexion

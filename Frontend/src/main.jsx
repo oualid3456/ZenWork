@@ -52,9 +52,9 @@ createRoot(document.getElementById("root")).render(
             </SecurisedRoute>
           }
         />
-        <Route path="/dashboard" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
-        <Route path="/ressource" element={<SecurisedRoute><DashboardLayout><Ressources /></DashboardLayout></SecurisedRoute>} />
-        <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
+        <Route path="/dashboard/:id" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
+        <Route path="/ressource/:id" element={<SecurisedRoute><DashboardLayout><Ressources /></DashboardLayout></SecurisedRoute>} />
+        <Route path="/employees/:id" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
         <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
 
         <Route
@@ -68,7 +68,7 @@ createRoot(document.getElementById("root")).render(
           }
         />
         <Route path="/ForumHome" element={<ForumHome />} />
-        <Route path="/psychobot" element={<SecurisedRoute><PsychoBot /></SecurisedRoute>} />
+        <Route path="/psychobot/:id" element={<SecurisedRoute><PsychoBot /></SecurisedRoute>} />
         <Route path="*" element={<Error />} />
 
       </Routes>
