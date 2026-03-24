@@ -9,6 +9,8 @@ import ForumHome from "../Forum/ForumHome.jsx";
 import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
 import "./Layout.css";
 import PsychoBot from "../Psychobot/Psychobot.jsx";
+import Questionnaire from "../Questionnaire/Questionnaire.jsx"; 
+import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx"; 
 
 const TAB_PSYCHOBOT = "psychobot";
 const TAB_DASHBOARD = "dashboard";
@@ -16,6 +18,7 @@ const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
 const TAB_FORUM = "forum";
+const TAB_QUESTIONNAIRE = "questionnaire";
 
 function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const navigate = useNavigate();
@@ -79,6 +82,9 @@ export default function DashboardLayout({ user, children }) {
   const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
   const [questionnaireId, setQuestionnaireId] = useState(null);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
@@ -111,7 +117,8 @@ export default function DashboardLayout({ user, children }) {
 
   useEffect(() => {
     async function fetchActiveQuestionnaire() {
-      const { data } = await supabase
+      setFetchLoading(true);
+      const { data, error } = await supabase
         .from("questionnaire")
         .select("*")
         .eq("active", true)
@@ -120,7 +127,10 @@ export default function DashboardLayout({ user, children }) {
 
       if (data) {
         setQuestionnaireId(data.id);
+        setTitle(data.titre);
+        setDescription(data.description);
       }
+      setFetchLoading(false);
     }
 
     fetchActiveQuestionnaire();
@@ -199,6 +209,24 @@ export default function DashboardLayout({ user, children }) {
               <span className="label">Employés</span>
             </button>
           )}
+          <button
+            type="button"
+            className={`menu-item ${tab === TAB_QUESTIONNAIRE ? "active" : ""}`}
+            onClick={() => {
+              setTab(TAB_QUESTIONNAIRE);
+
+              if (isRH) {
+                navigate(`/start_questionnaire/${user.id}`);
+              } else {
+                navigate(`/questionnaire/${user.id}/${questionnaireId || "none"}`);
+              }
+            }}
+          >
+            <img src="/questionnaire.png" alt="Questionnaire" className="sidebar-icon-img" />
+            <span className="label">
+              {isRH ? "Start Questionnaire" : "Questionnaire"}
+            </span>
+          </button>
           <button
             type="button"
             className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
@@ -285,6 +313,16 @@ export default function DashboardLayout({ user, children }) {
             )
           )}
           {tab === TAB_PSYCHOBOT && <PsychoBot />}
+
+          {tab === TAB_QUESTIONNAIRE && (
+            isRH ? (
+              <StartQuestionnaire user={user} />
+            ) : questionnaireId ? (
+              <Questionnaire user={user} questionnaireId={questionnaireId} />
+            ) : (
+              <Loading />
+            )
+          )}
         </div>
       </main>
 
