@@ -1,189 +1,153 @@
-html, body, #root { 
-  margin: 0;
-  padding: 0;
-  width: 100%; 
-  height: 100%; 
-  background-color: #F0F2F5; 
-  overflow-x: hidden; 
-}
-.app-container { 
-  display: flex;
-  min-height: 100vh; 
-  width: 100vw; 
-}
-.sidebar { 
-  width: 80px; 
-  background: white; 
-  border-right: 1px solid #E2E8F0; 
-  transition: width 0.35s ease; 
-  overflow: hidden; display: flex; 
-  flex-direction: column; 
-  z-index: 100; 
-}
-.sidebar:hover { 
-  width: 240px; 
-}
-.sidebar-header { 
-  display: flex; 
-  align-items: center; 
-  padding: 20px; 
-  height: 60px; 
-  overflow: hidden; 
-}
-.sidebar-logo-img { 
-  width: 40px; 
-  min-width: 40px; 
-  height: 40px; 
-  object-fit: contain; 
-}
-.sidebar-logo-text {
-  margin-left: 15px; 
-  font-weight: 800; font-size: 18px;
-  color: #6C5DD3;
-  opacity: 0; 
-  transition: opacity 0.2s; 
-  white-space: nowrap; 
-}
-.sidebar:hover .sidebar-logo-text { 
-  opacity: 1; 
-}
-.menu { 
-  display: flex; 
-  flex-direction: column;
-  padding: 25px 15px; 
-  gap: 12px; 
-}
-.menu-item { 
-  display: flex; 
-  align-items: center;
-  padding: 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  white-space: nowrap; 
-  color: #131314; 
+/* Conteneur de la page */
+.ressources-internal-container {
+  padding-top: 10px;
 }
 
-.menu-item .label {
-   opacity: 0; 
-   font-weight: 600; 
-   margin-left: 5px; 
-   transition: opacity 0.2s; 
-  }
-
-.sidebar:hover .label { 
-  opacity: 1; 
+/* Grille de vidéos */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* C'est ça qui fait les colonnes ! */
+  gap: 25px;
+  margin-top: 20px;
 }
 
-.menu-item.active {
-   background: #EEEBFB;
-
-  }
-
-.sidebar-icon-img {
-   width: 24px; 
-   height: 24px; 
-   object-fit: contain; 
-  }
-.main-content {
-  flex: 1;
-  background-color: #F0F2F5;
-  padding: 20px 35px;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  box-sizing: border-box;
-}
-
-.floating-topbar {
+/* Style des cartes */
+.video-card {
   background: white;
-  padding: 12px 25px;
+  padding: 18px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+  transition: transform 0.3s ease;
+}
+
+.video-card:hover {
+  transform: translateY(-8px);
+}
+
+.video-thumb {
+  height: 160px;
   border-radius: 20px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.04);
-  margin-bottom: 25px;
+  justify-content: center;
+  margin-bottom: 15px;
+  position: relative;
+  cursor: pointer;
 }
 
-.search-box {
-  background: #F7F8FA;
-  padding: 10px 20px;
-  border-radius: 14px;
+.play-overlay {
+  font-size: 35px;
+  color: white;
+  background: rgba(255,255,255,0.2);
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 50%;
-}
-
-.search-box input {
-  border: none;
-  background: none;
-  outline: none;
-  width: 100%;
-  color: #1A202C;
-}
-.user-avatar {
-  width: 42px;
-  height: 42px;
-  background: #CBD5E0;
+  justify-content: center;
   border-radius: 50%;
-  border: 2px solid #6C5DD3;
+  backdrop-filter: blur(5px);
 }
-.topbar-left {
+
+.cat-label {
+  color: #6C5DD3;
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Boutons de filtre */
+.filter-container {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  gap: 12px;
+  margin-bottom: 30px;
+  overflow-x: auto;
+  padding-bottom: 10px;
 }
-.welcome-text {
+
+.filter-chip {
+  padding: 10px 22px;
+  border-radius: 14px;
+  border: none;
+  background: white;
+  color: #808191;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.3s;
+}
+
+.filter-chip.active {
+  background: #6C5DD3;
+  color: white;
+}
+/* ============================================================ */
+/* FIX PROBLÈME 1 : Boutons de Filtre (Contour fin et clean) */
+/* ============================================================ */
+
+/* On cible tes chips de filtre pour les réinitialiser proprement */
+.filter-container .filter-chip {
+  /* 1. On supprime les contours par défaut moches */
+  outline: none !important;
+  box-shadow: none !important;
+  
+  /* 2. On applique un contour fin, complet et uniforme */
+  border: 1.5px solid #d1d1d1; /* Une couleur neutre pour le contour par défaut */
+  
+  /* Assurons-nous que le rayon de bordure est bien appliqué au contour */
+  border-radius: 20px;
+  
+  /* Un peu de transition pour l'effet au survol */
+  transition: all 0.2s ease;
+}
+
+/* On stylise l'état actif (quand le bouton est violet) */
+.filter-container .filter-chip.active {
+  /* Le contour devient violet pour un look plus "complet" */
+  border-color: #6C5DD3;
+  
+  /* Et on applique le fond violet comme avant */
+  background-color: #6C5DD3;
+  color: white;
+}
+
+/* Un petit effet de contour au survol pour le feedback */
+.filter-container .filter-chip:hover:not(.active) {
+  border-color: #6C5DD3; /* Le contour devient violet clair au survol */
+  background-color: rgba(108, 93, 211, 0.05); /* Un fond très léger */
+}
+
+
+/* 1. On dit à la carte de s'adapter à la taille de son contenu (efface la hauteur fixe) */
+.video-grid .video-card {
   display: flex;
   flex-direction: column;
+  height: auto !important; /* Force la carte à ne plus avoir une hauteur bloquée */
+  min-height: 320px; /* Une bonne hauteur de base */
+  overflow: hidden; /* Empêche quoi que ce soit de déborder du blanc */
 }
 
-.user-greeting {
-  font-weight: 800;
-  font-size: 17px;
-  color: #1A202C;
-}
-.company-name {
-  font-size: 12px;
-  color: #A0AEC0;
-}
-
-.topbar-center {
-  flex: 1;
+/* 2. Le corps de la carte prend l'espace sous l'image */
+.video-grid .video-card .video-body {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  flex-grow: 1; /* Remplit le vide */
 }
 
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+/* 3. On s'assure que le titre ne pousse pas trop fort */
+.video-grid .video-card .video-body h3 {
+  flex-grow: 0;
+  margin-bottom: 10px;
 }
 
-.menu-item {
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
+/* 4. LA MAGIE EST ICI : On pousse le texte "Par XXX" et le bouton tout en bas */
+.video-grid .video-card .video-body p {
+  margin-top: auto; /* Pousse cet élément (et ceux en dessous) vers le bas de la carte */
+  margin-bottom: 15px;
 }
 
-.user-avatar-btn {
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  border-radius: 50%;
-}
-
-.ressources-content {
-  flex: 1;
-  min-height: 0;
-}
-
-.ressources-placeholder {
-  flex: 1;
+/* 5. Le bouton se place sagement en bas de la zone blanche */
+.video-grid .video-card .video-body .start-btn {
+  margin-top: 0;
+  width: 100%; /* Étend le bouton sur toute la largeur (optionnel, mais souvent plus moderne) */
 }

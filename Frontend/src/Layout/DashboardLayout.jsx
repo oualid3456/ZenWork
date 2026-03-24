@@ -5,7 +5,8 @@ import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
 import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
-import ForumHome from "../Forum/ForumHome.jsx";
+import ForumHome from "../Forum/ForumHome.jsx"; 
+import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
 import "./Layout.css";
 import PsychoBot from "../Psychobot/Psychobot.jsx";
 
@@ -54,11 +55,7 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
             className="profile-popup-btn"
             onClick={handleSettings}
           >
-            <img
-              src="/parametre.png"
-              alt=""
-              className="profile-popup-btn-icon"
-            />
+            <img src="/parametre.png" alt="" className="profile-popup-btn-icon" />
             Paramètres
           </button>
           <button
@@ -79,7 +76,7 @@ export default function DashboardLayout({ user, children }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState(TAB_DASHBOARD);
+  const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
 
   useEffect(() => {
@@ -111,6 +108,14 @@ export default function DashboardLayout({ user, children }) {
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
+  
+  const avatarInitials =
+    [profile?.prenom?.[0], profile?.nom?.[0]]
+      .filter(Boolean)
+      .join("")
+      .toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    "U";
 
   if (loading) {
     return <Loading />;
@@ -120,11 +125,7 @@ export default function DashboardLayout({ user, children }) {
     <div className="app-container">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img
-            src="/zenwork-dessin.png"
-            alt="Logo"
-            className="sidebar-logo-img"
-          />
+          <img src="/zenwork-dessin.png" alt="Logo" className="sidebar-logo-img" />
           <span className="sidebar-logo-text">ZenWork</span>
         </div>
 
@@ -137,11 +138,7 @@ export default function DashboardLayout({ user, children }) {
               navigate("/dashboard");
             }}
           >
-            <img
-              src="/tableau-de-bord.png"
-              alt="Dashboard"
-              className="sidebar-icon-img"
-            />
+            <img src="/tableau-de-bord.png" alt="Dashboard" className="sidebar-icon-img" />
             <span className="label">Dashboard</span>
           </button>
 
@@ -153,11 +150,7 @@ export default function DashboardLayout({ user, children }) {
               navigate(`/forum/${user.id}`);
             }}
           >
-            <img
-              src="/tableau-de-bord.png"
-              alt="Forum"
-              className="sidebar-icon-img"
-            />
+            <img src="/tableau-de-bord.png" alt="Forum" className="sidebar-icon-img" />
             <span className="label">Forum</span>
           </button>
 
@@ -169,11 +162,7 @@ export default function DashboardLayout({ user, children }) {
               navigate("/ressource");
             }}
           >
-            <img
-              src="/ressource.png"
-              alt="Ressources"
-              className="sidebar-icon-img"
-            />
+            <img src="/ressource.png" alt="Ressources" className="sidebar-icon-img" />
             <span className="label">Ressources</span>
           </button>
 
@@ -186,17 +175,15 @@ export default function DashboardLayout({ user, children }) {
                 navigate("/employees");
               }}
             >
-              <img
-                src="/parametre.png"
-                alt="Employés"
-                className="sidebar-icon-img"
-              />
+              <img src="/parametre.png" alt="Employés" className="sidebar-icon-img" />
               <span className="label">Employés</span>
             </button>
           )}
-         <button type="button"
+          <button
+            type="button"
             className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
-            onClick={() => setTab(TAB_PSYCHOBOT)}>
+            onClick={() => setTab(TAB_PSYCHOBOT)}
+          >
             <img src="/bot.png" alt="Psychobot" className="sidebar-icon-img" />
             <span className="label">Psychobot</span>
           </button>
@@ -209,11 +196,7 @@ export default function DashboardLayout({ user, children }) {
               navigate(`/profile/${user.id}`);
             }}
           >
-            <img
-              src="/parametre.png"
-              alt="Paramètres"
-              className="sidebar-icon-img"
-            />
+            <img src="/parametre.png" alt="Paramètres" className="sidebar-icon-img" />
             <span className="label">Paramètres</span>
           </button>
         </nav>
@@ -236,26 +219,23 @@ export default function DashboardLayout({ user, children }) {
           </div>
 
           <div className="topbar-right">
-            <img
-              src="/notification.png"
-              alt="Notification"
-              className="sidebar-icon-img"
-            />
+            <img src="/notification.png" alt="Notification" className="sidebar-icon-img" />
             <button
               type="button"
               className="user-avatar-btn"
               onClick={() => setPopupOpen(true)}
               aria-label="Profil"
             >
-              <div className="user-avatar" />
+              <div className="user-avatar">{avatarInitials}</div>
             </button>
           </div>
         </header>
 
         <div className="ressources-content">
-          {tab === TAB_DASHBOARD && <div className="ressources-placeholder" />}
+          
+          {tab === TAB_DASHBOARD && <DashboardOverview user={user} profile={profile} />}
 
-          {tab === TAB_RESSOURCE && <div className="ressources-placeholder" />}
+          {tab === TAB_RESSOURCE && (children ? children : <div className="ressources-placeholder" />)}
 
           {tab === TAB_EMPLOYEES && isRH && (
             children ? (
@@ -293,7 +273,10 @@ export default function DashboardLayout({ user, children }) {
           user={user}
           profile={profile}
           onClose={() => setPopupOpen(false)}
-          onOpenSettings={() => setTab(TAB_PARAMETRES)}
+          onOpenSettings={() => {
+            setTab(TAB_PARAMETRES);
+            navigate(`/profile/${user.id}`);
+          }}
         />
       )}
     </div>
