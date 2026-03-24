@@ -80,8 +80,6 @@ export default function PsychoBot() {
     setLoading(true);
     setError(null);
  
-    console.log("Token utilisé :", token); // ← debug
- 
     try {
       const res = await fetch(`${API}/psychobot/chat/fermer/`, {
         method: "POST",
