@@ -13,7 +13,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- LE CHANGEMENT DU COLLÈGUE (Sécurisé) --- */
 /* Cela force les boutons et barres de recherche à hériter de ta police principale */
 button, input, select, textarea {
   font: inherit;

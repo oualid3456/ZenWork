@@ -5,8 +5,8 @@ import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
 import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
-import ForumHome from "../Forum/ForumHome.jsx"; // RESTAURÉ : Ton collègue l'avait supprimé !
-import DashboardOverview from "../Dashboard/DashboardOverview.jsx"; // NOUVEAUTÉ DU COLLÈGUE
+import ForumHome from "../Forum/ForumHome.jsx"; 
+import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
 import "./Layout.css";
 import PsychoBot from "../Psychobot/Psychobot.jsx";
 
@@ -76,10 +76,9 @@ export default function DashboardLayout({ user, children }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState(TAB_DASHBOARD); // RESTAURÉ : Essentiel pour que les menus marchent
+  const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
 
-  // RESTAURÉ : Le bon système pour détecter la page active (Ton collègue l'avait cassé)
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
@@ -110,7 +109,6 @@ export default function DashboardLayout({ user, children }) {
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
   
-  // NOUVEAUTÉ DU COLLÈGUE : Les initiales dans l'avatar
   const avatarInitials =
     [profile?.prenom?.[0], profile?.nom?.[0]]
       .filter(Boolean)
@@ -228,7 +226,6 @@ export default function DashboardLayout({ user, children }) {
               onClick={() => setPopupOpen(true)}
               aria-label="Profil"
             >
-              {/* NOUVEAUTÉ DU COLLÈGUE : Affichage des initiales */}
               <div className="user-avatar">{avatarInitials}</div>
             </button>
           </div>
@@ -236,10 +233,8 @@ export default function DashboardLayout({ user, children }) {
 
         <div className="ressources-content">
           
-          {/* NOUVEAUTÉ DU COLLÈGUE INTÉGRÉE : Le vrai composant Dashboard */}
           {tab === TAB_DASHBOARD && <DashboardOverview user={user} profile={profile} />}
 
-          {/* RESTAURÉ : TA LOGIQUE POUR AFFICHER LES VIDÉOS */}
           {tab === TAB_RESSOURCE && (children ? children : <div className="ressources-placeholder" />)}
 
           {tab === TAB_EMPLOYEES && isRH && (
