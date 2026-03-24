@@ -198,7 +198,6 @@ html, body, #root, .App {
   border: 2px solid white;
 }
 
-/* NOUVEAUTÉ DU COLLÈGUE : Avatar avec initiales et dégradé */
 .user-avatar {
   width: 42px;
   height: 42px;
@@ -432,7 +431,6 @@ html, body, #root, .App {
   border-radius: 50%;
 }
 
-/* NOUVEAUTÉ DU COLLÈGUE : Les styles pour sa page DashboardOverview */
 .empty-state-card {
   background: white;
   border: 1px solid #E2E8F0;
