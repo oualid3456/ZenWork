@@ -48,15 +48,16 @@ html, body, #root, .App {
   align-items: center;
   padding: 12px;
   border-radius: 12px;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  font: inherit;
   cursor: pointer;
   white-space: nowrap;
   color: #131314;
   transition: all 0.2s;
+  /* Reset button styles */
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  width: 100%;
 }
 
 .menu-item .icon {
@@ -86,10 +87,12 @@ html, body, #root, .App {
   background: #EEEBFB;
   color: rgb(48, 48, 48);
 }
+
 .start-btn:hover {
   background: rgb(93, 77, 184);
   color: #ffffff;
 }
+
 /* --- CONTENU PRINCIPAL --- */
 .main-content {
   flex: 1;
@@ -195,6 +198,7 @@ html, body, #root, .App {
   border: 2px solid white;
 }
 
+/* NOUVEAUTÉ DU COLLÈGUE : Avatar avec initiales et dégradé */
 .user-avatar {
   width: 42px;
   height: 42px;
@@ -274,6 +278,7 @@ html, body, #root, .App {
   border-radius: 12px;
   cursor: pointer;
 }
+
 /* Style du header de la sidebar */
 .sidebar-header {
   display: flex;
@@ -306,6 +311,7 @@ html, body, #root, .App {
 .sidebar:hover .sidebar-logo-text {
   opacity: 1;
 }
+
 /* À ajouter pour contrôler tes icônes images */
 .sidebar-icon-img {
   width: 24px;   /* Taille fixe pour l'icône */
@@ -426,6 +432,7 @@ html, body, #root, .App {
   border-radius: 50%;
 }
 
+/* NOUVEAUTÉ DU COLLÈGUE : Les styles pour sa page DashboardOverview */
 .empty-state-card {
   background: white;
   border: 1px solid #E2E8F0;
