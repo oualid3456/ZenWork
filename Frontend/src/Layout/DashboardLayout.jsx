@@ -1,19 +1,21 @@
 import React, { useState, useEffect, cloneElement } from "react";
-import { useNavigate, useLocation, NavLink } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
 import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
-import Questionnaire from "../Questionnaire/Questionnaire.jsx";
-import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx";
+import ForumHome from "../Forum/ForumHome.jsx"; // RESTAURÉ : Ton collègue l'avait supprimé !
+import DashboardOverview from "../Dashboard/DashboardOverview.jsx"; // NOUVEAUTÉ DU COLLÈGUE
 import "./Layout.css";
+import PsychoBot from "../Psychobot/Psychobot.jsx";
 
+const TAB_PSYCHOBOT = "psychobot";
 const TAB_DASHBOARD = "dashboard";
 const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
-const TAB_QUESTIONNAIRE = "questionnaire";
+const TAB_FORUM = "forum";
 
 function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const navigate = useNavigate();
@@ -27,6 +29,7 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const handleSettings = () => {
     onClose();
     onOpenSettings();
+    navigate(`/profile/${user.id}`);
   };
 
   return (
@@ -47,11 +50,19 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
           </div>
         </div>
         <div className="profile-popup-actions">
-          <button type="button" className="profile-popup-btn" onClick={handleSettings}>
+          <button
+            type="button"
+            className="profile-popup-btn"
+            onClick={handleSettings}
+          >
             <img src="/parametre.png" alt="" className="profile-popup-btn-icon" />
             Paramètres
           </button>
-          <button type="button" className="profile-popup-btn profile-popup-btn-logout" onClick={handleLogout}>
+          <button
+            type="button"
+            className="profile-popup-btn profile-popup-btn-logout"
+            onClick={handleLogout}
+          >
             Déconnexion
           </button>
         </div>
@@ -60,19 +71,20 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   );
 }
 
-
 export default function DashboardLayout({ user, children }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState(TAB_DASHBOARD);
+  const [tab, setTab] = useState(TAB_DASHBOARD); // RESTAURÉ : Essentiel pour que les menus marchent
   const [popupOpen, setPopupOpen] = useState(false);
   const [questionnaireId, setQuestionnaireId] = useState(null);
 
+  // RESTAURÉ : Le bon système pour détecter la page active (Ton collègue l'avait cassé)
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
+    else if (pathname.includes("/forum")) setTab(TAB_FORUM);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
     else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
@@ -85,12 +97,14 @@ export default function DashboardLayout({ user, children }) {
       setLoading(false);
       return;
     }
+
     (async () => {
       const { data } = await supabase
         .from("profiles")
         .select("nom, prenom, role")
         .eq("id", user.id)
         .single();
+
       setProfile(data || null);
       setLoading(false);
     })();
@@ -115,6 +129,15 @@ export default function DashboardLayout({ user, children }) {
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
+  
+  // NOUVEAUTÉ DU COLLÈGUE : Les initiales dans l'avatar
+  const avatarInitials =
+    [profile?.prenom?.[0], profile?.nom?.[0]]
+      .filter(Boolean)
+      .join("")
+      .toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    "U";
 
   if (loading) {
     return <Loading />;
@@ -127,65 +150,80 @@ export default function DashboardLayout({ user, children }) {
           <img src="/zenwork-dessin.png" alt="Logo" className="sidebar-logo-img" />
           <span className="sidebar-logo-text">ZenWork</span>
         </div>
+
         <nav className="menu">
           <button
             type="button"
             className={`menu-item ${tab === TAB_DASHBOARD ? "active" : ""}`}
-            onClick={() => setTab(TAB_DASHBOARD)}
+            onClick={() => {
+              setTab(TAB_DASHBOARD);
+              navigate("/dashboard");
+            }}
           >
             <img src="/tableau-de-bord.png" alt="Dashboard" className="sidebar-icon-img" />
             <span className="label">Dashboard</span>
           </button>
+
+          <button
+            type="button"
+            className={`menu-item ${tab === TAB_FORUM ? "active" : ""}`}
+            onClick={() => {
+              setTab(TAB_FORUM);
+              navigate(`/forum/${user.id}`);
+            }}
+          >
+            <img src="/tableau-de-bord.png" alt="Forum" className="sidebar-icon-img" />
+            <span className="label">Forum</span>
+          </button>
+
           <button
             type="button"
             className={`menu-item ${tab === TAB_RESSOURCE ? "active" : ""}`}
-            onClick={() => setTab(TAB_RESSOURCE)}
+            onClick={() => {
+              setTab(TAB_RESSOURCE);
+              navigate("/ressource");
+            }}
           >
             <img src="/ressource.png" alt="Ressources" className="sidebar-icon-img" />
             <span className="label">Ressources</span>
           </button>
-          <button
-            type="button"
-            className={`menu-item ${tab === TAB_QUESTIONNAIRE ? "active" : ""}`}
-            onClick={() => {
-              if (isRH) {
-                navigate(`/start_questionnaire/${user.id}`);
-              } else {
-                if (!questionnaireId) {
-                  alert("Aucun questionnaire actif");
-                  return;
-                }
-                navigate(`/questionnaire/${user.id}/${questionnaireId}`);
-              }
-            }}
-          >
-            <img src="/questionnaire.png" alt="Questionnaire" className="sidebar-icon-img" />
-            <span className="label">Questionnaire</span>
-          </button>
+
           {isRH && (
             <button
               type="button"
               className={`menu-item ${tab === TAB_EMPLOYEES ? "active" : ""}`}
-              onClick={() => setTab(TAB_EMPLOYEES)}
+              onClick={() => {
+                setTab(TAB_EMPLOYEES);
+                navigate("/employees");
+              }}
             >
               <img src="/parametre.png" alt="Employés" className="sidebar-icon-img" />
               <span className="label">Employés</span>
             </button>
           )}
-          <button type="button" className="menu-item">
+          <button
+            type="button"
+            className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
+            onClick={() => setTab(TAB_PSYCHOBOT)}
+          >
             <img src="/bot.png" alt="Psychobot" className="sidebar-icon-img" />
             <span className="label">Psychobot</span>
           </button>
+
           <button
             type="button"
             className={`menu-item ${tab === TAB_PARAMETRES ? "active" : ""}`}
-            onClick={() => setTab(TAB_PARAMETRES)}
+            onClick={() => {
+              setTab(TAB_PARAMETRES);
+              navigate(`/profile/${user.id}`);
+            }}
           >
             <img src="/parametre.png" alt="Paramètres" className="sidebar-icon-img" />
             <span className="label">Paramètres</span>
           </button>
         </nav>
       </aside>
+
       <main className="main-content">
         <header className="floating-topbar">
           <div className="topbar-left">
@@ -194,12 +232,14 @@ export default function DashboardLayout({ user, children }) {
               <span className="company-name">RH Bien-être IA</span>
             </div>
           </div>
+
           <div className="topbar-center">
             <div className="search-box">
               <span className="search-icon">🔍</span>
               <input type="text" placeholder="Rechercher une ressource..." />
             </div>
           </div>
+
           <div className="topbar-right">
             <img src="/notification.png" alt="Notification" className="sidebar-icon-img" />
             <button
@@ -208,31 +248,60 @@ export default function DashboardLayout({ user, children }) {
               onClick={() => setPopupOpen(true)}
               aria-label="Profil"
             >
-              <div className="user-avatar" />
+              {/* NOUVEAUTÉ DU COLLÈGUE : Affichage des initiales */}
+              <div className="user-avatar">{avatarInitials}</div>
             </button>
           </div>
         </header>
+
         <div className="ressources-content">
-          {tab === TAB_DASHBOARD && <div className="ressources-placeholder" />}
-          {tab === TAB_RESSOURCE && <div className="ressources-placeholder" />}
+          
+          {/* NOUVEAUTÉ DU COLLÈGUE INTÉGRÉE : Le vrai composant Dashboard */}
+          {tab === TAB_DASHBOARD && <DashboardOverview user={user} profile={profile} />}
+
+          {/* RESTAURÉ : TA LOGIQUE POUR AFFICHER LES VIDÉOS */}
+          {tab === TAB_RESSOURCE && (children ? children : <div className="ressources-placeholder" />)}
+
           {tab === TAB_EMPLOYEES && isRH && (
-            children
-              ? <RhSecuredRoute user={user}>{cloneElement(children, { user, embedded: true })}</RhSecuredRoute>
-              : <RhSecuredRoute user={user}><EmployeesList user={user} embedded /></RhSecuredRoute>
+            children ? (
+              <RhSecuredRoute user={user}>
+                {cloneElement(children, { user, embedded: true })}
+              </RhSecuredRoute>
+            ) : (
+              <RhSecuredRoute user={user}>
+                <EmployeesList user={user} embedded />
+              </RhSecuredRoute>
+            )
           )}
+
           {tab === TAB_PARAMETRES && (
-            children
-              ? cloneElement(children, { user, embedded: true })
-              : <Profile user={user} embedded />
+            children ? (
+              cloneElement(children, { user, embedded: true })
+            ) : (
+              <Profile user={user} embedded />
+            )
           )}
+
+          {tab === TAB_FORUM && (
+            children ? (
+              cloneElement(children, { user, embedded: true })
+            ) : (
+              <ForumHome user={user} embedded />
+            )
+          )}
+          {tab === TAB_PSYCHOBOT && <PsychoBot />}
         </div>
       </main>
+
       {popupOpen && (
         <ProfilePopup
           user={user}
           profile={profile}
           onClose={() => setPopupOpen(false)}
-          onOpenSettings={() => setTab(TAB_PARAMETRES)}
+          onOpenSettings={() => {
+            setTab(TAB_PARAMETRES);
+            navigate(`/profile/${user.id}`);
+          }}
         />
       )}
     </div>

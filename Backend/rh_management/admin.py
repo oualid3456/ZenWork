@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Profile, Planning, PlanningEmployee
+from .models import Profile, Planning
+#PlanningEmployee
 
 
 @admin.register(Profile)
@@ -19,6 +20,6 @@ class PlanningAdmin(admin.ModelAdmin):
     list_filter = ('type_planning', 'source')
 
 
-@admin.register(PlanningEmployee)
-class PlanningEmployeeAdmin(admin.ModelAdmin):
-    list_display = ('planning', 'utilisateur')
+#@admin.register(PlanningEmployee)
+#class PlanningEmployeeAdmin(admin.ModelAdmin):
+ #   list_display = ('planning', 'utilisateur')
