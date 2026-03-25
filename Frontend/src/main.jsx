@@ -53,7 +53,7 @@ createRoot(document.getElementById("root")).render(
           }
         />
         <Route path="/dashboard" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
-        <Route path="/ressource" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
+        <Route path="/ressource" element={<SecurisedRoute><DashboardLayout><Ressources /></DashboardLayout></SecurisedRoute>} />
         <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
         <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
 
