@@ -17,23 +17,23 @@ const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
 const TAB_FORUM = "forum";
 
-function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
+function PopupProfil({ user, profile, onFermer, onOuvrirParametres }) {
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
+  const deconnecter = async () => {
     await supabase.auth.signOut();
-    onClose();
+    onFermer();
     navigate("/");
   };
 
-  const handleSettings = () => {
-    onClose();
-    onOpenSettings();
+  const ouvrirParametres = () => {
+    onFermer();
+    onOuvrirParametres();
     navigate(`/profile/${user.id}`);
   };
 
   return (
-    <div className="profile-popup-overlay" onClick={onClose}>
+    <div className="profile-popup-overlay" onClick={onFermer}>
       <div className="profile-popup" onClick={(e) => e.stopPropagation()}>
         <div className="profile-popup-header">
           <div className="profile-popup-avatar" />
@@ -53,7 +53,7 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
           <button
             type="button"
             className="profile-popup-btn"
-            onClick={handleSettings}
+            onClick={ouvrirParametres}
           >
             <img src="/parametre.png" alt="" className="profile-popup-btn-icon" />
             Paramètres
@@ -61,7 +61,7 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
           <button
             type="button"
             className="profile-popup-btn profile-popup-btn-logout"
-            onClick={handleLogout}
+            onClick={deconnecter}
           >
             Déconnexion
           </button>
@@ -71,13 +71,126 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   );
 }
 
-export default function DashboardLayout({ user, children }) {
+function formaterDateNotification(iso) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function PopupNotifications({ user, onFermer }) {
+  const [items, setItems] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setFetchError(null);
+      if (!user?.id) {
+        if (!cancelled) {
+          setItems([]);
+          setLoading(false);
+        }
+        return;
+      }
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, type, title, body, is_read, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (cancelled) return;
+      if (error) {
+        setFetchError(error.message);
+        setItems([]);
+      } else {
+        setItems(data ?? []);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  return (
+    <div className="notification-popup-overlay" onClick={onFermer}>
+      <div
+        className="notification-popup"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Notifications"
+      >
+        <div className="notification-popup-header">
+          <h2 className="notification-popup-title">Notifications</h2>
+          <button
+            type="button"
+            className="notification-popup-close"
+            onClick={onFermer}
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+        </div>
+        <div className="notification-popup-body">
+          {loading && (
+            <p className="notification-popup-status">Chargement…</p>
+          )}
+          {!loading && fetchError && (
+            <p className="notification-popup-status notification-popup-error">
+              {fetchError}
+            </p>
+          )}
+          {!loading && !fetchError && items?.length === 0 && (
+            <p className="notification-popup-status">Aucune notification.</p>
+          )}
+          {!loading && !fetchError && items && items.length > 0 && (
+            <ul className="notification-list">
+              {items.map((n) => (
+                <li
+                  key={n.id}
+                  className={`notification-item${n.is_read ? "" : " notification-item-unread"}`}
+                >
+                  <div className="notification-item-top">
+                    <span className="notification-type">{n.type}</span>
+                    <span className="notification-date">
+                      {formaterDateNotification(n.created_at)}
+                    </span>
+                  </div>
+                  {n.title && (
+                    <div className="notification-title">{n.title}</div>
+                  )}
+                  {n.body && (
+                    <div className="notification-body">{n.body}</div>
+                  )}
+                  <div className="notification-seen">
+                    {n.is_read ? "Lu" : "Non lu"}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DispositionTableauDeBord({ user, children }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
@@ -219,11 +332,28 @@ export default function DashboardLayout({ user, children }) {
           </div>
 
           <div className="topbar-right">
-            <img src="/notification.png" alt="Notification" className="sidebar-icon-img" />
+            <button
+              type="button"
+              className="notification-icon-btn"
+              onClick={() => {
+                setPopupOpen(false);
+                setNotificationsOpen(true);
+              }}
+              aria-label="Ouvrir les notifications"
+            >
+              <img
+                src="/notification.png"
+                alt=""
+                className="sidebar-icon-img"
+              />
+            </button>
             <button
               type="button"
               className="user-avatar-btn"
-              onClick={() => setPopupOpen(true)}
+              onClick={() => {
+                setNotificationsOpen(false);
+                setPopupOpen(true);
+              }}
               aria-label="Profil"
             >
               <div className="user-avatar">{avatarInitials}</div>
@@ -269,14 +399,21 @@ export default function DashboardLayout({ user, children }) {
       </main>
 
       {popupOpen && (
-        <ProfilePopup
+        <PopupProfil
           user={user}
           profile={profile}
-          onClose={() => setPopupOpen(false)}
-          onOpenSettings={() => {
+          onFermer={() => setPopupOpen(false)}
+          onOuvrirParametres={() => {
             setTab(TAB_PARAMETRES);
             navigate(`/profile/${user.id}`);
           }}
+        />
+      )}
+
+      {notificationsOpen && (
+        <PopupNotifications
+          user={user}
+          onFermer={() => setNotificationsOpen(false)}
         />
       )}
     </div>
