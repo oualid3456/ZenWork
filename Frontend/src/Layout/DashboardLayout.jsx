@@ -7,6 +7,7 @@ import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
 import ForumHome from "../Forum/ForumHome.jsx"; 
 import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
+import FeedbackPanel from "../Dashboard/FeedbackPanel.jsx";
 import "./Layout.css";
 import PsychoBot from "../Psychobot/Psychobot.jsx";
 
@@ -16,6 +17,7 @@ const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
 const TAB_FORUM = "forum";
+const TAB_FEEDBACK = "feedback";
 
 function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
   const navigate = useNavigate();
@@ -83,6 +85,7 @@ export default function DashboardLayout({ user, children }) {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
     else if (pathname.includes("/forum")) setTab(TAB_FORUM);
+    else if (pathname.includes("/feedback")) setTab(TAB_FEEDBACK);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
     else setTab(TAB_DASHBOARD);
@@ -94,20 +97,39 @@ export default function DashboardLayout({ user, children }) {
       return;
     }
 
-    (async () => {
+    let active = true;
+
+    const fetchProfile = async ({ silent } = {}) => {
       const { data } = await supabase
         .from("profiles")
         .select("nom, prenom, role")
         .eq("id", user.id)
         .single();
-
+      if (!active) return;
       setProfile(data || null);
-      setLoading(false);
-    })();
+      if (!silent) setLoading(false);
+    };
+
+    fetchProfile();
+
+    const channel = supabase
+      .channel(`profile-sync-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        () => fetchProfile({ silent: true })
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
+  const isEmployee = !isRH;
   
   const avatarInitials =
     [profile?.prenom?.[0], profile?.nom?.[0]]
@@ -165,6 +187,20 @@ export default function DashboardLayout({ user, children }) {
             <img src="/ressource.png" alt="Ressources" className="sidebar-icon-img" />
             <span className="label">Ressources</span>
           </button>
+
+          {isEmployee && (
+            <button
+              type="button"
+              className={`menu-item ${tab === TAB_FEEDBACK ? "active" : ""}`}
+              onClick={() => {
+                setTab(TAB_FEEDBACK);
+                navigate("/feedback");
+              }}
+            >
+              <img src="/tableau-de-bord.png" alt="Feedback IA" className="sidebar-icon-img" />
+              <span className="label">Feedback IA</span>
+            </button>
+          )}
 
           {isRH && (
             <button
@@ -236,6 +272,8 @@ export default function DashboardLayout({ user, children }) {
           {tab === TAB_DASHBOARD && <DashboardOverview user={user} profile={profile} />}
 
           {tab === TAB_RESSOURCE && (children ? children : <div className="ressources-placeholder" />)}
+
+          {tab === TAB_FEEDBACK && isEmployee && <FeedbackPanel user={user} />}
 
           {tab === TAB_EMPLOYEES && isRH && (
             children ? (
