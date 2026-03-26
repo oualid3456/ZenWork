@@ -10,6 +10,7 @@ import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
 import "./Layout.css";
 import PsychoBot from "../Psychobot/Psychobot.jsx";
 import Questionnaire from "../Questionnaire/Questionnaire.jsx"; 
+import NoQuestionnaire from "../Questionnaire/NoQuestionnaire.jsx"; 
 import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx"; 
 
 const TAB_PSYCHOBOT = "psychobot";
@@ -116,24 +117,23 @@ export default function DashboardLayout({ user, children }) {
   }, [user?.id]);
 
   useEffect(() => {
-    async function fetchActiveQuestionnaire() {
+    async function fetchLastQuestionnaire() {
       setFetchLoading(true);
       const { data, error } = await supabase
         .from("questionnaire")
-        .select("*")
-        .eq("active", true)
+        .select("id")
         .order("created_at", { ascending: false })
+        .limit(1)
         .single();
-
+      if (error) {
+        console.error("Erreur récupération dernier questionnaire :", error.message);
+      }
       if (data) {
         setQuestionnaireId(data.id);
-        setTitle(data.titre);
-        setDescription(data.description);
       }
       setFetchLoading(false);
     }
-
-    fetchActiveQuestionnaire();
+    fetchLastQuestionnaire();
   }, []);
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
@@ -224,7 +224,7 @@ export default function DashboardLayout({ user, children }) {
           >
             <img src="/questionnaire.png" alt="Questionnaire" className="sidebar-icon-img" />
             <span className="label">
-              {isRH ? "Start Questionnaire" : "Questionnaire"}
+              {isRH ? "Questionnaire" : "Questionnaire"}
             </span>
           </button>
           <button
@@ -305,22 +305,11 @@ export default function DashboardLayout({ user, children }) {
             )
           )}
 
-          {tab === TAB_FORUM && (
-            children ? (
-              cloneElement(children, { user, embedded: true })
-            ) : (
-              <ForumHome user={user} embedded />
-            )
-          )}
-          {tab === TAB_PSYCHOBOT && <PsychoBot />}
-
           {tab === TAB_QUESTIONNAIRE && (
             isRH ? (
               <StartQuestionnaire user={user} />
-            ) : questionnaireId ? (
-              <Questionnaire user={user} questionnaireId={questionnaireId} />
             ) : (
-              <Loading />
+              <Questionnaire user={user} questionnaireId={questionnaireId} />
             )
           )}
         </div>

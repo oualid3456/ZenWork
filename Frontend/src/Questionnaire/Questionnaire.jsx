@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient.js";
 import { useParams, useNavigate  } from "react-router-dom";
 import Error from "../Error/Error.jsx";
 import AnswerInput  from "./AnswerInput.jsx";
+import NoQuestionnaire  from "./NoQuestionnaire.jsx";
 import Loading  from "../Loading/Loading.jsx";
 
 function Questionnaire({ user, questionnaireId  }) {
@@ -147,7 +148,7 @@ function Questionnaire({ user, questionnaireId  }) {
         <div className={styles.finish}>
           <h1 className={styles.h1}>C'est terminé !</h1>
           <button className={styles.goHome}
-            onClick={() => navigate(`/home/${userId}`)}
+            onClick={() => navigate('/dashboard')}
           >
             Retour à l'accueil
           </button>
