@@ -82,34 +82,10 @@ export default function DashboardLayout({ user, children }) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
-<<<<<<< HEAD
-
-  useEffect(() => {
-    async function fetchActiveQuestionnaire() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("questionnaire")
-        .select("*")
-        .eq("active", true)
-        .order("created_at", { ascending: false })
-        .single();
-
-      if (data) {
-        setQuestionnaireId(data.id);
-        setTitle(data.titre);
-        setDescription(data.description);
-      }
-      setLoading(false);
-    }
-
-    fetchActiveQuestionnaire();
-  }, []);
-=======
   const [questionnaireId, setQuestionnaireId] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
->>>>>>> c9bf4e8 (modification de layout pour ajouter le questionnaire)
 
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
@@ -336,8 +312,15 @@ export default function DashboardLayout({ user, children }) {
               <Questionnaire user={user} questionnaireId={questionnaireId} />
             )
           )}
-          {tab === TAB_FORUM && <ForumHome user={user} />}
-          {tab === TAB_PSYCHOBOT && <PsychoBot user={user} />}
+          {tab === TAB_FORUM && (
+            children ? (
+              cloneElement(children, { user, embedded: true })
+            ) : (
+              <ForumHome user={user} embedded />
+            )
+          )}
+
+          {tab === TAB_PSYCHOBOT && <PsychoBot />}
         </div>
       </main>
 
