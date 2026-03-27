@@ -191,6 +191,28 @@ export default function DispositionTableauDeBord({ user, children }) {
   const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user?.id) {
+        if (!cancelled) setUnreadNotifCount(0);
+        return;
+      }
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+      if (cancelled) return;
+      if (error) setUnreadNotifCount(0);
+      else setUnreadNotifCount(count ?? 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, notificationsOpen]);
 
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
@@ -339,13 +361,25 @@ export default function DispositionTableauDeBord({ user, children }) {
                 setPopupOpen(false);
                 setNotificationsOpen(true);
               }}
-              aria-label="Ouvrir les notifications"
+              aria-label={
+                unreadNotifCount > 0
+                  ? `Ouvrir les notifications, ${unreadNotifCount} non lues`
+                  : "Ouvrir les notifications"
+              }
             >
               <img
                 src="/notification.png"
                 alt=""
                 className="sidebar-icon-img"
               />
+              {unreadNotifCount > 0 ? (
+                <span
+                  className="notification-unread-badge"
+                  aria-hidden
+                >
+                  {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
+                </span>
+              ) : null}
             </button>
             <button
               type="button"
