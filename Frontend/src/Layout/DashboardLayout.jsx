@@ -336,6 +336,8 @@ export default function DashboardLayout({ user, children }) {
               <Questionnaire user={user} questionnaireId={questionnaireId} />
             )
           )}
+          {tab === TAB_FORUM && <ForumHome user={user} />}
+          {tab === TAB_PSYCHOBOT && <PsychoBot user={user} />}
         </div>
       </main>
 
