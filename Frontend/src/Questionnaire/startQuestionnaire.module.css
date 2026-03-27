@@ -154,8 +154,8 @@
 
 @media (prefers-color-scheme: dark) {
   .startQuestionnaireWrapper {
-    background-color: #2b2b2b;
-    min-height: 100vh;
+    background-color: #1a2023;
+    min-height: 100%;
   }
 
   .container {
