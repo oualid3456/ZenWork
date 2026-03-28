@@ -127,7 +127,11 @@ def send_chat_message(request):
         if reponses:
             prefix = build_context_prefix(reponses)
 
-     
+     # Récupère le prénom et injecte dans le contexte
+    profil = _get_profil_employe(utilisateur_id)
+    if profil and profil.get("prenom"):
+        prefix = f"[INFO INTERNE — NE PAS MENTIONNER DIRECTEMENT] L'employé s'appelle {profil['prenom']} {profil.get('nom', '')}. Utilise son prénom naturellement dans la conversation. " + prefix
+    
     bot_response = chat_with_gemini(history, user_message, prefix)
 
     return JsonResponse({"response": bot_response})
