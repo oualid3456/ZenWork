@@ -127,6 +127,7 @@ def send_chat_message(request):
         if reponses:
             prefix = build_context_prefix(reponses)
 
+     
     bot_response = chat_with_gemini(history, user_message, prefix)
 
     return JsonResponse({"response": bot_response})
@@ -215,3 +216,14 @@ def _get_historique(utilisateur_id, limit=10):
         # Inverse pour avoir l'ordre chronologique
         return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
 
+def _get_profil_employe(utilisateur_id):
+    """Récupère le prénom et nom de l'employé depuis profiles."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT prenom, nom FROM profiles WHERE id = %s",
+            [utilisateur_id]
+        )
+        row = cursor.fetchone()
+        if row:
+            return {"prenom": row[0], "nom": row[1]}
+        return None
