@@ -1,4 +1,4 @@
-import React, { useState, useEffect, cloneElement } from "react";
+import React, { useState, useEffect, useCallback, cloneElement } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Profile from "../Profile/Profile.jsx";
@@ -21,23 +21,23 @@ const TAB_PARAMETRES = "parametres";
 const TAB_FORUM = "forum";
 const TAB_QUESTIONNAIRE = "questionnaire";
 
-function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
+function PopupProfil({ user, profile, onFermer, onOuvrirParametres }) {
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
+  const deconnecter = async () => {
     await supabase.auth.signOut();
-    onClose();
+    onFermer();
     navigate("/");
   };
 
-  const handleSettings = () => {
-    onClose();
-    onOpenSettings();
+  const ouvrirParametres = () => {
+    onFermer();
+    onOuvrirParametres();
     navigate(`/profile/${user.id}`);
   };
 
   return (
-    <div className="profile-popup-overlay" onClick={onClose}>
+    <div className="profile-popup-overlay" onClick={onFermer}>
       <div className="profile-popup" onClick={(e) => e.stopPropagation()}>
         <div className="profile-popup-header">
           <div className="profile-popup-avatar" />
@@ -57,7 +57,7 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
           <button
             type="button"
             className="profile-popup-btn"
-            onClick={handleSettings}
+            onClick={ouvrirParametres}
           >
             <img src="/parametre.png" alt="" className="profile-popup-btn-icon" />
             Paramètres
@@ -65,10 +65,190 @@ function ProfilePopup({ user, profile, onClose, onOpenSettings }) {
           <button
             type="button"
             className="profile-popup-btn profile-popup-btn-logout"
-            onClick={handleLogout}
+            onClick={deconnecter}
           >
             Déconnexion
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formaterDateNotification(iso) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function PopupNotifications({ user, onFermer, onMarkedRead }) {
+  const [items, setItems] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [markingId, setMarkingId] = useState(null);
+  const [markingAll, setMarkingAll] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setFetchError(null);
+      if (!user?.id) {
+        if (!cancelled) {
+          setItems([]);
+          setLoading(false);
+        }
+        return;
+      }
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, type, title, body, is_read, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (cancelled) return;
+      if (error) {
+        setFetchError(error.message);
+        setItems([]);
+      } else {
+        setItems(data ?? []);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const marquerUneLue = async (n) => {
+    if (!user?.id || n.is_read || markingAll) return;
+    if (markingId === n.id) return;
+    setMarkingId(n.id);
+    console.log("marquerUneLue", n);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", n.id)
+      .eq("user_id", user.id);
+    setMarkingId(null);
+
+    if (error) return;
+    setItems((prev) =>
+      prev
+        ? prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x))
+        : prev
+    );
+    onMarkedRead?.();
+  };
+
+  const marquerToutLu = async () => {
+    if (!user?.id || markingAll || markingId) return;
+    const hasUnread = items?.some((x) => !x.is_read);
+    if (!hasUnread) return;
+    setMarkingAll(true);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
+    setMarkingAll(false);
+    if (error) return;
+    setItems((prev) =>
+      prev ? prev.map((x) => ({ ...x, is_read: true })) : prev
+    );
+    onMarkedRead?.();
+  };
+
+  const aDesNonLues = items?.some((x) => !x.is_read);
+
+  return (
+    <div className="notification-popup-overlay" onClick={onFermer}>
+      <div
+        className="notification-popup"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Notifications"
+      >
+        <div className="notification-popup-header">
+          <h2 className="notification-popup-title">Notifications</h2>
+          <div className="notification-popup-header-actions">
+            {!loading && !fetchError && aDesNonLues ? (
+              <button
+                type="button"
+                className="notification-mark-all-read-btn"
+                onClick={() => void marquerToutLu()}
+                disabled={markingAll || markingId !== null}
+              >
+                {markingAll ? "…" : "Tout marquer comme lu"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="notification-popup-close"
+              onClick={onFermer}
+              aria-label="Fermer"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <div className="notification-popup-body">
+          {loading && (
+            <p className="notification-popup-status">Chargement…</p>
+          )}
+          {!loading && fetchError && (
+            <p className="notification-popup-status notification-popup-error">
+              {fetchError}
+            </p>
+          )}
+          {!loading && !fetchError && items?.length === 0 && (
+            <p className="notification-popup-status">Aucune notification.</p>
+          )}
+          {!loading && !fetchError && items && items.length > 0 && (
+            <ul className="notification-list">
+              {items.map((n) => (
+                <li key={n.id} className="notification-item-wrap">
+                  <button
+                    type="button"
+                    className={`notification-item${n.is_read ? "" : " notification-item-unread"}${n.is_read ? "" : " notification-item-clickable"}`}
+                    onClick={() => void marquerUneLue(n)}
+                    disabled={markingAll || markingId === n.id}
+                    aria-label={
+                      n.is_read
+                        ? "Notification lue"
+                        : "Marquer cette notification comme lue"
+                    }
+                  >
+                    <div className="notification-item-top">
+                      <span className="notification-type">{n.type}</span>
+                      <span className="notification-date">
+                        {formaterDateNotification(n.created_at)}
+                      </span>
+                    </div>
+                    {n.title && (
+                      <div className="notification-title">{n.title}</div>
+                    )}
+                    {n.body && (
+                      <div className="notification-body">{n.body}</div>
+                    )}
+                    <div className="notification-seen">
+                      {markingId === n.id
+                        ? "…"
+                        : n.is_read
+                          ? "Lu"
+                          : "Non lu"}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
@@ -86,6 +266,26 @@ export default function DashboardLayout({ user, children }) {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  const rafraichirCompteurNonLues = useCallback(async () => {
+    if (!user?.id) {
+      setUnreadNotifCount(0);
+      return;
+    }
+    const { count, error } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
+    if (error) setUnreadNotifCount(0);
+    else setUnreadNotifCount(count ?? 0);
+  }, [user?.id]);
+
+  useEffect(() => {
+    rafraichirCompteurNonLues();
+  }, [notificationsOpen, rafraichirCompteurNonLues]);
 
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
@@ -267,11 +467,40 @@ export default function DashboardLayout({ user, children }) {
           </div>
 
           <div className="topbar-right">
-            <img src="/notification.png" alt="Notification" className="sidebar-icon-img" />
+            <button
+              type="button"
+              className="notification-icon-btn"
+              onClick={() => {
+                setPopupOpen(false);
+                setNotificationsOpen(true);
+              }}
+              aria-label={
+                unreadNotifCount > 0
+                  ? `Ouvrir les notifications, ${unreadNotifCount} non lues`
+                  : "Ouvrir les notifications"
+              }
+            >
+              <img
+                src="/notification.png"
+                alt=""
+                className="sidebar-icon-img"
+              />
+              {unreadNotifCount > 0 ? (
+                <span
+                  className="notification-unread-badge"
+                  aria-hidden
+                >
+                  {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
+                </span>
+              ) : null}
+            </button>
             <button
               type="button"
               className="user-avatar-btn"
-              onClick={() => setPopupOpen(true)}
+              onClick={() => {
+                setNotificationsOpen(false);
+                setPopupOpen(true);
+              }}
               aria-label="Profil"
             >
               <div className="user-avatar">{avatarInitials}</div>
@@ -325,14 +554,22 @@ export default function DashboardLayout({ user, children }) {
       </main>
 
       {popupOpen && (
-        <ProfilePopup
+        <PopupProfil
           user={user}
           profile={profile}
-          onClose={() => setPopupOpen(false)}
-          onOpenSettings={() => {
+          onFermer={() => setPopupOpen(false)}
+          onOuvrirParametres={() => {
             setTab(TAB_PARAMETRES);
             navigate(`/profile/${user.id}`);
           }}
+        />
+      )}
+
+      {notificationsOpen && (
+        <PopupNotifications
+          user={user}
+          onFermer={() => setNotificationsOpen(false)}
+          onMarkedRead={rafraichirCompteurNonLues}
         />
       )}
     </div>
