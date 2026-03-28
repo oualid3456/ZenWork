@@ -106,23 +106,15 @@ def send_chat_message(request):
         utilisateur_id = request.supabase_user_id
     except AttributeError:
         return JsonResponse({"error": "Non authentifié"}, status=401)
- 
+
     if not utilisateur_id:
         return JsonResponse({"error": "Non authentifié"}, status=401)
- 
+
     data             = json.loads(request.body)
     history          = data.get("history", [])
     user_message     = data.get("message", "")
     questionnaire_id = data.get("questionnaire_id")
- 
-    prefix = ""
-    if len(history) == 1 and questionnaire_id:
-        reponses = _get_reponses_questionnaire(questionnaire_id)
-        if reponses:
-            prefix = build_context_prefix(reponses)
- 
-    bot_response = chat_with_gemini(history, user_message, prefix)
- 
+
     return JsonResponse({"response": bot_response})
  
 @csrf_exempt
@@ -164,6 +156,8 @@ def close_chat_session(request):
                     """,
                     [utilisateur_id, commentaire]
         )
+        # Sauvegarde l'historique
+        _save_historique(utilisateur_id, history)
         return JsonResponse({
             "status":       "Session clôturée",
             "score_final":  score_final,
@@ -190,4 +184,20 @@ def _save_historique(utilisateur_id, messages):
                     [utilisateur_id, role, contenu]
                 )
 
+
+def _get_historique(utilisateur_id, limit=10):
+    """Récupère les derniers messages pour contexte."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT role, contenu FROM historique_chat
+            WHERE utilisateur_id = %s
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            [utilisateur_id, limit]
+        )
+        rows = cursor.fetchall()
+        # Inverse pour avoir l'ordre chronologique
+        return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
 
