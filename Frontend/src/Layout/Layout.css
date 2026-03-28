@@ -495,9 +495,40 @@ html, body, #root, .App {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 16px 18px;
   border-bottom: 1px solid #E2E8F0;
   flex-shrink: 0;
+}
+
+.notification-popup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.notification-mark-all-read-btn {
+  border: none;
+  background: #F4F7FE;
+  color: #6C5DD3;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.notification-mark-all-read-btn:hover:not(:disabled) {
+  background: #EEEBFB;
+  color: #5546b8;
+}
+
+.notification-mark-all-read-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .notification-popup-title {
@@ -505,6 +536,7 @@ html, body, #root, .App {
   font-size: 16px;
   font-weight: 700;
   color: #1A202C;
+  min-width: 0;
 }
 
 .notification-popup-close {
@@ -550,11 +582,44 @@ html, body, #root, .App {
   gap: 10px;
 }
 
+.notification-item-wrap {
+  margin: 0;
+}
+
 .notification-item {
   border: 1px solid #E2E8F0;
   border-radius: 12px;
   padding: 12px 14px;
   background: #FAFBFC;
+}
+
+button.notification-item {
+  display: block;
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  appearance: none;
+  cursor: default;
+}
+
+button.notification-item.notification-item-clickable {
+  cursor: pointer;
+}
+
+button.notification-item.notification-item-clickable:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+button.notification-item:focus-visible {
+  outline: 2px solid #6C5DD3;
+  outline-offset: 2px;
+}
+
+button.notification-item:disabled {
+  cursor: wait;
+  opacity: 1;
 }
 
 .notification-item-unread {

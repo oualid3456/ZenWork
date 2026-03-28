@@ -26,6 +26,12 @@ CREATE POLICY "Users select own notifications"
   TO authenticated
   USING (auth.uid() = user_id);
 
--- Later: add UPDATE policy for is_read when you implement "mark as read".
+DROP POLICY IF EXISTS "Users update own notifications" ON public.notifications;
+CREATE POLICY "Users update own notifications"
+  ON public.notifications
+  FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 COMMENT ON TABLE public.notifications IS 'In-app notifications; scoped by user_id = recipient.';

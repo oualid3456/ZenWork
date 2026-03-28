@@ -1,4 +1,4 @@
-import React, { useState, useEffect, cloneElement } from "react";
+import React, { useState, useEffect, useCallback, cloneElement } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Profile from "../Profile/Profile.jsx";
@@ -83,10 +83,12 @@ function formaterDateNotification(iso) {
   }
 }
 
-function PopupNotifications({ user, onFermer }) {
+function PopupNotifications({ user, onFermer, onMarkedRead }) {
   const [items, setItems] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
+  const [markingId, setMarkingId] = useState(null);
+  const [markingAll, setMarkingAll] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +122,47 @@ function PopupNotifications({ user, onFermer }) {
     };
   }, [user?.id]);
 
+  const marquerUneLue = async (n) => {
+    if (!user?.id || n.is_read || markingAll) return;
+    if (markingId === n.id) return;
+    setMarkingId(n.id);
+    console.log("marquerUneLue", n);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", n.id)
+      .eq("user_id", user.id);
+    setMarkingId(null);
+
+    if (error) return;
+    setItems((prev) =>
+      prev
+        ? prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x))
+        : prev
+    );
+    onMarkedRead?.();
+  };
+
+  const marquerToutLu = async () => {
+    if (!user?.id || markingAll || markingId) return;
+    const hasUnread = items?.some((x) => !x.is_read);
+    if (!hasUnread) return;
+    setMarkingAll(true);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
+    setMarkingAll(false);
+    if (error) return;
+    setItems((prev) =>
+      prev ? prev.map((x) => ({ ...x, is_read: true })) : prev
+    );
+    onMarkedRead?.();
+  };
+
+  const aDesNonLues = items?.some((x) => !x.is_read);
+
   return (
     <div className="notification-popup-overlay" onClick={onFermer}>
       <div
@@ -130,14 +173,26 @@ function PopupNotifications({ user, onFermer }) {
       >
         <div className="notification-popup-header">
           <h2 className="notification-popup-title">Notifications</h2>
-          <button
-            type="button"
-            className="notification-popup-close"
-            onClick={onFermer}
-            aria-label="Fermer"
-          >
-            ×
-          </button>
+          <div className="notification-popup-header-actions">
+            {!loading && !fetchError && aDesNonLues ? (
+              <button
+                type="button"
+                className="notification-mark-all-read-btn"
+                onClick={() => void marquerToutLu()}
+                disabled={markingAll || markingId !== null}
+              >
+                {markingAll ? "…" : "Tout marquer comme lu"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="notification-popup-close"
+              onClick={onFermer}
+              aria-label="Fermer"
+            >
+              ×
+            </button>
+          </div>
         </div>
         <div className="notification-popup-body">
           {loading && (
@@ -154,25 +209,38 @@ function PopupNotifications({ user, onFermer }) {
           {!loading && !fetchError && items && items.length > 0 && (
             <ul className="notification-list">
               {items.map((n) => (
-                <li
-                  key={n.id}
-                  className={`notification-item${n.is_read ? "" : " notification-item-unread"}`}
-                >
-                  <div className="notification-item-top">
-                    <span className="notification-type">{n.type}</span>
-                    <span className="notification-date">
-                      {formaterDateNotification(n.created_at)}
-                    </span>
-                  </div>
-                  {n.title && (
-                    <div className="notification-title">{n.title}</div>
-                  )}
-                  {n.body && (
-                    <div className="notification-body">{n.body}</div>
-                  )}
-                  <div className="notification-seen">
-                    {n.is_read ? "Lu" : "Non lu"}
-                  </div>
+                <li key={n.id} className="notification-item-wrap">
+                  <button
+                    type="button"
+                    className={`notification-item${n.is_read ? "" : " notification-item-unread"}${n.is_read ? "" : " notification-item-clickable"}`}
+                    onClick={() => void marquerUneLue(n)}
+                    disabled={markingAll || markingId === n.id}
+                    aria-label={
+                      n.is_read
+                        ? "Notification lue"
+                        : "Marquer cette notification comme lue"
+                    }
+                  >
+                    <div className="notification-item-top">
+                      <span className="notification-type">{n.type}</span>
+                      <span className="notification-date">
+                        {formaterDateNotification(n.created_at)}
+                      </span>
+                    </div>
+                    {n.title && (
+                      <div className="notification-title">{n.title}</div>
+                    )}
+                    {n.body && (
+                      <div className="notification-body">{n.body}</div>
+                    )}
+                    <div className="notification-seen">
+                      {markingId === n.id
+                        ? "…"
+                        : n.is_read
+                          ? "Lu"
+                          : "Non lu"}
+                    </div>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -193,26 +261,23 @@ export default function DispositionTableauDeBord({ user, children }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
+  const rafraichirCompteurNonLues = useCallback(async () => {
+    if (!user?.id) {
+      setUnreadNotifCount(0);
+      return;
+    }
+    const { count, error } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
+    if (error) setUnreadNotifCount(0);
+    else setUnreadNotifCount(count ?? 0);
+  }, [user?.id]);
+
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!user?.id) {
-        if (!cancelled) setUnreadNotifCount(0);
-        return;
-      }
-      const { count, error } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-      if (cancelled) return;
-      if (error) setUnreadNotifCount(0);
-      else setUnreadNotifCount(count ?? 0);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, notificationsOpen]);
+    rafraichirCompteurNonLues();
+  }, [notificationsOpen, rafraichirCompteurNonLues]);
 
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
@@ -448,6 +513,7 @@ export default function DispositionTableauDeBord({ user, children }) {
         <PopupNotifications
           user={user}
           onFermer={() => setNotificationsOpen(false)}
+          onMarkedRead={rafraichirCompteurNonLues}
         />
       )}
     </div>
