@@ -174,3 +174,20 @@ def close_chat_session(request):
     except Exception as e:
         print(f">>> Erreur : {e}")
         return JsonResponse({"error": str(e)}, status=500)
+    
+def _save_historique(utilisateur_id, messages):
+    """Sauvegarde tous les messages de la session."""
+    with connection.cursor() as cursor:
+        for msg in messages:
+            role    = msg.get("role", "user")
+            contenu = msg.get("content", msg.get("contenu", ""))
+            if contenu:
+                cursor.execute(
+                    """
+                    INSERT INTO historique_chat (utilisateur_id, role, contenu)
+                    VALUES (%s, %s, %s)
+                    """,
+                    [utilisateur_id, role, contenu]
+                )
+
+
