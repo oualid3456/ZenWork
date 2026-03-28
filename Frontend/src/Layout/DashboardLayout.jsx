@@ -9,6 +9,9 @@ import ForumHome from "../Forum/ForumHome.jsx";
 import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
 import "./Layout.css";
 import PsychoBot from "../Psychobot/Psychobot.jsx";
+import Questionnaire from "../Questionnaire/Questionnaire.jsx"; 
+import NoQuestionnaire from "../Questionnaire/NoQuestionnaire.jsx"; 
+import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx"; 
 
 const TAB_PSYCHOBOT = "psychobot";
 const TAB_DASHBOARD = "dashboard";
@@ -16,6 +19,7 @@ const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
 const TAB_FORUM = "forum";
+const TAB_QUESTIONNAIRE = "questionnaire";
 
 function PopupProfil({ user, profile, onFermer, onOuvrirParametres }) {
   const navigate = useNavigate();
@@ -251,13 +255,17 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
   );
 }
 
-export default function DispositionTableauDeBord({ user, children }) {
+export default function DashboardLayout({ user, children }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(TAB_DASHBOARD); 
   const [popupOpen, setPopupOpen] = useState(false);
+  const [questionnaireId, setQuestionnaireId] = useState(null);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
@@ -285,6 +293,8 @@ export default function DispositionTableauDeBord({ user, children }) {
     else if (pathname.includes("/forum")) setTab(TAB_FORUM);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
+    else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
+    else if (pathname.includes("/start_questionnaire")) setTab(TAB_QUESTIONNAIRE);
     else setTab(TAB_DASHBOARD);
   }, [pathname]);
 
@@ -305,6 +315,26 @@ export default function DispositionTableauDeBord({ user, children }) {
       setLoading(false);
     })();
   }, [user?.id]);
+
+  useEffect(() => {
+    async function fetchLastQuestionnaire() {
+      setFetchLoading(true);
+      const { data, error } = await supabase
+        .from("questionnaire")
+        .select("id")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (error) {
+        console.error("Erreur récupération dernier questionnaire :", error.message);
+      }
+      if (data) {
+        setQuestionnaireId(data.id);
+      }
+      setFetchLoading(false);
+    }
+    fetchLastQuestionnaire();
+  }, []);
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
@@ -379,6 +409,24 @@ export default function DispositionTableauDeBord({ user, children }) {
               <span className="label">Employés</span>
             </button>
           )}
+          <button
+            type="button"
+            className={`menu-item ${tab === TAB_QUESTIONNAIRE ? "active" : ""}`}
+            onClick={() => {
+              setTab(TAB_QUESTIONNAIRE);
+
+              if (isRH) {
+                navigate(`/start_questionnaire/${user.id}`);
+              } else {
+                navigate(`/questionnaire/${user.id}/${questionnaireId || "none"}`);
+              }
+            }}
+          >
+            <img src="/questionnaire.png" alt="Questionnaire" className="sidebar-icon-img" />
+            <span className="label">
+              {isRH ? "Questionnaire" : "Questionnaire"}
+            </span>
+          </button>
           <button
             type="button"
             className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
@@ -486,6 +534,13 @@ export default function DispositionTableauDeBord({ user, children }) {
             )
           )}
 
+          {tab === TAB_QUESTIONNAIRE && (
+            isRH ? (
+              <StartQuestionnaire user={user} />
+            ) : (
+              <Questionnaire user={user} questionnaireId={questionnaireId} />
+            )
+          )}
           {tab === TAB_FORUM && (
             children ? (
               cloneElement(children, { user, embedded: true })
@@ -493,6 +548,7 @@ export default function DispositionTableauDeBord({ user, children }) {
               <ForumHome user={user} embedded />
             )
           )}
+
           {tab === TAB_PSYCHOBOT && <PsychoBot />}
         </div>
       </main>

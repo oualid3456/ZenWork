@@ -687,3 +687,86 @@ button.notification-item:disabled {
   color: #718096;
   font-size: 0.95rem;
 }
+
+@media (prefers-color-scheme: dark) {
+  html, body, #root, .app-container, .main-content {
+    background-color: #1a2023;
+    color: #ffffff;
+  }
+  
+  .sidebar {
+    background: #151515;
+  }
+  
+  .floating-topbar {
+    background-color: #151515;
+  }
+  
+  .profile-popup-overlay {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .profile-popup {
+    background-color: #242424;
+  }
+
+  .profile-popup-btn {
+    color: #ffffff;
+  }
+
+  .profile-popup-btn:hover {
+    background: #211f1f;
+  }
+
+  .profile-popup-btn-logout {
+    color: #E53E3E;
+  }
+
+  .profile-popup-btn-logout:hover {
+    background: #301515;
+  }
+  
+  .floating-topbar .user-greeting,
+  .floating-topbar .company-name,
+  .profile-popup-info span {
+    color: #ffffff;
+  }
+  
+  .video-card,
+  .empty-state-card,
+  .filter-chip,
+  .start-btn {
+    background-color: #242424;
+    color: #ffffff;
+    border-color: #444;
+  }
+
+  .menu-item:hover {
+    background-color: #333333;
+    color: #ffffff;
+  }
+  
+  .menu-item.active {
+    background-color: #3a3a3a;
+    color: #ffffff;
+  }
+
+  .search-box,
+  .search-box input {
+    background-color: #2a2a2a;
+    color: #ffffff;
+  }
+
+  .sidebar,
+  .menu-item,
+  .menu-item .label,
+  .sidebar-logo-text {
+    color: #ffffff;
+  }
+
+  .floating-topbar,
+  .floating-topbar .user-greeting,
+  .floating-topbar .company-name {
+    color: #ffffff;
+  }
+}
