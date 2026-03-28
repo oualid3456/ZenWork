@@ -13,7 +13,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Cela force les boutons et barres de recherche à hériter de ta police principale */
 button, input, select, textarea {
   font: inherit;
 }
