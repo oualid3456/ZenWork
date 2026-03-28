@@ -115,6 +115,20 @@ def send_chat_message(request):
     user_message     = data.get("message", "")
     questionnaire_id = data.get("questionnaire_id")
 
+    # Réinjecte l'historique passé au 1er message de la session
+    if len(history) <= 1:
+        historique_passe = _get_historique(utilisateur_id, limit=10)
+        if historique_passe:
+            history = historique_passe + history
+
+    prefix = ""
+    if len(history) == 1 and questionnaire_id:
+        reponses = _get_reponses_questionnaire(questionnaire_id)
+        if reponses:
+            prefix = build_context_prefix(reponses)
+
+    bot_response = chat_with_gemini(history, user_message, prefix)
+
     return JsonResponse({"response": bot_response})
  
 @csrf_exempt
