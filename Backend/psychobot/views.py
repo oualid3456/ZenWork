@@ -11,6 +11,7 @@ from .services import (
     determine_level,
     build_context_prefix,
     generate_commentaire_rh,
+    detect_besoins_ressources,
 )
  
 # ─────────────────────────────────────────────
@@ -114,6 +115,7 @@ def send_chat_message(request):
     history          = data.get("history", [])
     user_message     = data.get("message", "")
     questionnaire_id = data.get("questionnaire_id")
+    score_actuel     = data.get("score_actuel", 0) 
 
     # Réinjecte l'historique passé au 1er message de la session
     if len(history) <= 1:
@@ -134,7 +136,19 @@ def send_chat_message(request):
     
     bot_response = chat_with_gemini(history, user_message, prefix)
 
-    return JsonResponse({"response": bot_response})
+    # Détection des besoins après chaque message
+    history_complet = history + [
+        {"role": "user", "content": user_message},
+        {"role": "assistant", "content": bot_response},
+    ]
+    besoins = detect_besoins_ressources(history_complet, score_actuel)
+
+    return JsonResponse({
+    "response":            bot_response,
+    "categorie_ressource": besoins.get("categorie"),
+    "urgence":             besoins.get("urgence", False),
+    "message_redirection": besoins.get("message_redirection"),
+    })
  
 @csrf_exempt
 @require_POST
