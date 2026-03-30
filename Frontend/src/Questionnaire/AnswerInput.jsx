@@ -1,10 +1,77 @@
 import React from "react";
 import styles from "./questionnaire.module.css";
 
-function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurrentQuestion, ratings }) {  
-  if (question === "Veuillez-indiquer votre niveau de stress de 1 à 10"
-    || question === "Veuillez-indiquer votre charge de travail de 1 à 10"
-  ) {
+function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurrentQuestion, ratings }) {
+  if (question.type === "text") {
+    return (
+      <div className={styles.finalInput}>
+        <textarea
+          className={styles.textarea}
+          value={answers[question.question] || ""}
+          maxLength={150}
+          onChange={(event) =>
+            setAnswers({
+              ...answers,
+              [question.question]: event.target.value
+            })
+          }
+        />
+        <button
+          className={styles.button}
+          onClick={() => {
+            if (!question.optional) {
+              if (!answers[question.question] || answers[question.question].trim() === "") {
+                return;
+              }
+            }
+            setCurrentQuestion(currentQuestion + 1);
+          }}
+        >
+        Suivant
+        </button>
+      </div>
+    );
+  }
+
+  if (question.type === "yes_no") {
+    return (
+      <>
+        <div className={styles.yesNoButtons}>
+          <button
+            className={styles.yes_no_button}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: "oui" });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+          Oui
+          </button>
+
+          <button
+            className={styles.yes_no_button}
+            onClick={() => {
+              setAnswers({ ...answers, [question.question]: "non" });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+          Non
+          </button>
+        </div>
+        {question.optional && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              className={styles.y_n_optianal}
+              onClick={() => setCurrentQuestion(currentQuestion + 1)}
+            >
+            Suivant
+            </button>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (question.type === "1_to_10") {
     return (
       <div className={styles.finalInput}>
         <input
@@ -13,111 +80,63 @@ function AnswerInput({ question, answers, setAnswers, currentQuestion, setCurren
           min={1}
           max={10}
           step={1}
-          value={answers[question] || ""}
-          onChange={(event) => 
-            setAnswers({ ...answers, [question]: Number(event.target.value) })
-          }
-          pattern="[1-9]|10"
-        />
-        <button
-          className={styles.button}
-          onClick={() => {
-            const value = answers[question];
-            if (Number.isInteger(value) && value >= 1 && value <= 10) {
-              setCurrentQuestion(currentQuestion + 1);
-            }
-          }}
-        >
-          Suivant
-        </button>
-      </div>
-    );
-  }
-  else if (question === "Vous sentez-vous isolé(e) ?") {
-    return (
-        <>
-        <button
-            className={styles.emoji_button}
-            onClick={() => {
-            setAnswers({ ...answers, [question]: "oui" });
-            setCurrentQuestion(currentQuestion + 1);
-            }}
-        >
-            Oui
-        </button>
-        <button
-            className={styles.emoji_button}
-            onClick={() => {
-            setAnswers({ ...answers, [question]: "non" });
-            setCurrentQuestion(currentQuestion + 1);
-            }}
-        >
-            Non
-        </button>
-        </>
-    );
-  }
-  else if (question === "Qu'est-ce qui vous cause le plus de stress au travail ?") {
-    return (
-      <div className={styles.finalInput}>
-        <textarea
-          className={styles.textarea}
-          value={answers[question] || ""}
-          maxLength={150}
+          value={answers[question.question] || ""}
           onChange={(event) =>
-            setAnswers({ ...answers, [question]: event.target.value })
+            setAnswers({
+              ...answers,
+              [question.question]: Number(event.target.value)
+            })
           }
         />
         <button
           className={styles.button}
           onClick={() => {
-            if (!answers[question] || answers[question].trim() === "") {
+            const value = answers[question.question];
+            if (!question.optional) {
+              if (!Number.isInteger(value) || value < 1 || value > 10) {
                 return;
+              }
             }
             setCurrentQuestion(currentQuestion + 1);
           }}
         >
-          Suivant
+        Suivant
         </button>
       </div>
     );
   }
-  else if (question === "Commentaires libres (facultatif)") {
+
+  if (question.type === "emoji") {
     return (
-      <div className={styles.finalInput}>
-        <textarea
-          className={styles.textarea}
-          value={answers[question] || ""}
-          maxLength={150}
-          onChange={(event) =>
-            setAnswers({ ...answers, [question]: event.target.value })
-          }
-        />
-        <button
-          className={styles.button}
-          onClick={() => setCurrentQuestion(currentQuestion + 1)}
-        >
-          Suivant
-        </button>
-      </div>
+      <>
+        {ratings.map((emoji) => (
+          <button
+            className={styles.emoji_button}
+            key={emoji}
+            onClick={() => {
+              setAnswers({
+                ...answers,
+                [question.question]: emoji
+              });
+              setCurrentQuestion(currentQuestion + 1);
+            }}
+          >
+          {emoji}
+          </button>
+        ))}
+        {question.optional && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              className={styles.y_n_optianal}
+              onClick={() => setCurrentQuestion(currentQuestion + 1)}
+            >
+            Suivant
+            </button>
+          </div>
+        )}
+      </>
     );
   }
-  return (
-    <>
-      {ratings.map((emoji) => (
-        <button
-          className={styles.emoji_button}
-          key={emoji}
-          onClick={() => {
-            setAnswers({ ...answers, [question]: emoji });
-            setCurrentQuestion(currentQuestion + 1);
-          }}
-        >
-          {emoji}
-        </button>
-      ))}
-    </>
-  );
 }
 
 export default AnswerInput;
