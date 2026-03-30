@@ -23,6 +23,8 @@ Forum : L'espace d'échange avec vos collègues.
 
 Ressources : Votre médiathèque bien-être.
 
+Questionnaire : L'outil d'évaluation pour suivre l'évolution de votre bien-être mental.
+
 Psychobot : Votre assistant virtuel d'écoute.
 
 Paramètres : La gestion de votre compte.
@@ -57,7 +59,19 @@ Vous pouvez lire les sujets existants ou créer une nouvelle discussion pour pos
 
 ![Page du forum](./assets/forum_tutorial.png)
 
-5. Le Psychobot (Assistant Virtuel)
+5. Les Questionnaires (Bilan Bien-être)
+Pour vous aider à faire le point sur votre état d'esprit et vos conditions de travail, ZenWork met à votre disposition des évaluations régulières. Ces bilans permettent à la plateforme de vous recommander les meilleures ressources.
+
+Comment remplir un questionnaire ?
+
+Cliquez sur "Questionnaires" dans le menu latéral.
+Cliquez sur le bouton pour démarrer l'évaluation disponible (ex: *Bilan mensuel*, *Niveau de stress*).
+Laissez-vous guider et répondez aux questions avec sincérité. 
+À la fin du questionnaire, vos résultats sont enregistrés et vous recevrez des recommandations personnalisées.
+
+![Page du Questionnaire](./assets/quiz_tutorial.png)
+
+6. Le Psychobot (Assistant Virtuel)
 Si vous ressentez le besoin de vous exprimer ou si vous traversez un moment de surcharge mentale, le Psychobot est là pour vous écouter 24h/24 et 7j/7.
 
 Cliquez sur Psychobot dans le menu.
@@ -66,7 +80,7 @@ Tapez votre message dans la zone de texte. Les échanges sont totalement confide
 
 ![Page de psychobot](./assets/bot_tutorial.png)
 
-6. Gérer son profil et se déconnecter
+7. Gérer son profil et se déconnecter
 En haut à droite de votre écran se trouve l'icône de votre profil (vos initiales).
 
 Cliquez dessus pour ouvrir le menu rapide.
