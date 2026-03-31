@@ -142,6 +142,43 @@ Ce composant a uniquement pour vocation d’afficher « Il n'y a pas de question
 
 8. Partie Paramètre
 
+9. Partie Feedback
+   Cette page sert a afficher les retours IA issus des sessions PsychoBot de l'utilisateur connecte.
+
+On recupere dans Supabase :
+
+- id
+- resume_anonymise
+- score_risque
+- created_at
+
+Depuis la table :
+
+- session_ia
+
+On filtre avec :
+
+- utilisateur_id = user.id
+
+Donc normalement chaque employe ne voit que ses propres retours.
+
+### Ce qui s'affiche
+
+La page affiche :
+
+- le nombre total de sessions chargees
+- la date de la derniere session
+- une petite "astuce du jour"
+- la liste des retours ecrits
+
+Si resume_anonymise est vide, un texte par defaut est affiche pour ne pas laisser une carte vide.
+
+### Rafraichissement temps reel
+
+Comme pour le dashboard, il y a un channel Supabase qui ecoute les changements de la table session_ia pour l'utilisateur courant.
+
+Des qu'une session est ajoutee ou modifiee, la liste peut se mettre a jour automatiquement.
+
 Réalisé par
 
 - Mohamed ALDYAB
