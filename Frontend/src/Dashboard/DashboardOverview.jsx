@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import Loading from "../Loading/Loading.jsx";
@@ -118,6 +118,7 @@ export default function DashboardOverview({ user, profile }) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const refreshTimeoutRef = useRef(null);
 
   const [stats, setStats] = useState({
     employeesCount: 0,
@@ -139,11 +140,15 @@ export default function DashboardOverview({ user, profile }) {
   useEffect(() => {
     if (!user?.id) {
       setLoading(false);
-      return;
+      return undefined;
     }
 
-    async function fetchDashboard() {
-      setLoading(true);
+    let active = true;
+
+    async function fetchDashboard({ silent } = {}) {
+      if (!silent) {
+        setLoading(true);
+      }
       setError("");
 
       const sevenDaysAgo = new Date();
@@ -227,6 +232,7 @@ export default function DashboardOverview({ user, profile }) {
             );
           }
 
+          if (!active) return;
           setStats({
             employeesCount,
             activeQuestionnaires,
@@ -347,6 +353,7 @@ export default function DashboardOverview({ user, profile }) {
           );
           const completionRate = Math.min(100, (activeDays.size / 30) * 100);
 
+          if (!active) return;
           setActiveQuestionnaireId(activeQuestionnaireIdFound);
           setStats({
             employeesCount: 0,
@@ -388,13 +395,51 @@ export default function DashboardOverview({ user, profile }) {
           );
         }
       } catch (err) {
+        if (!active) return;
         setError(err.message || "Erreur lors du chargement du dashboard.");
       } finally {
+        if (!active) return;
         setLoading(false);
       }
     }
 
     fetchDashboard();
+
+    const scheduleRefresh = () => {
+      if (refreshTimeoutRef.current) return;
+      refreshTimeoutRef.current = setTimeout(() => {
+        refreshTimeoutRef.current = null;
+        fetchDashboard({ silent: true });
+      }, 300);
+    };
+
+    const changeOptions = (tableName) =>
+      role === "RH"
+        ? { event: "*", schema: "public", table: tableName }
+        : { event: "*", schema: "public", table: tableName, filter: `utilisateur_id=eq.${user.id}` };
+
+    let channel = supabase
+      .channel(`dashboard-sync-${user.id}-${role}`)
+      .on("postgres_changes", changeOptions("reponse_questionnaire"), scheduleRefresh)
+      .on("postgres_changes", changeOptions("session_ia"), scheduleRefresh)
+      .on("postgres_changes", changeOptions("alerte_burnout"), scheduleRefresh)
+      .on("postgres_changes", changeOptions("demande_changement"), scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "questionnaire" }, scheduleRefresh);
+
+    if (role === "RH") {
+      channel = channel.on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, scheduleRefresh);
+    }
+
+    channel = channel.subscribe();
+
+    return () => {
+      active = false;
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+      supabase.removeChannel(channel);
+    };
   }, [role, user?.id]);
 
   const riskTotal = useMemo(
