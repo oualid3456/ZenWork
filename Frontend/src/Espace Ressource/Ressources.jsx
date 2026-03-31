@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import './Ressources.css';
+import RessourceDetail from './RessourceDetail.jsx'; // C'EST CETTE LIGNE QUI MANQUAIT !
 
 const Ressources = () => {
   const [filter, setFilter] = useState('Tous');
+  const [selectedRessource, setSelectedRessource] = useState(null); // Gère quelle vidéo est ouverte
 
-  // 1. LA BASE DE DONNÉES "SANTÉ MENTALE AU TRAVAIL" (Vraies données)
+  // LA BASE DE DONNÉES
   const ressourcesData = [
     { 
       id: 1, 
       title: "Cohérence Cardiaque (Anti-Stress)", 
       type: "video", 
-      category: "Sommeil", // Aide à calmer l'anxiété et favoriser le repos
+      category: "Sommeil", 
       duration: "5 min", 
-      author: "Dr. David O'Hare", 
+      author: "Denis Fortier", 
       color: "#00C38E",
-      image: "https://img.youtube.com/vi/bM3mWlq4mPU/maxresdefault.jpg",
-      lien: "https://www.youtube.com/watch?v=bM3mWlq4mPU" 
+      image: "https://img.youtube.com/vi/cHuUs483S4Q/hqdefault.jpg",
+      embedUrl: "https://www.youtube.com/embed/cHuUs483S4Q"
     },
     { 
       id: 2, 
@@ -25,8 +27,8 @@ const Ressources = () => {
       duration: "3 min", 
       author: "Petit BamBou", 
       color: "#6C5DD3",
-      image: "https://img.youtube.com/vi/9E0peXFUC60/maxresdefault.jpg",
-      lien: "https://www.youtube.com/watch?v=9E0peXFUC60"
+      image: "https://img.youtube.com/vi/9E0peXFUC60/hqdefault.jpg",
+      embedUrl: "https://www.youtube.com/embed/9E0peXFUC60"
     },
     { 
       id: 3, 
@@ -34,10 +36,10 @@ const Ressources = () => {
       type: "video", 
       category: "Méditation", 
       duration: "5 min", 
-      author: "Cédric Michel", 
+      author: "Delphine Morin", 
       color: "#FFA043",
-      image: "https://img.youtube.com/vi/tWcu6AlDu6I/maxresdefault.jpg",
-      lien: "https://www.youtube.com/watch?v=tWcu6AlDu6I"
+      image: "https://img.youtube.com/vi/tWcu6AlDu6I/hqdefault.jpg",
+      embedUrl: "https://www.youtube.com/embed/tWcu6AlDu6I"
     },
     { 
       id: 4, 
@@ -48,7 +50,7 @@ const Ressources = () => {
       author: "Welcome To The Jungle", 
       color: "#6C5DD3",
       image: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=800&auto=format&fit=crop",
-      lien: "https://www.welcometothejungle.com/fr/articles/comment-rester-concentre-au-travail"
+      contenuText: "La concentration est comme un muscle, elle s'entraîne.\n\nAu bureau, les distractions sont nombreuses (notifications, bruits, collègues). Pour retrouver le focus, essayez la méthode Pomodoro : 25 minutes de travail intense, 5 minutes de pause.\n\nÉloignez votre téléphone et buvez de l'eau régulièrement. Pensez également à aérer votre espace de travail."
     },
   ];
 
@@ -58,15 +60,20 @@ const Ressources = () => {
     ? ressourcesData 
     : ressourcesData.filter(r => r.category === filter);
 
-  // Fonction pour ouvrir la ressource quand on clique sur le bouton
-  const handleOpenRessource = (lien) => {
-    window.open(lien, '_blank', 'noopener,noreferrer');
-  };
+  // SI UNE RESSOURCE EST SÉLECTIONNÉE -> ON AFFICHE LE LECTEUR
+  if (selectedRessource) {
+    return (
+      <RessourceDetail 
+        ressource={selectedRessource} 
+        onBack={() => setSelectedRessource(null)} // La fonction pour revenir en arrière
+      />
+    );
+  }
 
+  // SINON -> ON AFFICHE LA GRILLE
   return (
     <div className="ressources-internal-container">
       
-      {/* 1. LA BARRE DE FILTRES */}
       <div className="filter-container">
         {categories.map(cat => (
           <button 
@@ -79,7 +86,6 @@ const Ressources = () => {
         ))}
       </div>
 
-      {/* 2. LA GRILLE DE RESSOURCES */}
       <div className="resources-grid-section">
         <h2 className="section-title">Recommandé pour vous</h2>
         <div className="video-grid">
@@ -87,22 +93,19 @@ const Ressources = () => {
           {filteredRessources.map(ressource => (
             <div key={ressource.id} className="video-card">
               
-              {/* LA COUVERTURE AVEC L'ICÔNE ADAPTÉE */}
               <div 
                 className="video-thumb" 
                 style={{ 
                   background: `url(${ressource.image}) center/cover`,
-                  backgroundColor: ressource.color // Couleur de secours au cas où
+                  backgroundColor: ressource.color 
                 }}
               >
                 <div className="play-overlay">
                   {ressource.type === 'video' && "▶"}
-                  {ressource.type === 'document' && "📄"}
                   {ressource.type === 'article' && "📖"}
                 </div>
               </div>
               
-              {/* LE CORPS DE LA CARTE */}
               <div className="video-body">
                 <span className="cat-label">
                   {ressource.category} • {ressource.type === 'video' ? 'Vidéo' : 'Texte'}
@@ -115,10 +118,9 @@ const Ressources = () => {
                   {ressource.author} • {ressource.duration}
                 </p>
                 
-                {/* LE BOUTON CLICABLE */}
                 <button 
                   className="start-btn" 
-                  onClick={() => handleOpenRessource(ressource.lien)}
+                  onClick={() => setSelectedRessource(ressource)} // Change l'état ici !
                 >
                   {ressource.type === 'video' ? 'Démarrer' : 'Lire'}
                 </button>

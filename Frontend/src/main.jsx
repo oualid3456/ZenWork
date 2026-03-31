@@ -39,7 +39,9 @@ createRoot(document.getElementById("root")).render(
           path="/start_questionnaire/:id"
           element={
             <SecurisedRoute>
-              <StartQuestionnaire />
+              <DashboardLayout>
+                <StartQuestionnaire />
+              </DashboardLayout>
             </SecurisedRoute>
           }
         />
@@ -48,7 +50,9 @@ createRoot(document.getElementById("root")).render(
           path="/questionnaire/:userId/:questionnaireId"
           element={
             <SecurisedRoute>
-              <Questionnaire />
+              <DashboardLayout>
+                <Questionnaire />
+              </DashboardLayout>
             </SecurisedRoute>
           }
         />
