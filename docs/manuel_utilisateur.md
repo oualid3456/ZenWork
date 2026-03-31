@@ -93,5 +93,6 @@ Cliquez sur Déconnexion pour fermer votre session de manière sécurisée à la
 8. Voir les retours de l'IA sur vos échanges
    ![Page de feedback](./assets/image_feedback.png)
 
-On va là bas pour voir un résumé cours et rapide qui nous explique ce que l'ia pense et retient de nos derniers échanges.
-On peut y retrouver le nombre de sessions que nous avons fais, les dates de nos échanges, ainsi que des astuces mise chaque jours qui peuvent aider les employés à aller mieux.
+- On va là bas pour voir un résumé cours et rapide qui nous explique ce que l'ia pense et retient de nos derniers échanges.
+
+- On peut y retrouver le nombre de sessions que nous avons fais, les dates de nos échanges, ainsi que des astuces mise chaque jours qui peuvent aider les employés à aller mieux.
