@@ -1,19 +1,10 @@
-
-
-
 ZenWork
-
-
 
 1. Partie Login
 
-
-
 La partie Login du projet est regroupée dans un dossier Login contenant des composants React permettant aux utilisateurs de se connecter soit en tant qu’employé, soit en tant que RH.
 
-
 i. Login
-
 
 Le composant Login est la page principale du site, elle est la première à apparaître lorsqu’on rentre sur l’application web.
 
@@ -21,40 +12,31 @@ Elle permet à l’utilisateur de choisir son espace de connexion parmi employé
 
 Si l’on n’a pas de compte, on peut cliquer sur un lien en dessous de la zone d’authentification pour en créer un.
 
-
 ii. RhLogin
-
 
 Ce composant permet aux utilisateurs ayant le rôle RH uniquement de se connecter à l’application. Il fait partie de la page Login et s’affiche uniquement lorsque l’espace RH est sélectionné.
 
 La connexion se fait via un email et un mot de passe, une fois ses infos rentrées, on fait un fetch avec la base de données pour vérifier que les infos correspondent bien avec ceux présente dans la base.
 
-
 iii. EmployeeLogin
-
 
 Composant identique à RhLogin à la différence près qu’il s’applique aux employés et non au RH.
 
-
-
 2. Partie Register
-
-
 
 Cette partie de projet est dédié à la création de compte que ce soit employé ou RH.
 
-
 i. Register
 
-
 Ce composant permet à l’utilisateur de remplir le formulaire suivant:
+
 - une adresse mail
 - un mot de passe qui respecte les conditions suivantes:
-	- au moins une majuscule
-	- au moins une minuscule
-	- au moins un chiffre
-	- au moins un caractère spécial parmi !, @, #, $, %, ^, &, *
-	- au moins dix caractères
+  - au moins une majuscule
+  - au moins une minuscule
+  - au moins un chiffre
+  - au moins un caractère spécial parmi !, @, #, $, %, ^, &, \*
+  - au moins dix caractères
 - un nom
 - un prénom
 - si l’on souhaite créer un compte en tant qu’employé ou RH
@@ -63,39 +45,61 @@ Une fois, ce formulaire remplit, on envoie ses informations vers la base de donn
 
 Lors de la création du compte, un id unique est automatiquement généré pour l’utilisateur pour l’identifier dans les autres pages du site (ex. dans Questionnaire voir qui a répondu au questionnaire).
 
-
-
 3. Partie Dashboard
+   Ce composant affiche une vue differente selon le role :
 
+- version RH
+- version employe
 
+Le role vient de profile?.role.
+
+Si le role est RH, le dashboard affiche plutot des infos globales :
+
+- nombre d'employes
+- questionnaires actifs
+- reponses totales
+- alertes ouvertes
+- demandes en attente
+- moyenne de risque IA
+
+Si le role n'est pas RH, on est cote employe et le dashboard affiche plutot des infos personnelles :
+
+- questionnaires completes
+- questionnaire actif
+- alertes ouvertes de l'utilisateur
+- demandes en attente
+- dernier score IA
+- moyenne des scores IA
+
+Les tables utilisees sont surtout :
+
+- profiles
+- questionnaire
+- reponse_questionnaire
+- alerte_burnout
+- session_ia
+- demande_changement
 
 4. Partie Forum
 
-
-
 5. Partie Ressource
-
-
 
 6. Partie Questionnaire
 
-
-
 La partie Questionnaire du projet est regroupée dans un dossier Questionnaire contenant des composants React, elle se compose principalement d’un module permettant de créer un questionnaire et d’un autre permettant d’y répondre.
 
-
 i. StartQuestionnaire
-
 
 Il s’agit d’un composant React permettant aux RH uniquement de lancer un questionnaire auquel les employés pourront répondre. Ils ont deux options: utiliser le questionnaire par défaut fourni par l’application ou créer leur propre questionnaire personnalisé.
 
 Les questions sont stockées dans une liste d’objets, chacun contenant:
+
 - l’intitulé de la question
 - son type de réponse parmi
-	- émoji du moins expressif au plus expressif
-	- de 1 à 10
-	- oui/non
-	- texte (pour laisser l’utilisateur répondre plus librement)
+  - émoji du moins expressif au plus expressif
+  - de 1 à 10
+  - oui/non
+  - texte (pour laisser l’utilisateur répondre plus librement)
 - s’il s’agit d’une question optionnelle ou non
 - un indicateur de validation (utiliser lors la création de questionnaire personnalisés pour vérifier que les questions sont correctement remplies)
 
@@ -105,9 +109,7 @@ Pour tout cela, on fait un fetch vers la base de données pour vérifier si un q
 
 Une fois que le questionnaire est créé, on peut le lancer, cela revient à envoyer vers la base de données un fichier JSON du tableau contenant toutes les questions.
 
-
 ii. Questionnaire
-
 
 Il s’agit également d’un composant React permettant aux employés uniquement cette fois-ci de répondre aux questionnaires lancés par les RH.
 
@@ -117,13 +119,12 @@ Lorsqu’un employé répond au questionnaire, les questions s’affichent une �
 
 Une fois que l’on a fini de répondre au questionnaire, on effectue un fetch pour envoyer chaque question associée à sa réponse au format JSON à la base de données. C’est de ce dernier que l’on vérifie si un employé a déjà répondu à un questionnaire ou non pour lui en empêcher l’accès.
 
-
-iii.  AnswerInput
-
+iii. AnswerInput
 
 Ce composant React est là pour gérer l’affichage/rendu des questions et est utilisé par Questionnaire.
 
 L’affichage des questions dépend du type de la question :
+
 - émoji: cinq boutons avec un émoji du moins expressif au plus expressif
 - de 1 à 10: une petite zone de texte dans laquelle on peut rentrer uniquement un nombre entre 1 et 10 compris
 - oui/non: deux boutons, l’un pour oui, l’autre pour non
@@ -133,29 +134,19 @@ Mais également de si elle est optionnel ou non, dans ce cas-là on laisse la po
 
 Elle stocke les couples (question, réponse) dans une variable qu’elle renverra au composant Questionnaire pour qu’il puisse l’envoyer à la base de données.
 
-
 iv. NoQuestionnaire
-
 
 Ce composant a uniquement pour vocation d’afficher « Il n'y a pas de questionnaire disponible pour le moment ». Il est utilisé par Questionnaire lorsqu’aucun questionnaire n’est lancé.
 
-
-
 7. Partie Psychobot
-
-
 
 8. Partie Paramètre
 
-
-
-
-
-
 Réalisé par
+
 - Mohamed ALDYAB
 - Oualid FELKAOUI
 - Abderrahim HERMEZ
 - Lilia AIT-MOKHTAR
 - Rayane HEBBACHE
-- Nassim ICHCHOU 
+- Nassim ICHCHOU
