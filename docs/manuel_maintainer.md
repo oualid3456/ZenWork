@@ -41,6 +41,30 @@ Composant identique à RhLogin à la différence près qu’il s’applique aux 
 
 
 
+Cette partie de projet est dédié à la création de compte que ce soit employé ou RH.
+
+
+i. Register
+
+
+Ce composant permet à l’utilisateur de remplir le formulaire suivant:
+- une adresse mail
+- un mot de passe qui respecte les conditions suivantes:
+	- au moins une majuscule
+	- au moins une minuscule
+	- au moins un chiffre
+	- au moins un caractère spécial parmi !, @, #, $, %, ^, &, *
+	- au moins dix caractères
+- un nom
+- un prénom
+- si l’on souhaite créer un compte en tant qu’employé ou RH
+
+Une fois, ce formulaire remplit, on envoie ses informations vers la base de données via un fetch afin de créer un nouvel utilisateur (c’est avec ces informations que l’on décide s’il on peut se connecter ou non dans Login).
+
+Lors de la création du compte, un id unique est automatiquement généré pour l’utilisateur pour l’identifier dans les autres pages du site (ex. dans Questionnaire voir qui a répondu au questionnaire).
+
+
+
 3. Partie Dashboard
 
 
