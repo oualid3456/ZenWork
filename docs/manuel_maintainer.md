@@ -142,7 +142,29 @@ Ce composant a uniquement pour vocation d’afficher « Il n'y a pas de question
 
 8. Partie Paramètre
 
-9. Partie Feedback
+Accessible via le menu latéral ou l'icône avatar (route `/profile/:id`), ce composant permet à tout utilisateur de gérer son compte. Il fetch la table `profiles` (`id`, `role`, `nom`, `prenom`, `service`, `date_embauche`) et expose deux sections :
+
+i. Mon compte — modification du mot de passe (min. 10 caractères, confirmation requise) via `supabase.auth.updateUser`. Email affiché en lecture seule.
+
+ii. Informations personnelles — mise à jour de `nom`, `prenom`, `service`, `date_embauche` via `UPDATE` sur `profiles`. Le rôle est en lecture seule (modifiable uniquement par un RH depuis la page Employés).
+
+9. Partie Employés (RH uniquement)
+
+Protégé par `RhSecuredRoute`, accessible via `/employees` ou le bouton « Voir les employés » du Dashboard RH. Affiche tous les profils de la table `profiles` triés par nom (colonnes : Nom, Prénom, Service, Date d'embauche, Rôle).
+
+Un bouton « Modifier » par ligne ouvre un formulaire inline pour mettre à jour `nom`, `prenom`, `service`, `date_embauche` et `role` (EMPLOYE / RH) via `UPDATE` sur `profiles`. Un seul employé est modifiable à la fois ; les autres boutons sont désactivés le temps de l'édition.
+
+10. Partie Notifications
+
+Intégré dans `DashboardLayout`, le système est accessible via l'icône de cloche en haut à droite. Un badge rouge indique le nombre de notifications non lues (`SELECT COUNT` sur `notifications` où `user_id` et `is_read = false`, rafraîchi à chaque ouverture du panneau).
+
+Un clic sur la cloche ouvre un popup listant les 100 dernières notifications (`type`, `title`, `body`, date, statut lu/non lu). Les non lues sont mises en évidence ; cliquer dessus les marque comme lues (`UPDATE is_read = true`). Un bouton « Tout marquer comme lu » traite toutes les non lues en une seule requête.
+
+Pour les alertes burnout, le champ `body` identifie l'employé concerné (nom, prénom, niveau d'urgence). Le RH retrouve ces mêmes alertes dans la section « Activité récente » du Dashboard avec le nom de l'employé et le statut (`NOUVEAU`, `EN_COURS`, `TRAITE`), puis peut accéder au profil complet via `/employees`.
+
+Tables : `notifications` (`id`, `user_id`, `type`, `title`, `body`, `is_read`, `created_at`) et `alerte_burnout`.
+
+11. Partie Feedback
    Cette page sert a afficher les retours IA issus des sessions PsychoBot de l'utilisateur connecte.
 
 On recupere dans Supabase :

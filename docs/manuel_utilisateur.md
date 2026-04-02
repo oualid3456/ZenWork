@@ -78,19 +78,23 @@ Tapez votre message dans la zone de texte. Les échanges sont totalement confide
 
 ![Page de psychobot](./assets/bot_tutorial.png)
 
-7. Gérer son profil et se déconnecter
-   En haut à droite de votre écran se trouve l'icône de votre profil (vos initiales).
+7. Le système de notifications
 
-Cliquez dessus pour ouvrir le menu rapide.
+L'icône de cloche en haut à droite affiche un badge rouge avec le nombre de notifications non lues. Cliquez dessus pour ouvrir le panneau : il liste vos dernières notifications (catégorie, titre, contenu, date, statut lu/non lu). Cliquer sur une notification non lue la marque comme lue. Le bouton « Tout marquer comme lu » acquitte tout en une fois.
 
-Cliquez sur Paramètres pour modifier vos informations (Nom, Prénom, mot de passe).
+Pour les RH : lorsqu'un employé déclenche une alerte burnout, la notification précise son nom et le niveau d'urgence. La section « Activité récente » du Dashboard RH reprend ces alertes avec le statut de traitement (Nouveau, En cours, Traité) et permet d'accéder à la page Employés pour consulter le profil complet.
 
-Cliquez sur Déconnexion pour fermer votre session de manière sécurisée à la fin de votre journée.
+8. Gérer son profil et se déconnecter
+
+Cliquez sur l'icône de vos initiales en haut à droite pour ouvrir le menu rapide.
+
+- Paramètres : modifiez votre mot de passe (min. 10 caractères) ou vos informations personnelles (nom, prénom, service, date d'embauche).
+- Déconnexion : ferme votre session de manière sécurisée.
 
 ![Page de profil](./assets/profil.png)
 ![Page de profil](./assets/logout_tutorial.png)
 
-8. Voir les retours de l'IA sur vos échanges
+9. Voir les retours de l'IA sur vos échanges
    ![Page de feedback](./assets/image_feedback.png)
 
 - On va là bas pour voir un résumé cours et rapide qui nous explique ce que l'ia pense et retient de nos derniers échanges.

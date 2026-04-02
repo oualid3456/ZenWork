@@ -93,12 +93,18 @@ function formaterDateNotification(iso) {
   }
 }
 
+function resolveEmployeeName(profiles) {
+  if (!profiles) return null;
+  return [profiles.prenom, profiles.nom].filter(Boolean).join(" ") || "Employé";
+}
+
 function PopupNotifications({ user, onFermer, onMarkedRead }) {
   const [items, setItems] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [markingId, setMarkingId] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [alerteByMinute, setAlerteByMinute] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -122,9 +128,35 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
       if (error) {
         setFetchError(error.message);
         setItems([]);
-      } else {
-        setItems(data ?? []);
+        setLoading(false);
+        return;
       }
+
+      const notifications = data ?? [];
+      setItems(notifications);
+
+      const hasBurnoutAlerts = notifications.some(
+        (n) => n.type?.toLowerCase() === "alerte_burnout"
+      );
+      if (hasBurnoutAlerts) {
+        const { data: alertes, error: alerteError } = await supabase
+          .from("alerte_burnout")
+          .select("id, created_at, profiles!utilisateur_id(nom, prenom)")
+          .order("created_at", { ascending: false })
+          .limit(200);
+        if (alerteError) {
+          console.warn("[Notifications] alerte_burnout join failed:", alerteError.message);
+        }
+        if (!cancelled && alertes) {
+          const map = {};
+          alertes.forEach((a) => {
+            const key = String(a.created_at ?? "").slice(0, 16);
+            if (!map[key]) map[key] = resolveEmployeeName(a.profiles);
+          });
+          setAlerteByMinute(map);
+        }
+      }
+
       setLoading(false);
     })();
     return () => {
@@ -216,37 +248,46 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
           )}
           {!loading && !fetchError && items && items.length > 0 && (
             <ul className="notification-list">
-              {items.map((n) => (
-                <li key={n.id} className="notification-item-wrap">
-                  <button
-                    type="button"
-                    className={`notification-item${n.is_read ? "" : " notification-item-unread"}${n.is_read ? "" : " notification-item-clickable"}`}
-                    onClick={() => void marquerUneLue(n)}
-                    disabled={markingAll || markingId === n.id}
-                    aria-label={
-                      n.is_read
-                        ? "Notification lue"
-                        : "Marquer cette notification comme lue"
-                    }
-                  >
-                    <div className="notification-item-top">
-                      <span className="notification-type">{n.type}</span>
-                      <span className="notification-date">
-                        {formaterDateNotification(n.created_at)}
-                      </span>
-                    </div>
-                    {n.title && (
-                      <div className="notification-title">{n.title}</div>
-                    )}
-                    {n.body && (
-                      <div className="notification-body">{n.body}</div>
-                    )}
-                    <div className="notification-seen">
-                      {markingId === n.id ? "…" : n.is_read ? "Lu" : "Non lu"}
-                    </div>
-                  </button>
-                </li>
-              ))}
+              {items.map((n) => {
+                const minuteKey = String(n.created_at ?? "").slice(0, 16);
+                const triggeredBy =
+                  n.type?.toLowerCase() === "alerte_burnout"
+                    ? alerteByMinute[minuteKey]
+                    : null;
+                return (
+                  <li key={n.id} className="notification-item-wrap">
+                    <button
+                      type="button"
+                      className={`notification-item${n.is_read ? "" : " notification-item-unread notification-item-clickable"}`}
+                      onClick={() => void marquerUneLue(n)}
+                      disabled={markingAll || markingId === n.id}
+                      aria-label={
+                        n.is_read
+                          ? "Notification lue"
+                          : "Marquer cette notification comme lue"
+                      }
+                    >
+                      <div className="notification-item-top">
+                        <span className="notification-type">{n.type}</span>
+                        <span className="notification-date">
+                          {formaterDateNotification(n.created_at)}
+                        </span>
+                      </div>
+                      {triggeredBy && (
+                        <div className="notification-triggered-by">
+                          👤 Déclenché par : <strong>{triggeredBy}</strong>
+                        </div>
+                      )}
+                      {n.title && (
+                        <div className="notification-title">{n.title}</div>
+                      )}
+                      <div className="notification-seen">
+                        {markingId === n.id ? "…" : n.is_read ? "Lu" : "Non lu"}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
