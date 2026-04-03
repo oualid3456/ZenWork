@@ -151,3 +151,134 @@
   margin-top: 0;
   width: 100%; /* Étend le bouton sur toute la largeur (optionnel, mais souvent plus moderne) */
 }
+
+/* --- ACTIONS RH --- */
+.ressources-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.add-ressource-btn {
+  background-color: #00C38E;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.add-ressource-btn:hover {
+  transform: scale(1.05);
+}
+
+.rh-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.rh-edit-btn, .rh-delete-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.rh-edit-btn {
+  background: #F4F7FE;
+  color: #6C5DD3;
+}
+
+.rh-delete-btn {
+  background: #FFF5F5;
+  color: #E53E3E;
+}
+
+.rh-edit-btn:hover { background: #E2E8F0; }
+.rh-delete-btn:hover { background: #FED7D7; }
+
+/* --- MODAL (POPUP CRUD) --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  color: #1A202C;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4A5568;
+  margin-bottom: 5px;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+  padding: 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  font-family: inherit;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.cancel-btn {
+  background: none;
+  border: none;
+  color: #718096;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save-btn {
+  background: #6C5DD3;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
