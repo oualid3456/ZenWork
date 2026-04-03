@@ -3,70 +3,62 @@ import { supabase } from '../supabaseClient';
 import './Ressources.css';
 import RessourceDetail from './RessourceDetail.jsx';
 
-const initialData = [
-  { 
-    id: 1, 
-    title: "Cohérence Cardiaque (Anti-Stress)", 
-    type: "video", 
-    category: "Sommeil", 
-    duration: "5 min", 
-    author: "Denis Fortier", 
-    color: "#00C38E",
-    image: "https://img.youtube.com/vi/cHuUs483S4Q/hqdefault.jpg",
-    embedUrl: "https://www.youtube.com/embed/cHuUs483S4Q"
-  },
-  { 
-    id: 2, 
-    title: "Trop de pensées ? L'histoire de la cascade", 
-    type: "video", 
-    category: "Mental", 
-    duration: "3 min", 
-    author: "Petit BamBou", 
-    color: "#6C5DD3",
-    image: "https://img.youtube.com/vi/9E0peXFUC60/hqdefault.jpg",
-    embedUrl: "https://www.youtube.com/embed/9E0peXFUC60"
-  }
-];
-
-// Les catégories de base
 const initialCategories = ['Tous', 'Méditation', 'Sport', 'Mental', 'Sommeil'];
 
 export default function Ressources() {
-  const [ressources, setRessources] = useState(initialData);
-  // NOUVEAU : On transforme les catégories en variable d'état pour pouvoir en ajouter !
+  const [ressources, setRessources] = useState([]);
   const [categories, setCategories] = useState(initialCategories);
-  
   const [filter, setFilter] = useState('Tous');
   const [selectedRessource, setSelectedRessource] = useState(null);
-  
   const [isRH, setIsRH] = useState(false);
 
+  // Formulaire CRUD
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     title: '', type: 'video', category: '', author: '', duration: '', image: '', embedUrl: '', contenuText: '', color: '#6C5DD3'
   });
 
+  // 1. AU CHARGEMENT : On vérifie le rôle ET on télécharge les ressources depuis Supabase
   useEffect(() => {
-    const checkRole = async () => {
+    const checkRoleAndFetchData = async () => {
+      // Vérification du rôle
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (data?.role === 'RH') {
-          setIsRH(true);
-        }
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role === 'RH') setIsRH(true);
+      }
+
+      // Téléchargement des ressources
+      const { data: ressourcesData, error } = await supabase.from('ressources').select('*');
+      if (error) {
+        console.error("Erreur lors du chargement :", error);
+      } else if (ressourcesData) {
+        setRessources(ressourcesData);
+        
+        // On récupère aussi les catégories personnalisées qui existent dans la base
+        const dbCategories = [...new Set(ressourcesData.map(r => r.category))];
+        const allCategories = [...new Set([...initialCategories, ...dbCategories])];
+        setCategories(allCategories);
       }
     };
-    checkRole();
+    
+    checkRoleAndFetchData();
   }, []);
 
   const filteredRessources = filter === 'Tous' 
     ? ressources 
     : ressources.filter(r => r.category === filter);
 
-  const handleDelete = (id) => {
+  // 2. SUPPRIMER DANS SUPABASE
+  const handleDelete = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ressource ?")) {
-      setRessources(ressources.filter(r => r.id !== id));
+      const { error } = await supabase.from('ressources').delete().eq('id', id);
+      if (!error) {
+        setRessources(ressources.filter(r => r.id !== id));
+      } else {
+        alert("Erreur lors de la suppression.");
+      }
     }
   };
 
@@ -82,19 +74,30 @@ export default function Ressources() {
     setShowModal(true);
   };
 
-  const handleSave = (e) => {
+  // 3. AJOUTER / MODIFIER DANS SUPABASE
+  const handleSave = async (e) => {
     e.preventDefault();
-    
-    // NOUVEAU : On vérifie si la catégorie tapée est nouvelle. Si oui, on l'ajoute aux filtres !
     const newCategory = formData.category.trim();
+    
     if (newCategory && !categories.includes(newCategory)) {
       setCategories([...categories, newCategory]);
     }
 
+    const payload = { ...formData, category: newCategory };
+    delete payload.id; // On enlève l'ID du payload car Supabase le gère tout seul
+
     if (editingId) {
-      setRessources(ressources.map(r => r.id === editingId ? { ...formData, category: newCategory, id: editingId } : r));
+      // UPDATE
+      const { data, error } = await supabase.from('ressources').update(payload).eq('id', editingId).select();
+      if (!error && data) {
+        setRessources(ressources.map(r => r.id === editingId ? data[0] : r));
+      }
     } else {
-      setRessources([...ressources, { ...formData, category: newCategory, id: Date.now() }]);
+      // INSERT
+      const { data, error } = await supabase.from('ressources').insert([payload]).select();
+      if (!error && data) {
+        setRessources([...ressources, data[0]]);
+      }
     }
     setShowModal(false);
   };
@@ -105,10 +108,8 @@ export default function Ressources() {
 
   return (
     <div className="ressources-internal-container">
-      
       <div className="ressources-header-flex">
         <div className="filter-container">
-          {/* Les puces de filtre se mettent à jour automatiquement si on crée une nouvelle catégorie */}
           {categories.map(cat => (
             <button 
               key={cat}
@@ -129,36 +130,40 @@ export default function Ressources() {
 
       <div className="resources-grid-section">
         <h2 className="section-title">Recommandé pour vous</h2>
-        <div className="video-grid">
-          
-          {filteredRessources.map(ressource => (
-            <div key={ressource.id} className="video-card">
-              <div className="video-thumb" style={{ background: `url(${ressource.image}) center/cover`, backgroundColor: ressource.color }}>
-                <div className="play-overlay">
-                  {ressource.type === 'video' ? "▶" : "📖"}
+        
+        {/* Affichage d'un message si la base de données est vide */}
+        {ressources.length === 0 ? (
+          <p style={{ color: '#718096' }}>Aucune ressource disponible pour le moment.</p>
+        ) : (
+          <div className="video-grid">
+            {filteredRessources.map(ressource => (
+              <div key={ressource.id} className="video-card">
+                <div className="video-thumb" style={{ background: `url(${ressource.image}) center/cover`, backgroundColor: ressource.color }}>
+                  <div className="play-overlay">
+                    {ressource.type === 'video' ? "▶" : "📖"}
+                  </div>
+                </div>
+                
+                <div className="video-body">
+                  <span className="cat-label">{ressource.category} • {ressource.type === 'video' ? 'Vidéo' : 'Texte'}</span>
+                  <h3>{ressource.title}</h3>
+                  <p>{ressource.type === 'video' ? 'Par ' : 'Source : '} {ressource.author} • {ressource.duration}</p>
+                  
+                  <button className="start-btn" onClick={() => setSelectedRessource(ressource)}>
+                    {ressource.type === 'video' ? 'Démarrer' : 'Lire'}
+                  </button>
+
+                  {isRH && (
+                    <div className="rh-actions">
+                      <button className="rh-edit-btn" onClick={() => openModalForEdit(ressource)}>Modifier</button>
+                      <button className="rh-delete-btn" onClick={() => handleDelete(ressource.id)}>Supprimer</button>
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              <div className="video-body">
-                <span className="cat-label">{ressource.category} • {ressource.type === 'video' ? 'Vidéo' : 'Texte'}</span>
-                <h3>{ressource.title}</h3>
-                <p>{ressource.type === 'video' ? 'Par ' : 'Source : '} {ressource.author} • {ressource.duration}</p>
-                
-                <button className="start-btn" onClick={() => setSelectedRessource(ressource)}>
-                  {ressource.type === 'video' ? 'Démarrer' : 'Lire'}
-                </button>
-
-                {isRH && (
-                  <div className="rh-actions">
-                    <button className="rh-edit-btn" onClick={() => openModalForEdit(ressource)}>Modifier</button>
-                    <button className="rh-delete-btn" onClick={() => handleDelete(ressource.id)}>Supprimer</button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {showModal && (
@@ -180,13 +185,12 @@ export default function Ressources() {
                   </select>
                 </div>
                 
-                {/* L'ASTUCE EST ICI : Le Datalist */}
                 <div className="form-group">
                   <label>Catégorie</label>
                   <input 
                     type="text" 
                     list="category-options"
-                    placeholder="Choisir ou taper une nouvelle"
+                    placeholder="Choisir ou taper"
                     value={formData.category} 
                     onChange={e => setFormData({...formData, category: e.target.value})} 
                     required 
@@ -216,12 +220,12 @@ export default function Ressources() {
               {formData.type === 'video' ? (
                 <div className="form-group">
                   <label>URL Embed YouTube</label>
-                  <input type="url" placeholder="https://www.youtube.com/embed/..." value={formData.embedUrl} onChange={e => setFormData({...formData, embedUrl: e.target.value})} required />
+                  <input type="url" placeholder="https://www.youtube.com/embed/..." value={formData.embedUrl} onChange={e => setFormData({...formData, embedUrl: e.target.value})} />
                 </div>
               ) : (
                 <div className="form-group">
                   <label>Contenu du texte</label>
-                  <textarea rows="4" value={formData.contenuText} onChange={e => setFormData({...formData, contenuText: e.target.value})} required />
+                  <textarea rows="4" value={formData.contenuText} onChange={e => setFormData({...formData, contenuText: e.target.value})} />
                 </div>
               )}
 
