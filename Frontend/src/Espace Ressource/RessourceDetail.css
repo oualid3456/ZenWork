@@ -97,9 +97,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* =============================================== */
-/* --- DARK MODE POUR LE LECTEUR ET L'ARTICLE --- */
-/* =============================================== */
+
 @media (prefers-color-scheme: dark) {
   .detail-header h1 { color: #E2E8F0; }
   .detail-meta { color: #A0AEC0; }
