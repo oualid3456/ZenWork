@@ -10,7 +10,6 @@ import Loading  from "../Loading/Loading.jsx";
 function Questionnaire({ user, questionnaireId  }) {
   // on a besoin de cela pour savoir si le questionnaire a
   // commence ou non et agir en consequence
-  const { userId } = useParams();
   const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
