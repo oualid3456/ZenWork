@@ -5,13 +5,14 @@ import Profile from "../Profile/Profile.jsx";
 import EmployeesList from "../Employees/EmployeesList.jsx";
 import RhSecuredRoute from "../RhSecuredRoute.jsx";
 import Loading from "../Loading/Loading.jsx";
-import ForumHome from "../Forum/ForumHome.jsx"; 
+import ForumHome from "../Forum/ForumHome.jsx";
 import DashboardOverview from "../Dashboard/DashboardOverview.jsx";
+import FeedbackPanel from "../Dashboard/FeedbackPanel.jsx";
 import "./Layout.css";
 import PsychoBot from "../Psychobot/Psychobot.jsx";
-import Questionnaire from "../Questionnaire/Questionnaire.jsx"; 
-import NoQuestionnaire from "../Questionnaire/NoQuestionnaire.jsx"; 
-import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx"; 
+import Questionnaire from "../Questionnaire/Questionnaire.jsx";
+import NoQuestionnaire from "../Questionnaire/NoQuestionnaire.jsx";
+import StartQuestionnaire from "../Questionnaire/StartQuestionnaire.jsx";
 
 const TAB_PSYCHOBOT = "psychobot";
 const TAB_DASHBOARD = "dashboard";
@@ -19,6 +20,7 @@ const TAB_RESSOURCE = "ressource";
 const TAB_EMPLOYEES = "employees";
 const TAB_PARAMETRES = "parametres";
 const TAB_FORUM = "forum";
+const TAB_FEEDBACK = "feedback";
 const TAB_QUESTIONNAIRE = "questionnaire";
 
 function PopupProfil({ user, profile, onFermer, onOuvrirParametres }) {
@@ -59,7 +61,11 @@ function PopupProfil({ user, profile, onFermer, onOuvrirParametres }) {
             className="profile-popup-btn"
             onClick={ouvrirParametres}
           >
-            <img src="/parametre.png" alt="" className="profile-popup-btn-icon" />
+            <img
+              src="/parametre.png"
+              alt=""
+              className="profile-popup-btn-icon"
+            />
             Paramètres
           </button>
           <button
@@ -87,12 +93,18 @@ function formaterDateNotification(iso) {
   }
 }
 
+function resolveEmployeeName(profiles) {
+  if (!profiles) return null;
+  return [profiles.prenom, profiles.nom].filter(Boolean).join(" ") || "Employé";
+}
+
 function PopupNotifications({ user, onFermer, onMarkedRead }) {
   const [items, setItems] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [markingId, setMarkingId] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [alerteByMinute, setAlerteByMinute] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -116,9 +128,35 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
       if (error) {
         setFetchError(error.message);
         setItems([]);
-      } else {
-        setItems(data ?? []);
+        setLoading(false);
+        return;
       }
+
+      const notifications = data ?? [];
+      setItems(notifications);
+
+      const hasBurnoutAlerts = notifications.some(
+        (n) => n.type?.toLowerCase() === "alerte_burnout"
+      );
+      if (hasBurnoutAlerts) {
+        const { data: alertes, error: alerteError } = await supabase
+          .from("alerte_burnout")
+          .select("id, created_at, profiles!utilisateur_id(nom, prenom)")
+          .order("created_at", { ascending: false })
+          .limit(200);
+        if (alerteError) {
+          console.warn("[Notifications] alerte_burnout join failed:", alerteError.message);
+        }
+        if (!cancelled && alertes) {
+          const map = {};
+          alertes.forEach((a) => {
+            const key = String(a.created_at ?? "").slice(0, 16);
+            if (!map[key]) map[key] = resolveEmployeeName(a.profiles);
+          });
+          setAlerteByMinute(map);
+        }
+      }
+
       setLoading(false);
     })();
     return () => {
@@ -142,7 +180,7 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
     setItems((prev) =>
       prev
         ? prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x))
-        : prev
+        : prev,
     );
     onMarkedRead?.();
   };
@@ -160,7 +198,7 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
     setMarkingAll(false);
     if (error) return;
     setItems((prev) =>
-      prev ? prev.map((x) => ({ ...x, is_read: true })) : prev
+      prev ? prev.map((x) => ({ ...x, is_read: true })) : prev,
     );
     onMarkedRead?.();
   };
@@ -199,9 +237,7 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
           </div>
         </div>
         <div className="notification-popup-body">
-          {loading && (
-            <p className="notification-popup-status">Chargement…</p>
-          )}
+          {loading && <p className="notification-popup-status">Chargement…</p>}
           {!loading && fetchError && (
             <p className="notification-popup-status notification-popup-error">
               {fetchError}
@@ -212,41 +248,46 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
           )}
           {!loading && !fetchError && items && items.length > 0 && (
             <ul className="notification-list">
-              {items.map((n) => (
-                <li key={n.id} className="notification-item-wrap">
-                  <button
-                    type="button"
-                    className={`notification-item${n.is_read ? "" : " notification-item-unread"}${n.is_read ? "" : " notification-item-clickable"}`}
-                    onClick={() => void marquerUneLue(n)}
-                    disabled={markingAll || markingId === n.id}
-                    aria-label={
-                      n.is_read
-                        ? "Notification lue"
-                        : "Marquer cette notification comme lue"
-                    }
-                  >
-                    <div className="notification-item-top">
-                      <span className="notification-type">{n.type}</span>
-                      <span className="notification-date">
-                        {formaterDateNotification(n.created_at)}
-                      </span>
-                    </div>
-                    {n.title && (
-                      <div className="notification-title">{n.title}</div>
-                    )}
-                    {n.body && (
-                      <div className="notification-body">{n.body}</div>
-                    )}
-                    <div className="notification-seen">
-                      {markingId === n.id
-                        ? "…"
-                        : n.is_read
-                          ? "Lu"
-                          : "Non lu"}
-                    </div>
-                  </button>
-                </li>
-              ))}
+              {items.map((n) => {
+                const minuteKey = String(n.created_at ?? "").slice(0, 16);
+                const triggeredBy =
+                  n.type?.toLowerCase() === "alerte_burnout"
+                    ? alerteByMinute[minuteKey]
+                    : null;
+                return (
+                  <li key={n.id} className="notification-item-wrap">
+                    <button
+                      type="button"
+                      className={`notification-item${n.is_read ? "" : " notification-item-unread notification-item-clickable"}`}
+                      onClick={() => void marquerUneLue(n)}
+                      disabled={markingAll || markingId === n.id}
+                      aria-label={
+                        n.is_read
+                          ? "Notification lue"
+                          : "Marquer cette notification comme lue"
+                      }
+                    >
+                      <div className="notification-item-top">
+                        <span className="notification-type">{n.type}</span>
+                        <span className="notification-date">
+                          {formaterDateNotification(n.created_at)}
+                        </span>
+                      </div>
+                      {triggeredBy && (
+                        <div className="notification-triggered-by">
+                          👤 Déclenché par : <strong>{triggeredBy}</strong>
+                        </div>
+                      )}
+                      {n.title && (
+                        <div className="notification-title">{n.title}</div>
+                      )}
+                      <div className="notification-seen">
+                        {markingId === n.id ? "…" : n.is_read ? "Lu" : "Non lu"}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -260,7 +301,7 @@ export default function DashboardLayout({ user, children }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState(TAB_DASHBOARD); 
+  const [tab, setTab] = useState(TAB_DASHBOARD);
   const [popupOpen, setPopupOpen] = useState(false);
   const [questionnaireId, setQuestionnaireId] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -291,10 +332,12 @@ export default function DashboardLayout({ user, children }) {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
     else if (pathname.includes("/forum")) setTab(TAB_FORUM);
+    else if (pathname.includes("/feedback")) setTab(TAB_FEEDBACK);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
     else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
-    else if (pathname.includes("/start_questionnaire")) setTab(TAB_QUESTIONNAIRE);
+    else if (pathname.includes("/start_questionnaire"))
+      setTab(TAB_QUESTIONNAIRE);
     else setTab(TAB_DASHBOARD);
   }, [pathname]);
 
@@ -304,16 +347,39 @@ export default function DashboardLayout({ user, children }) {
       return;
     }
 
-    (async () => {
+    let active = true;
+
+    const fetchProfile = async ({ silent } = {}) => {
       const { data } = await supabase
         .from("profiles")
         .select("nom, prenom, role")
         .eq("id", user.id)
         .single();
-
+      if (!active) return;
       setProfile(data || null);
-      setLoading(false);
-    })();
+      if (!silent) setLoading(false);
+    };
+
+    fetchProfile();
+
+    const channel = supabase
+      .channel(`profile-sync-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        () => fetchProfile({ silent: true }),
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   useEffect(() => {
@@ -326,7 +392,10 @@ export default function DashboardLayout({ user, children }) {
         .limit(1)
         .single();
       if (error) {
-        console.error("Erreur récupération dernier questionnaire :", error.message);
+        console.error(
+          "Erreur récupération dernier questionnaire :",
+          error.message,
+        );
       }
       if (data) {
         setQuestionnaireId(data.id);
@@ -338,7 +407,8 @@ export default function DashboardLayout({ user, children }) {
 
   const greetingName = profile?.prenom || profile?.nom || "Utilisateur";
   const isRH = profile?.role === "RH";
-  
+  const isEmployee = !isRH;
+
   const avatarInitials =
     [profile?.prenom?.[0], profile?.nom?.[0]]
       .filter(Boolean)
@@ -355,7 +425,11 @@ export default function DashboardLayout({ user, children }) {
     <div className="app-container">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img src="/zenwork-dessin.png" alt="Logo" className="sidebar-logo-img" />
+          <img
+            src="/zenwork-dessin.png"
+            alt="Logo"
+            className="sidebar-logo-img"
+          />
           <span className="sidebar-logo-text">ZenWork</span>
         </div>
 
@@ -368,7 +442,11 @@ export default function DashboardLayout({ user, children }) {
               navigate("/dashboard");
             }}
           >
-            <img src="/tableau-de-bord.png" alt="Dashboard" className="sidebar-icon-img" />
+            <img
+              src="/tableau-de-bord.png"
+              alt="Dashboard"
+              className="sidebar-icon-img"
+            />
             <span className="label">Dashboard</span>
           </button>
 
@@ -380,7 +458,11 @@ export default function DashboardLayout({ user, children }) {
               navigate(`/forum/${user.id}`);
             }}
           >
-            <img src="/tableau-de-bord.png" alt="Forum" className="sidebar-icon-img" />
+            <img
+              src="/tableau-de-bord.png"
+              alt="Forum"
+              className="sidebar-icon-img"
+            />
             <span className="label">Forum</span>
           </button>
 
@@ -392,9 +474,31 @@ export default function DashboardLayout({ user, children }) {
               navigate("/ressource");
             }}
           >
-            <img src="/ressource.png" alt="Ressources" className="sidebar-icon-img" />
+            <img
+              src="/ressource.png"
+              alt="Ressources"
+              className="sidebar-icon-img"
+            />
             <span className="label">Ressources</span>
           </button>
+
+          {isEmployee && (
+            <button
+              type="button"
+              className={`menu-item ${tab === TAB_FEEDBACK ? "active" : ""}`}
+              onClick={() => {
+                setTab(TAB_FEEDBACK);
+                navigate("/feedback");
+              }}
+            >
+              <img
+                src="/tableau-de-bord.png"
+                alt="Feedback IA"
+                className="sidebar-icon-img"
+              />
+              <span className="label">Feedback IA</span>
+            </button>
+          )}
 
           {isRH && (
             <button
@@ -405,7 +509,11 @@ export default function DashboardLayout({ user, children }) {
                 navigate("/employees");
               }}
             >
-              <img src="/parametre.png" alt="Employés" className="sidebar-icon-img" />
+              <img
+                src="/parametre.png"
+                alt="Employés"
+                className="sidebar-icon-img"
+              />
               <span className="label">Employés</span>
             </button>
           )}
@@ -418,11 +526,17 @@ export default function DashboardLayout({ user, children }) {
               if (isRH) {
                 navigate(`/start_questionnaire/${user.id}`);
               } else {
-                navigate(`/questionnaire/${user.id}/${questionnaireId || "none"}`);
+                navigate(
+                  `/questionnaire/${user.id}/${questionnaireId || "none"}`,
+                );
               }
             }}
           >
-            <img src="/questionnaire.png" alt="Questionnaire" className="sidebar-icon-img" />
+            <img
+              src="/questionnaire.png"
+              alt="Questionnaire"
+              className="sidebar-icon-img"
+            />
             <span className="label">
               {isRH ? "Questionnaire" : "Questionnaire"}
             </span>
@@ -444,7 +558,11 @@ export default function DashboardLayout({ user, children }) {
               navigate(`/profile/${user.id}`);
             }}
           >
-            <img src="/parametre.png" alt="Paramètres" className="sidebar-icon-img" />
+            <img
+              src="/parametre.png"
+              alt="Paramètres"
+              className="sidebar-icon-img"
+            />
             <span className="label">Paramètres</span>
           </button>
         </nav>
@@ -454,7 +572,9 @@ export default function DashboardLayout({ user, children }) {
         <header className="floating-topbar">
           <div className="topbar-left">
             <div className="welcome-text">
-              <span className="user-greeting">Bonjour, {greetingName} ! 👋</span>
+              <span className="user-greeting">
+                Bonjour, {greetingName} ! 👋
+              </span>
               <span className="company-name">RH Bien-être IA</span>
             </div>
           </div>
@@ -486,10 +606,7 @@ export default function DashboardLayout({ user, children }) {
                 className="sidebar-icon-img"
               />
               {unreadNotifCount > 0 ? (
-                <span
-                  className="notification-unread-badge"
-                  aria-hidden
-                >
+                <span className="notification-unread-badge" aria-hidden>
                   {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
                 </span>
               ) : null}
@@ -509,13 +626,18 @@ export default function DashboardLayout({ user, children }) {
         </header>
 
         <div className="ressources-content">
-          
-          {tab === TAB_DASHBOARD && <DashboardOverview user={user} profile={profile} />}
+          {tab === TAB_DASHBOARD && (
+            <DashboardOverview user={user} profile={profile} />
+          )}
 
-          {tab === TAB_RESSOURCE && (children ? children : <div className="ressources-placeholder" />)}
+          {tab === TAB_RESSOURCE &&
+            (children ? children : <div className="ressources-placeholder" />)}
 
-          {tab === TAB_EMPLOYEES && isRH && (
-            children ? (
+          {tab === TAB_FEEDBACK && isEmployee && <FeedbackPanel user={user} />}
+
+          {tab === TAB_EMPLOYEES &&
+            isRH &&
+            (children ? (
               <RhSecuredRoute user={user}>
                 {cloneElement(children, { user, embedded: true })}
               </RhSecuredRoute>
@@ -523,31 +645,27 @@ export default function DashboardLayout({ user, children }) {
               <RhSecuredRoute user={user}>
                 <EmployeesList user={user} embedded />
               </RhSecuredRoute>
-            )
-          )}
+            ))}
 
-          {tab === TAB_PARAMETRES && (
-            children ? (
+          {tab === TAB_PARAMETRES &&
+            (children ? (
               cloneElement(children, { user, embedded: true })
             ) : (
               <Profile user={user} embedded />
-            )
-          )}
+            ))}
 
-          {tab === TAB_QUESTIONNAIRE && (
-            isRH ? (
+          {tab === TAB_QUESTIONNAIRE &&
+            (isRH ? (
               <StartQuestionnaire user={user} />
             ) : (
               <Questionnaire user={user} questionnaireId={questionnaireId} />
-            )
-          )}
-          {tab === TAB_FORUM && (
-            children ? (
+            ))}
+          {tab === TAB_FORUM &&
+            (children ? (
               cloneElement(children, { user, embedded: true })
             ) : (
               <ForumHome user={user} embedded />
-            )
-          )}
+            ))}
 
           {tab === TAB_PSYCHOBOT && <PsychoBot />}
         </div>
