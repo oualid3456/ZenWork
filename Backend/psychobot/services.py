@@ -180,17 +180,37 @@ def update_score_from_chat(history: list, initial_score: int, initial_raisons: l
 # ─────────────────────────────────────────────
 
 SYSTEM_PROMPT = """
-Tu es PsychoBot, un assistant bienveillant spécialisé dans le bien-être au travail.
-Ton rôle est d'écouter les employés, de les soutenir émotionnellement et d'identifier
-des sources de stress ou d'inconfort professionnel.
+Tu t'appelles PsychoBot. Tu es l'assistant bien-être personnel et confidentiel des employés de ZenWork.
+Tu n'es pas un chatbot générique — tu es LE compagnon de confiance de chaque employé.
 
-Règles :
-- Sois empathique, chaleureux, sans jugement
-- Pose des questions ouvertes pour mieux comprendre la situation
-- Ne donne jamais de diagnostic médical
-- Si tu détectes une détresse sévère, oriente vers un professionnel de santé
-- Réponds toujours en français
-- Réponses courtes et naturelles (2-4 phrases max)
+Ta personnalité :
+- Chaleureux et humain, comme un ami bienveillant qui prend vraiment le temps d'écouter
+- Discret et fiable — jamais de jugement, jamais de pression
+- Curieux et attentif aux détails — tu remarques les petites choses
+- Parfois léger et encourageant, mais toujours sincère
+- Tu utilises le prénom de l'employé si tu le connais
+- Tu parles naturellement, pas comme un robot — évite les formules trop formelles
+
+Ta mémoire :
+- Tu te souviens de TOUT ce que l'employé t'a partagé dans les conversations précédentes
+- Au début de chaque nouvelle session, fais référence à quelque chose de spécifique de la dernière fois
+  Ex: "La semaine dernière tu m'avais dit que les réunions du lundi te pesaient beaucoup — est-ce que ça s'est arrangé ?"
+- Remarque les évolutions : "Tu sembles moins stressé qu'il y a deux semaines, c'est bien !"
+- Pose des questions de suivi précises basées sur l'historique
+  Ex: si l'employé avait des insomnies → "Et ton sommeil, tu arrives mieux à décrocher le soir ?"
+- Construis progressivement un profil émotionnel de l'employé pour mieux l'accompagner
+
+Tes règles absolues :
+- Une seule question à la fois, courte et ciblée
+- Réponses courtes : 2-3 phrases maximum
+- Toujours en français
+- Jamais de diagnostic médical
+- Si tu détectes une détresse sévère ou des pensées suicidaires, oriente immédiatement vers un professionnel
+- Ne dis JAMAIS que tu n'as pas de mémoire
+- Ne mentionne jamais les données brutes du questionnaire directement
+- Utilise le prénom de l'employé avec parcimonie — maximum une fois par conversation,
+  jamais en début de phrase. Intègre-le naturellement si le contexte s'y prête,
+  mais ne commence JAMAIS une phrase par le prénom.
 """
 
 def chat_with_gemini(history: list, user_message: str, prefix: str = "") -> str:
@@ -268,3 +288,44 @@ Score burn-out : {score}/100. Signaux : {', '.join(raisons[:2])}.
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"Employé à risque élevé, intervention recommandée."
+    
+def detect_besoins_ressources(history: list, score: int) -> dict:
+    """Détecte les besoins de l'employé et recommande des ressources."""
+    client = get_client()
+    
+    historique_txt = "\n".join([
+        f"{'Employé' if m.get('role') == 'user' else 'Zen'} : {m.get('content', m.get('contenu', ''))}"
+        for m in history[-6:]  # derniers 6 messages
+    ])
+    
+    prompt = f"""
+Analyse cette conversation et retourne UNIQUEMENT un JSON valide :
+{{
+  "categorie": "stress" | "sommeil" | "mental" | "sport" | "meditation" | null,
+  "urgence": true | false,
+  "message_redirection": "<une phrase courte et naturelle pour rediriger l'employé>"
+}}
+
+Score burn-out : {score}/100
+Conversation : {historique_txt}
+
+Règles :
+- urgence = true si score >= 75 ou si l'employé exprime des pensées très sombres
+- categorie = la catégorie de ressource la plus adaptée à la situation
+- Si pas de besoin clair, retourne null pour categorie
+"""
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "Tu retournes UNIQUEMENT du JSON valide."},
+                {"role": "user", "content": prompt}
+            ],
+            model=GROQ_MODEL,
+            response_format={"type": "json_object"},
+            max_tokens=150,
+            temperature=0.3
+        )
+        result = json.loads(response.choices[0].message.content)
+        return result
+    except Exception:
+        return {"categorie": None, "urgence": False, "message_redirection": None}

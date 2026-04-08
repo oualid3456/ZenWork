@@ -11,6 +11,7 @@ from .services import (
     determine_level,
     build_context_prefix,
     generate_commentaire_rh,
+    detect_besoins_ressources,
 )
  
 # ─────────────────────────────────────────────
@@ -106,24 +107,48 @@ def send_chat_message(request):
         utilisateur_id = request.supabase_user_id
     except AttributeError:
         return JsonResponse({"error": "Non authentifié"}, status=401)
- 
+
     if not utilisateur_id:
         return JsonResponse({"error": "Non authentifié"}, status=401)
- 
+
     data             = json.loads(request.body)
     history          = data.get("history", [])
     user_message     = data.get("message", "")
     questionnaire_id = data.get("questionnaire_id")
- 
+    score_actuel     = data.get("score_actuel", 0) 
+
+    # Réinjecte l'historique passé au 1er message de la session
+    if len(history) <= 1:
+        historique_passe = _get_historique(utilisateur_id, limit=10)
+        if historique_passe:
+            history = historique_passe + history
+
     prefix = ""
     if len(history) == 1 and questionnaire_id:
         reponses = _get_reponses_questionnaire(questionnaire_id)
         if reponses:
             prefix = build_context_prefix(reponses)
- 
+
+     # Récupère le prénom et injecte dans le contexte
+    profil = _get_profil_employe(utilisateur_id)
+    if profil and profil.get("prenom"):
+        prefix = f"[INFO INTERNE — NE PAS MENTIONNER DIRECTEMENT] L'employé s'appelle {profil['prenom']} {profil.get('nom', '')}. Utilise son prénom naturellement dans la conversation. " + prefix
+    
     bot_response = chat_with_gemini(history, user_message, prefix)
- 
-    return JsonResponse({"response": bot_response})
+
+    # Détection des besoins après chaque message
+    history_complet = history + [
+        {"role": "user", "content": user_message},
+        {"role": "assistant", "content": bot_response},
+    ]
+    besoins = detect_besoins_ressources(history_complet, score_actuel)
+
+    return JsonResponse({
+    "response":            bot_response,
+    "categorie_ressource": besoins.get("categorie"),
+    "urgence":             besoins.get("urgence", False),
+    "message_redirection": besoins.get("message_redirection"),
+    })
  
 @csrf_exempt
 @require_POST
@@ -164,6 +189,8 @@ def close_chat_session(request):
                     """,
                     [utilisateur_id, commentaire]
         )
+        # Sauvegarde l'historique
+        _save_historique(utilisateur_id, history)
         return JsonResponse({
             "status":       "Session clôturée",
             "score_final":  score_final,
@@ -174,3 +201,47 @@ def close_chat_session(request):
     except Exception as e:
         print(f">>> Erreur : {e}")
         return JsonResponse({"error": str(e)}, status=500)
+    
+def _save_historique(utilisateur_id, messages):
+    """Sauvegarde tous les messages de la session."""
+    with connection.cursor() as cursor:
+        for msg in messages:
+            role    = msg.get("role", "user")
+            contenu = msg.get("content", msg.get("contenu", ""))
+            if contenu:
+                cursor.execute(
+                    """
+                    INSERT INTO historique_chat (utilisateur_id, role, contenu)
+                    VALUES (%s, %s, %s)
+                    """,
+                    [utilisateur_id, role, contenu]
+                )
+
+
+def _get_historique(utilisateur_id, limit=10):
+    """Récupère les derniers messages pour contexte."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT role, contenu FROM historique_chat
+            WHERE utilisateur_id = %s
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            [utilisateur_id, limit]
+        )
+        rows = cursor.fetchall()
+        # Inverse pour avoir l'ordre chronologique
+        return [{"role": r[0], "content": r[1]} for r in reversed(rows)]
+
+def _get_profil_employe(utilisateur_id):
+    """Récupère le prénom et nom de l'employé depuis profiles."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT prenom, nom FROM profiles WHERE id = %s",
+            [utilisateur_id]
+        )
+        row = cursor.fetchone()
+        if row:
+            return {"prenom": row[0], "nom": row[1]}
+        return None

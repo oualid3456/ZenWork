@@ -235,3 +235,100 @@
 }
 .close-session-btn:hover    { opacity: 0.8; }
 .close-session-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* ── Redirection banner ── */
+.redirection-banner {
+  margin: 0 0 12px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.redirection-banner.ressource {
+  background: #eff6ff;
+  border: 0.5px solid #bfdbfe;
+}
+
+.redirection-banner.urgence {
+  background: #fef2f2;
+  border: 0.5px solid #fecaca;
+}
+
+.redirection-banner p {
+  margin: 0 0 10px;
+  color: var(--color-text-primary);
+}
+
+.redirection-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-ressource {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #7c6ff7;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-ressource:hover { opacity: 0.9; }
+
+.btn-urgence-red {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.btn-urgence-blue {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.btn-urgence-red:hover,
+.btn-urgence-blue:hover { opacity: 0.9; }
+
+.btn-non-merci {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0.5px solid var(--color-border-tertiary);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-non-merci:hover { background: var(--color-background-secondary); }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .redirection-banner.ressource {
+    background: rgba(29, 78, 216, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  .redirection-banner.urgence {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(248, 113, 113, 0.3);
+  }
+}
