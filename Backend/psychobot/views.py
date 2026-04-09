@@ -18,35 +18,56 @@ from .services import (
 # REQUÊTES SQL SUPABASE
 # ─────────────────────────────────────────────
  
-def _get_reponses_questionnaire(questionnaire_id):
+def _get_reponses_et_utilisateur(questionnaire_id):
+    """
+    Retourne (reponses_dict, utilisateur_id) depuis reponse_questionnaire.
+    """
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT reponse_json FROM reponse_questionnaire WHERE id = %s",
+            "SELECT reponse_json, utilisateur_id FROM reponse_questionnaire WHERE id = %s",
             [questionnaire_id]
         )
         row = cursor.fetchone()
-        return row[0] if row else None
+        if not row:
+            return None, None
+        reponse, utilisateur_id = row[0], row[1]
+        while isinstance(reponse, str):
+            try:
+                reponse = json.loads(reponse)
+            except (json.JSONDecodeError, ValueError):
+                break
+        return (reponse if isinstance(reponse, dict) else None), utilisateur_id
  
  
-def _upsert_alerte_burnout(questionnaire_id, niveau, score, raisons):
+def _message_score(score: int) -> str:
+    if score >= 75:
+        return f"Je ressens des signes sévères de burn-out ({score}/100), nécessitant une attention immédiate."
+    if score >= 55:
+        return f"Je présente des signaux modérés de burn-out ({score}/100), une intervention est recommandée."
+    if score >= 35:
+        return f"Je montre quelques signes de fatigue ({score}/100), à surveiller de près."
+    return f"Mon état général est satisfaisant ({score}/100), aucun signal préoccupant."
+
+
+def _upsert_alerte_burnout(utilisateur_id, niveau, score, raisons):
+    """
+    Écrit dans alerte_burnout (liée à profiles.id via utilisateur_id).
+    On n'utilise plus psychobot_alerteburnout dont la FK pointe vers
+    psychobot_questionnairereponse — table incompatible avec reponse_questionnaire.
+    """
+    commentaire = _message_score(score)
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            INSERT INTO psychobot_alerteburnout (questionnaire_id, niveau, score, raisons, analyse_le)
-            VALUES (%s, %s, %s, %s::jsonb, NOW())
-            ON CONFLICT (questionnaire_id)
-            DO UPDATE SET
-                niveau     = EXCLUDED.niveau,
-                score      = EXCLUDED.score,
-                raisons    = EXCLUDED.raisons,
-                analyse_le = NOW()
+            INSERT INTO alerte_burnout (utilisateur_id, statut, commentaire_rh, created_at)
+            VALUES (%s, 'NOUVEAU', %s, NOW())
             RETURNING id
             """,
-            [questionnaire_id, niveau, score, json.dumps(raisons)]
+            [utilisateur_id, commentaire]
         )
         return cursor.fetchone()[0]
- 
- 
+
+
 def _insert_session_ia(utilisateur_id, score_risque, resume_anonymise=None):
     with connection.cursor() as cursor:
         cursor.execute(
@@ -67,6 +88,8 @@ def _insert_session_ia(utilisateur_id, score_risque, resume_anonymise=None):
 @csrf_exempt
 @require_POST
 def analyze_questionnaire(request):
+    print(">>> analyze_questionnaire appelé")
+
     try:
         utilisateur_id = request.supabase_user_id
     except AttributeError:
@@ -81,16 +104,20 @@ def analyze_questionnaire(request):
     if not questionnaire_id:
         return JsonResponse({"error": "questionnaire_id manquant"}, status=400)
  
-    reponses = _get_reponses_questionnaire(questionnaire_id)
+    reponses, uid_from_db = _get_reponses_et_utilisateur(questionnaire_id)
     if not reponses:
         return JsonResponse({"error": "Questionnaire introuvable en BDD"}, status=404)
+
+    # Sécurité : l'utilisateur connecté doit être le propriétaire de la réponse
+    if uid_from_db and str(uid_from_db) != str(utilisateur_id):
+        return JsonResponse({"error": "Accès non autorisé"}, status=403)
  
     result            = compute_burnout_score(reponses)
     score_initial     = result["score"]
     niveau_initial    = determine_level(score_initial)
     raisons_initiales = result["raisons"]
  
-    alerte_id = _upsert_alerte_burnout(questionnaire_id, niveau_initial, score_initial, raisons_initiales)
+    alerte_id = _upsert_alerte_burnout(utilisateur_id, niveau_initial, score_initial, raisons_initiales)
  
     return JsonResponse({
         "alerte_id":     alerte_id,
@@ -125,7 +152,7 @@ def send_chat_message(request):
 
     prefix = ""
     if len(history) == 1 and questionnaire_id:
-        reponses = _get_reponses_questionnaire(questionnaire_id)
+        reponses, _ = _get_reponses_et_utilisateur(questionnaire_id)
         if reponses:
             prefix = build_context_prefix(reponses)
 
@@ -178,9 +205,9 @@ def close_chat_session(request):
         # Stocke dans session_ia
         _insert_session_ia(utilisateur_id, score_final, resume)
 
-        # Si score dépasse 60 → alerte dans psychobot_alerteburnout
+        # Si score dépasse 60 → alerte
         if score_final >= 60:
-            commentaire = generate_commentaire_rh(score_final, raisons_finales)
+            commentaire = _message_score(score_final)
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -188,7 +215,7 @@ def close_chat_session(request):
                     VALUES (%s, 'NOUVEAU', %s)
                     """,
                     [utilisateur_id, commentaire]
-        )
+                )
         # Sauvegarde l'historique
         _save_historique(utilisateur_id, history)
         return JsonResponse({
