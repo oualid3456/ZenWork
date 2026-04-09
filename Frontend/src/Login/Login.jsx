@@ -20,7 +20,7 @@ function Login() {
         </div>
         <div className={styles.right}>
           <div className={styles.div}>
-            <img className={styles.img} src={DarkTheme ? "public/zenwork-dessin-dark.png" : "public/zenwork-dessin.png"} alt="zenwork logo" />
+            <img className={styles.img} src={DarkTheme ? "public/zenwork_final_login_dark.png" : "public/zenwork-final-login.png"} alt="zenwork logo" />
           </div>
           <div className={styles.choice}>
             {/* expression ternaire pour mettre l'un a in et l'autre a out pour */}

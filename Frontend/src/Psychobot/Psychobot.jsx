@@ -91,7 +91,7 @@ export default function PsychoBot() {
     if (sessionClosed) return;
     setLoading(true);
     setError(null);
-
+ 
     try {
       const res = await fetch(`${API}/psychobot/chat/fermer/`, {
         method: "POST",
