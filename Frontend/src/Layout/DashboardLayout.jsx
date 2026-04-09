@@ -164,6 +164,55 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
     };
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`notifications-popup-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newNotif = payload.new;
+          if (!newNotif) return;
+          setItems((prev) => {
+            if (!prev) return [newNotif];
+            if (prev.some((x) => x.id === newNotif.id)) return prev;
+            return [newNotif, ...prev];
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updated = payload.new;
+          if (!updated) return;
+          setItems((prev) =>
+            prev
+              ? prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x))
+              : prev,
+          );
+          onMarkedRead?.();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, onMarkedRead]);
+
   const marquerUneLue = async (n) => {
     if (!user?.id || n.is_read || markingAll) return;
     if (markingId === n.id) return;
@@ -381,6 +430,44 @@ export default function DashboardLayout({ user, children }) {
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`notifications-badge-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (!payload.new?.is_read) {
+            setUnreadNotifCount((prev) => prev + 1);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          rafraichirCompteurNonLues();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, rafraichirCompteurNonLues]);
 
   useEffect(() => {
     async function fetchLastQuestionnaire() {
