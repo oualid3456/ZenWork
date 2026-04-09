@@ -358,6 +358,14 @@ export default function DashboardLayout({ user, children }) {
   const [description, setDescription] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [newForumCount, setNewForumCount] = useState(0);
+
+  const resetForumCount = useCallback(() => {
+    setNewForumCount(0);
+    if (user?.id) {
+      localStorage.setItem(`forum_last_visit_${user.id}`, new Date().toISOString());
+    }
+  }, [user?.id]);
 
   const rafraichirCompteurNonLues = useCallback(async () => {
     if (!user?.id) {
@@ -380,7 +388,7 @@ export default function DashboardLayout({ user, children }) {
   useEffect(() => {
     if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
     else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
-    else if (pathname.includes("/forum")) setTab(TAB_FORUM);
+    else if (pathname.includes("/forum")) { setTab(TAB_FORUM); resetForumCount(); }
     else if (pathname.includes("/feedback")) setTab(TAB_FEEDBACK);
     else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
     else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
@@ -388,7 +396,7 @@ export default function DashboardLayout({ user, children }) {
     else if (pathname.includes("/start_questionnaire"))
       setTab(TAB_QUESTIONNAIRE);
     else setTab(TAB_DASHBOARD);
-  }, [pathname]);
+  }, [pathname, resetForumCount]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -470,6 +478,75 @@ export default function DashboardLayout({ user, children }) {
   }, [user?.id, rafraichirCompteurNonLues]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
+    const lastVisitRaw = localStorage.getItem(`forum_last_visit_${user.id}`);
+    if (!lastVisitRaw) {
+      localStorage.setItem(`forum_last_visit_${user.id}`, new Date().toISOString());
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const [postsResult, msgsResult] = await Promise.all([
+        supabase
+          .from("forum_posts")
+          .select("*", { count: "exact", head: true })
+          .neq("user_id", user.id)
+          .gt("created_at", lastVisitRaw),
+        supabase
+          .from("forum_private_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("receiver_id", user.id)
+          .gt("created_at", lastVisitRaw),
+      ]);
+      if (!cancelled) {
+        setNewForumCount((postsResult.count ?? 0) + (msgsResult.count ?? 0));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`forum-badge-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "forum_posts",
+        },
+        (payload) => {
+          if (payload.new?.user_id === user.id) return;
+          setNewForumCount((prev) => prev + 1);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "forum_private_messages",
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => {
+          setNewForumCount((prev) => prev + 1);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
     async function fetchLastQuestionnaire() {
       setFetchLoading(true);
       const { data, error } = await supabase
@@ -540,16 +617,28 @@ export default function DashboardLayout({ user, children }) {
           <button
             type="button"
             className={`menu-item ${tab === TAB_FORUM ? "active" : ""}`}
+            style={{ position: "relative" }}
             onClick={() => {
               setTab(TAB_FORUM);
               navigate(`/forum/${user.id}`);
+              resetForumCount();
             }}
+            aria-label={
+              newForumCount > 0
+                ? `Forum, ${newForumCount} nouveau${newForumCount > 1 ? "x" : ""}`
+                : "Forum"
+            }
           >
             <img
               src="/tableau-de-bord.png"
               alt="Forum"
               className="sidebar-icon-img"
             />
+            {newForumCount > 0 && (
+              <span className="menu-item-badge" aria-hidden>
+                {newForumCount > 99 ? "99+" : newForumCount}
+              </span>
+            )}
             <span className="label">Forum</span>
           </button>
 
