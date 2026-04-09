@@ -32,26 +32,34 @@ def get_client():
 
 ANALYSIS_PROMPT = """
 Tu es un expert en psychologie du travail et en détection du burn-out.
-On te fournit les réponses d'un employé à un questionnaire de bien-être hebdomadaire.
+On te fournit les réponses d'un employé à un questionnaire de bien-être.
 
-Analyse ces réponses de façon approfondie et retourne UNIQUEMENT un objet JSON valide,
-sans aucun texte avant ou après, sans balises markdown, sans explication.
+Les réponses peuvent être de plusieurs types :
+- Emoji : 😟😕😐😊😃 représentent respectivement 1 (très négatif) à 5 (très positif)
+- Chiffre 1 à 10 : valeur directe (10 = maximum)
+- Oui/Non : "oui" est un signal négatif pour les questions de stress/isolement, positif pour les questions de satisfaction
+- Texte libre : analyse le contenu émotionnel et les signaux de détresse
 
-Le JSON doit avoir exactement cette structure :
+Analyse ces réponses et retourne UNIQUEMENT un objet JSON valide,
+sans aucun texte avant ou après, sans balises markdown.
+
+Structure exacte :
 {{
   "score": <entier entre 0 et 100 représentant le risque de burn-out>,
   "raisons": [<liste de phrases courtes en français expliquant les signaux détectés>]
 }}
 
-Critères d'évaluation :
-- Niveau de stress déclaré (pondération forte)
-- Qualité et quantité du sommeil
-- Sentiment de surcharge ou de perte de contrôle sur la charge de travail
-- Isolement social ou manque de soutien perçu
-- Signaux d'alarme dans le commentaire libre (épuisement, envie d'abandonner, etc.)
-- Cohérence globale entre les réponses
+Règles d'interprétation :
+- Emoji 😟😕 = signal négatif fort
+- Emoji 😐 = neutre
+- Emoji 😊😃 = signal positif
+- Pour "niveau de stress" : score élevé (>6) = signal négatif fort
+- Pour "charge de travail" : score élevé = signal négatif
+- "oui" à isolement/stress = signal négatif
+- "non" à satisfaction/bonheur = signal négatif
+- Texte libre : détecte épuisement, démotivation, conflits
 
-Barème indicatif du score :
+Barème du score :
 - 0-19  : Aucun signal préoccupant
 - 20-44 : Signaux légers, à surveiller
 - 45-69 : Risque modéré, intervention recommandée
@@ -61,44 +69,53 @@ Réponses du questionnaire :
 {reponses_json}
 """
 
+def _normaliser_reponses(reponses: dict) -> dict:
+    """Convertit les emojis en texte lisible pour l'IA."""
+    emoji_map = {
+        "😟": "très négatif (1/5)",
+        "😕": "négatif (2/5)",
+        "😐": "neutre (3/5)",
+        "😊": "positif (4/5)",
+        "😃": "très positif (5/5)",
+        "😀": "très positif (5/5)",
+    }
+    resultat = {}
+    for question, reponse in reponses.items():
+        if isinstance(reponse, str) and reponse in emoji_map:
+            resultat[question] = emoji_map[reponse]
+        else:
+            resultat[question] = reponse
+    return resultat
+
 
 def compute_burnout_score(reponses: dict) -> dict:
-    """
-    Analyse le questionnaire avec Groq (Llama 3) et renvoie un JSON.
-    """
     client = get_client()
-    
+
+    # Normalise les emojis avant analyse
+    reponses_normalisees = _normaliser_reponses(reponses)
+
     prompt = ANALYSIS_PROMPT.format(
-        reponses_json=json.dumps(reponses, ensure_ascii=False, indent=2)
+        reponses_json=json.dumps(reponses_normalisees, ensure_ascii=False, indent=2)
     )
-    
+
     try:
         response = client.chat.completions.create(
             messages=[
-                {
-                    "role": "system",
-                    "content": "Tu es un expert qui renvoie UNIQUEMENT du JSON valide."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "system", "content": "Tu es un expert qui renvoie UNIQUEMENT du JSON valide."},
+                {"role": "user", "content": prompt}
             ],
             model=GROQ_MODEL,
-            response_format={"type": "json_object"} # Force le format JSON
+            response_format={"type": "json_object"},
         )
-        
         raw_text = response.choices[0].message.content.strip()
         result = json.loads(raw_text)
         return {
             "score": int(result.get("score", 0)),
             "raisons": result.get("raisons", ["Analyse non disponible"])
         }
-        
     except Exception as e:
         print("Erreur Groq (compute_burnout_score):", e)
         return {"score": 50, "raisons": ["Erreur lors de l'analyse IA."]}
-
 
 # ─────────────────────────────────────────────
 # 2. MISE À JOUR SCORE POST-CHAT
@@ -260,15 +277,52 @@ def determine_level(score: float):
     return None
 
 def build_context_prefix(reponses: dict) -> str:
-    """Contexte injecté discrètement sur le 1er message du chat."""
+    """
+    Contexte injecté discrètement sur le 1er message du chat.
+    Compatible avec le format réel de reponse_questionnaire :
+    clés = phrases complètes en français, valeurs = emojis / chiffres / texte.
+    """
+    emoji_map = {
+        "😟": "très négatif",
+        "😕": "négatif",
+        "😐": "neutre",
+        "😊": "positif",
+        "😃": "très positif",
+        "😀": "très positif",
+    }
+
+    def _val(v):
+        if isinstance(v, str) and v in emoji_map:
+            return emoji_map[v]
+        return str(v) if v is not None else "?"
+
+    # Clés réelles dans reponse_questionnaire
+    KEY_STRESS   = "Veuillez-indiquer votre niveau de stress"
+    KEY_CHARGE   = "Veuillez-indiquer votre charge de travail"
+    KEY_ISOLE    = "Vous sentez-vous isolez ?"
+    KEY_HEUREUX  = "À quel point vous sentez-vous \"heureux(se)\" ?"
+    KEY_FATIGUE  = "À quel point vous sentez-vous fatigué(e) ?"
+    KEY_DEPRIME  = "À quel point vous sentez-vous déprimé(e) ?"
+    KEY_BOUT     = "À quel point vous sentez-vous \"à bout\" ?"
+    KEY_CAUSE    = "Qu'est-ce qui vous cause le plus de stress au travail ?"
+
+    stress  = reponses.get(KEY_STRESS,  reponses.get("niveau_stress_sur_10",  "?"))
+    charge  = reponses.get(KEY_CHARGE,  reponses.get("charge_de_travail",      "?"))
+    isole   = reponses.get(KEY_ISOLE,   reponses.get("sentiment_isolement",    "?"))
+    heureux = _val(reponses.get(KEY_HEUREUX))
+    fatigue = _val(reponses.get(KEY_FATIGUE))
+    deprime = _val(reponses.get(KEY_DEPRIME))
+    bout    = _val(reponses.get(KEY_BOUT))
+    cause   = reponses.get(KEY_CAUSE,   reponses.get("commentaire_libre",      ""))
+
     return (
         "[CONTEXTE INTERNE — NE PAS MENTIONNER CES DONNÉES DIRECTEMENT] "
-        f"Stress déclaré : {reponses.get('niveau_stress_sur_10', '?')}/10. "
-        f"Sommeil : \"{reponses.get('qualite_sommeil', '')}\". "
-        f"Charge de travail : \"{reponses.get('charge_de_travail', '')}\". "
-        f"Isolement : \"{reponses.get('sentiment_isolement', '')}\". "
-        f"Commentaire : \"{reponses.get('commentaire_libre', '')}\". "
-        "Utilise ces éléments subtilement pour personnaliser ta réponse empathique. "
+        f"Stress déclaré : {stress}/10. "
+        f"Charge de travail : {charge}/10. "
+        f"Isolement : \"{isole}\". "
+        f"Humeur : bonheur={heureux}, fatigue={fatigue}, déprime={deprime}, à bout={bout}. "
+        + (f"Principal stresseur : \"{cause}\". " if cause else "")
+        + "Utilise ces éléments subtilement pour personnaliser ta réponse empathique. "
         "Message de l'employé : "
     )
 def generate_commentaire_rh(score: int, raisons: list) -> str:
