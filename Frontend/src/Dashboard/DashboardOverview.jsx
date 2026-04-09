@@ -377,7 +377,7 @@ export default function DashboardOverview({ user, profile }) {
           const sessionEvents = sessions.slice(0, 6).map((item) => ({
             id: `s-${item.id}`,
             title: "Session IA",
-            subtitle: item.score_risque != null ? `Score risque: ${item.score_risque}/10` : "Session enregistree",
+            subtitle: item.score_risque != null ? `Score risque: ${item.score_risque}/100` : "Session enregistree",
             date: item.created_at,
           }));
 

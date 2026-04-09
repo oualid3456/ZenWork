@@ -1,57 +1,51 @@
 import { useState, useEffect } from "react";
 import styles from "./questionnaire.module.css";
 import { supabase } from "../supabaseClient.js";
-import { useParams, useNavigate  } from "react-router-dom";
-import Error from "../Error/Error.jsx";
-import AnswerInput  from "./AnswerInput.jsx";
-import NoQuestionnaire  from "./NoQuestionnaire.jsx";
-import Loading  from "../Loading/Loading.jsx";
+import { useParams, useNavigate } from "react-router-dom";
+import AnswerInput from "./AnswerInput.jsx";
+import NoQuestionnaire from "./NoQuestionnaire.jsx";
+import Loading from "../Loading/Loading.jsx";
 
-function Questionnaire({ user, questionnaireId  }) {
-  // on a besoin de cela pour savoir si le questionnaire a
-  // commence ou non et agir en consequence
+const API = "http://localhost:8000";
+
+function Questionnaire({ user, questionnaireId }) {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const [started, setStarted] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [finish, setFinish] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  // on utilise des emojis comme reponse, cela parait
-  // plus intuitif.
-  const ratings = ["😟", "🙁", "😐", "🙂", "😃"];
-  // un dictionnaire auquel on va associer a chaque question
-  // l'emoji auquel l'employe a repondu
-  const empty_answers = {};
-  const [answers, setAnswers] = useState(empty_answers);
-  const progression = Math.floor((currentQuestion / questions.length) * 100);
+
+  const [started, setStarted]                   = useState(false);
+  const [currentQuestion, setCurrentQuestion]   = useState(0);
+  const [finish, setFinish]                     = useState(false);
+  const [currentUser, setCurrentUser]           = useState(null);
+  const [questions, setQuestions]               = useState([]);
+  const [answers, setAnswers]                   = useState({});
   const [questionnaireClosed, setQuestionnaireClosed] = useState(false);
   const [loadingQuestionnaire, setLoadingQuestionnaire] = useState(true);
-  const [loadingFinish, setLoadingFinish] = useState(true);
+  const [loadingFinish, setLoadingFinish]       = useState(true);
+  const [analyseEnCours, setAnalyseEnCours]     = useState(false);
 
+  const ratings    = ["😟", "🙁", "😐", "🙂", "😃"];
+  const progression = Math.floor((currentQuestion / questions.length) * 100);
+
+  // ── Récupère l'utilisateur connecté ──────────────────────
   useEffect(() => {
     async function fetchUser() {
       const { data, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Erreur getUser:", error.message);
-        return;
-      }
-      if (data?.user) {
-        setCurrentUser(data.user);
-      }
+      if (error) { console.error("Erreur getUser:", error.message); return; }
+      if (data?.user) setCurrentUser(data.user);
     }
     fetchUser();
   }, []);
 
+  // ── Vérifie si le questionnaire est encore actif ──────────
   useEffect(() => {
     let interval;
     const checkQuestionnaire = async () => {
-      const { data: questionnaire, error } = await supabase
+      const { data: q, error } = await supabase
         .from("questionnaire")
         .select("active")
         .eq("id", questionnaireId)
         .single();
-      if (error || !questionnaire || !questionnaire.active) {
+      if (error || !q || !q.active) {
         setQuestionnaireClosed(true);
         clearInterval(interval);
       }
@@ -62,10 +56,9 @@ function Questionnaire({ user, questionnaireId  }) {
     return () => clearInterval(interval);
   }, [questionnaireId]);
 
+  // ── Vérifie si l'employé a déjà répondu ──────────────────
   useEffect(() => {
-    if (!currentUser) {
-      return;
-    }
+    if (!currentUser) return;
     async function checkFinish() {
       setLoadingFinish(true);
       const { data } = await supabase
@@ -74,70 +67,93 @@ function Questionnaire({ user, questionnaireId  }) {
         .eq("questionnaire_id", questionnaireId)
         .eq("utilisateur_id", currentUser.id)
         .maybeSingle();
-
-      if (data) {
-        setFinish(true);
-      }  
+      if (data) setFinish(true);
       setLoadingFinish(false);
     }
     checkFinish();
   }, [currentUser, questionnaireId]);
 
+  // ── Charge les questions du questionnaire ─────────────────
   useEffect(() => {
     async function fetchQuestionnaire() {
       if (!questionnaireId) return;
       const { data, error } = await supabase
         .from("questionnaire")
-        .select("structure_json, default")
+        .select("structure_json")
         .eq("id", questionnaireId)
         .single();
-      if (error) {
-        console.error("Erreur dans la recherche du questionnaire", error.message);
-        return;
-      }
-      if (data.structure_json) {
+      if (error) { console.error("Erreur questionnaire:", error.message); return; }
+      if (data?.structure_json) {
         try {
-          const Questions = JSON.parse(data.structure_json);
-          setQuestions(Questions);
+          setQuestions(JSON.parse(data.structure_json));
           setCurrentQuestion(0);
           setAnswers({});
-        } catch (e) {
-          console.error("Erreur dans le parsing du JSON du questionnaire", e);
-        }
+        } catch (e) { console.error("Erreur parsing JSON:", e); }
       }
     }
     fetchQuestionnaire();
   }, [questionnaireId]);
 
+  // ── Envoi des réponses + analyse IA ──────────────────────
   async function sendAnswers() {
-    if (finish) {
+    if (finish) return;
+
+    // 1. Insère les réponses dans Supabase et récupère l'id
+    const { data: inserted, error } = await supabase
+      .from("reponse_questionnaire")
+      .insert([{
+        utilisateur_id:   currentUser.id,
+        questionnaire_id: questionnaireId,
+        reponse_json:     JSON.stringify(answers),
+      }])
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Echec envoi réponses :", error.message);
       return;
     }
-    const { error } = await supabase
-      .from("reponse_questionnaire")
-      .insert([
-        {
-          utilisateur_id: currentUser.id,
-          questionnaire_id: questionnaireId,
-          reponse_json: JSON.stringify(answers),
+
+    console.log(">>> Réponses insérées, id :", inserted.id);
+    setFinish(true);
+
+    // 2. Appelle Django pour analyser et stocker le score
+    setAnalyseEnCours(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch(`${API}/psychobot/questionnaire/`, {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-      ]);
-    if (error) {
-      console.error("Echec de l'envoie des réponses :", error.message);
-    } else {
-      setFinish(true);
+        body: JSON.stringify({ questionnaire_id: inserted.id }),
+      });
+
+      const result = await res.json();
+      console.log(">>> Analyse IA :", result);
+
+    } catch (e) {
+      console.error("Erreur analyse IA :", e);
+    } finally {
+      setAnalyseEnCours(false);
     }
   }
 
+  // ── Déclenche sendAnswers quand toutes les questions sont répondues ──
   useEffect(() => {
-    if (currentQuestion === questions.length && !finish) {
+    if (currentQuestion === questions.length && questions.length > 0 && !finish) {
       sendAnswers();
     }
   }, [currentQuestion, finish, questions.length]);
 
+  // ── Écrans de chargement et états ────────────────────────
   if (!currentUser || loadingQuestionnaire || loadingFinish) {
     return <Loading />;
   }
+
   if (questionnaireClosed || !questionnaireId) {
     return <NoQuestionnaire />;
   }
@@ -147,12 +163,21 @@ function Questionnaire({ user, questionnaireId  }) {
       <div className={styles.questionnaireWrapper}>
         <div className={styles.finish}>
           <h1 className={styles.h1}>C'est terminé !</h1>
-          <button className={styles.goHome}
-            onClick={() => navigate('/dashboard')}
+          {analyseEnCours && (
+            <p className={styles.p} style={{ fontSize: "13px", opacity: 0.7 }}>
+              Analyse en cours...
+            </p>
+          )}
+          <button
+            className={styles.goHome}
+            onClick={() => navigate("/dashboard")}
+            disabled={analyseEnCours}
           >
             Retour à l'accueil
           </button>
-          <p className={styles.p}>Merci d'avoir pris le temps de répondre au questionnaire.</p>
+          <p className={styles.p}>
+            Merci d'avoir pris le temps de répondre au questionnaire.
+          </p>
         </div>
       </div>
     );
@@ -162,17 +187,28 @@ function Questionnaire({ user, questionnaireId  }) {
     return (
       <div className={styles.questionnaireWrapper}>
         <div className={styles.welcome}>
-          <h1 className={styles.h1}>Voulez vous procédé au <br />questionnaire ?</h1>
-          <button className={styles.button} onClick={() => setStarted(true)}>Commencer l'évaluation</button>
-          <p className={styles.p}><br /><br />Il s'agit d'un questionnaire anonyme de {questions.length} questions ayant pour but<br />
-          d'évaluer votre santé mentale afin de pouvoir vous aider si besoin.<br />
-          Il vous sera demandé de répondre avec honnêteté afin de ne pas fausser<br />
-          le questionnaire qui pourrait vous aider.</p>
-          <p className={styles.p}>Il s'agit d'un questionnaire complet et détaillé basé sur de nombreux<br />questionnaires fiables.</p>
+          <h1 className={styles.h1}>
+            Voulez vous procédé au <br />questionnaire ?
+          </h1>
+          <button className={styles.button} onClick={() => setStarted(true)}>
+            Commencer l'évaluation
+          </button>
+          <p className={styles.p}>
+            <br /><br />
+            Il s'agit d'un questionnaire anonyme de {questions.length} questions ayant pour but
+            <br />d'évaluer votre santé mentale afin de pouvoir vous aider si besoin.<br />
+            Il vous sera demandé de répondre avec honnêteté afin de ne pas fausser
+            <br />le questionnaire qui pourrait vous aider.
+          </p>
+          <p className={styles.p}>
+            Il s'agit d'un questionnaire complet et détaillé basé sur de nombreux
+            <br />questionnaires fiables.
+          </p>
         </div>
       </div>
     );
   }
+
   if (currentQuestion < questions.length) {
     return (
       <div className={styles.questionnaireWrapper}>
@@ -180,15 +216,14 @@ function Questionnaire({ user, questionnaireId  }) {
           <div className={styles.middle}>
             <div className={styles.title}>
               <h2 className={styles.h2}>
-              {questions[currentQuestion].question}
-              {questions[currentQuestion].optional ? " (facultatif)" : ""}
-              {questions[currentQuestion].type == "1_to_10" ? " (de 1 à 10)" : ""}
+                {questions[currentQuestion].question}
+                {questions[currentQuestion].optional ? " (facultatif)" : ""}
+                {questions[currentQuestion].type === "1_to_10" ? " (de 1 à 10)" : ""}
               </h2>
             </div>
             <div className={styles.answer}>
               <div className={styles.progression_container}>
-                <div className={styles.bar} style={{ width: `${progression}%` }}>
-                </div>
+                <div className={styles.bar} style={{ width: `${progression}%` }} />
               </div>
               <div className={styles.div}>
                 <AnswerInput
@@ -200,12 +235,12 @@ function Questionnaire({ user, questionnaireId  }) {
                   ratings={ratings}
                 />
               </div>
-              <button className={styles.retour} onClick={() => {
-                  if (currentQuestion > 0) {
-                    setCurrentQuestion(currentQuestion - 1);
-                    const lastAnswer = answers[questions[currentQuestion - 1].question];
-                  }
-                }}>
+              <button
+                className={styles.retour}
+                onClick={() => {
+                  if (currentQuestion > 0) setCurrentQuestion(currentQuestion - 1);
+                }}
+              >
                 Retour
               </button>
             </div>
