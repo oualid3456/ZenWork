@@ -31,7 +31,7 @@
   justify-content: center;
   width: 250px;
   height: 35px;
-  margin-top: 50px;
+  margin-top: 0;
   transition: transform 0.1s ease;
   border: none;
   background: #6C5DD3;
@@ -107,7 +107,7 @@
     justify-content: center;
     width: 250px;
     height: 35px;
-    margin-top: 50px;
+    margin-top: 0;
     transition: transform 0.1s ease;
     border: none;
     background: #6C5DD3;
