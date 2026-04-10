@@ -611,10 +611,10 @@ export default function DashboardLayout({ user, children }) {
               setTab(TAB_QUESTIONNAIRE);
 
               if (isRH) {
-                navigate(`/start_questionnaire/${user.id}`);
+                navigate('/start_questionnaire');
               } else {
                 navigate(
-                  `/questionnaire/${user.id}/${questionnaireId || "none"}`,
+                  '/questionnaire',
                 );
               }
             }}

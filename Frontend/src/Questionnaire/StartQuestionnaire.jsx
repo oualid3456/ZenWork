@@ -20,13 +20,13 @@ function StartQuestionnaire({ user }) {
       validated: true
     },
     {
-      question: 'À quel point vous sentez-vous fatigué(e) ?',
+      question: "Comment évalueriez-vous votre niveau d'énergie général ?",
       type: "emoji",
       optional: false,
       validated: true
     },
     {
-      question: 'À quel point vous sentez-vous déprimé(e) ?',
+      question: "Comment évalueriez-vous votre niveau de déprime ?",
       type: "emoji",
       optional: false,
       validated: true
@@ -38,7 +38,7 @@ function StartQuestionnaire({ user }) {
       validated: true
     },
     {
-      question: 'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
+      question: 'À quel point sentez-vous que votre travail interfère avec votre vie privée',
       type: "emoji",
       optional: false,
       validated: true
@@ -83,7 +83,7 @@ function StartQuestionnaire({ user }) {
       validated: true
     },
     {
-      question: 'Commentaires libres (facultatif)',
+      question: 'Commentaires libres',
       type: "text",
       optional: true,
       validated: true
