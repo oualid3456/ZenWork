@@ -39,23 +39,13 @@ def _get_reponses_et_utilisateur(questionnaire_id):
         return (reponse if isinstance(reponse, dict) else None), utilisateur_id
  
  
-def _message_score(score: int) -> str:
-    if score >= 75:
-        return f"Je ressens des signes sévères de burn-out ({score}/100), nécessitant une attention immédiate."
-    if score >= 55:
-        return f"Je présente des signaux modérés de burn-out ({score}/100), une intervention est recommandée."
-    if score >= 35:
-        return f"Je montre quelques signes de fatigue ({score}/100), à surveiller de près."
-    return f"Mon état général est satisfaisant ({score}/100), aucun signal préoccupant."
-
-
 def _upsert_alerte_burnout(utilisateur_id, niveau, score, raisons):
     """
     Écrit dans alerte_burnout (liée à profiles.id via utilisateur_id).
     On n'utilise plus psychobot_alerteburnout dont la FK pointe vers
     psychobot_questionnairereponse — table incompatible avec reponse_questionnaire.
     """
-    commentaire = _message_score(score)
+    commentaire = generate_commentaire_rh(score, raisons)
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -207,7 +197,7 @@ def close_chat_session(request):
 
         # Si score dépasse 60 → alerte
         if score_final >= 60:
-            commentaire = _message_score(score_final)
+            commentaire = generate_commentaire_rh(score_final, raisons_finales)
             with connection.cursor() as cursor:
                 cursor.execute(
                     """

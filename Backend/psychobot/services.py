@@ -326,22 +326,39 @@ def build_context_prefix(reponses: dict) -> str:
         "Message de l'employé : "
     )
 def generate_commentaire_rh(score: int, raisons: list) -> str:
+    """
+    Génère une phrase courte à la 1ère personne résumant l'état de l'employé.
+    Ex: "Je ressens une fatigue intense et un isolement croissant au travail."
+    """
     client = get_client()
-    
-    prompt = f"""
-Score burn-out : {score}/100. Signaux : {', '.join(raisons[:2])}.
-Écris UNE seule phrase courte et professionnelle pour alerter le RH. Maximum 15 mots.
-"""
+
+    niveau = (
+        "sévère, nécessitant une attention immédiate" if score >= 75 else
+        "modéré, une intervention est recommandée"    if score >= 55 else
+        "léger, à surveiller"                         if score >= 35 else
+        "faible, état satisfaisant"
+    )
+    signaux = ", ".join(raisons[:3]) if raisons else "aucun signal particulier"
+
+    prompt = (
+        f"Score burn-out : {score}/100 (niveau {niveau}).\n"
+        f"Signaux détectés : {signaux}.\n\n"
+        "Écris UNE seule phrase commençant par \"Se sent\", "
+        "courte (maximum 15 mots), naturelle et humaine, qui résume l'état émotionnel. "
+        "Ne mentionne pas le score ni les pourcentages. "
+        "Réponds UNIQUEMENT avec la phrase, sans guillemets."
+    )
+
     try:
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
             model=GROQ_MODEL,
-            max_tokens=40,
-            temperature=0.3
+            max_tokens=50,
+            temperature=0.4
         )
         return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"Employé à risque élevé, intervention recommandée."
+    except Exception:
+        return "Se sent épuisé et nécessite une attention particulière."
     
 def detect_besoins_ressources(history: list, score: int) -> dict:
     """Détecte les besoins de l'employé et recommande des ressources."""
