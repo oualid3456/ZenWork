@@ -137,6 +137,48 @@ iv. NoQuestionnaire
 Ce composant a uniquement pour vocation d’afficher « Il n'y a pas de questionnaire disponible pour le moment ». Il est utilisé par Questionnaire lorsqu’aucun questionnaire n’est lancé.
 
 1. Partie Psychobot
+
+La partie Psychobot du projet est regroupée dans un dossier Psychobot contenant des composants React côté frontend et une application Django côté backend. Elle se compose d'un module d'analyse de questionnaire, d'un chat thérapeutique et d'un système de détection de burn-out.
+
+i. Architecture générale
+Le Psychobot repose sur deux couches :
+
+Frontend : composants React qui affichent le chat et communiquent avec le backend via des appels fetch.
+Backend Django (dossier psychobot/) : trois endpoints REST qui font appel au modèle Llama 3 via l'API Groq pour analyser les réponses et générer des messages personnalisés.
+
+L'authentification entre le frontend et le backend est gérée par un middleware Django (middleware.py) qui vérifie le JWT Supabase transmis dans le header Authorization: Bearer <token> et injecte l'UUID de l'utilisateur dans chaque requête.
+
+ii. Analyse du questionnaire
+Une fois qu'un employé a soumis ses réponses au questionnaire, le frontend appelle l'endpoint POST /psychobot/questionnaire/ en transmettant le questionnaire_id.
+Le backend récupère alors les réponses depuis la table reponse_questionnaire et les transmet au modèle IA. Les réponses peuvent être de plusieurs formats : emojis (😟 😐 😊), valeurs numériques de 1 à 10, oui/non, ou texte libre. Chaque format est normalisé avant l'analyse pour que le modèle puisse les interpréter correctement.
+Le modèle retourne un score de 0 à 100 ainsi qu'une liste de signaux détectés. À partir de ce score, un niveau de risque est déterminé :
+
+0–34 : aucun signal préoccupant
+35–54 : léger, à surveiller
+55–74 : modéré, intervention recommandée
+75–100 : sévère, attention immédiate
+
+Un message court à la troisième personne est ensuite généré par l'IA (ex : "Se sent épuisé et complètement débordé, une intervention est urgente.") et stocké dans le champ commentaire_rh de la table alerte_burnout.
+
+iii. Chat
+L'employé peut ensuite ouvrir une session de chat avec PsychoBot. Chaque message est envoyé via POST /psychobot/chat/message/ avec l'historique complet de la conversation.
+Au premier message de la session, le backend injecte discrètement dans le contexte les données clés du questionnaire (niveau de stress, charge de travail, isolement, humeur) sans les mentionner directement, afin que PsychoBot puisse personnaliser ses réponses de façon naturelle. Le prénom de l'employé est également récupéré depuis la table profiles et intégré dans ce contexte.
+Le backend réinjecte aussi les 10 derniers messages des conversations précédentes (table historique_chat) pour donner à PsychoBot une mémoire entre les sessions.
+Après chaque message, le backend analyse la conversation pour détecter les besoins de l'employé et recommande une catégorie de ressource parmi : stress, sommeil, mental, sport, méditation.
+
+iv. Clôture de session
+Lorsque l'employé ferme le chat, le frontend appelle POST /psychobot/chat/fermer/. Le backend relit l'intégralité de la conversation et affine le score initial grâce au modèle IA, qui peut détecter des éléments aggravants ou rassurants non visibles dans le questionnaire seul.
+Le score final et un résumé anonymisé sont stockés dans la table session_ia. Si le score dépasse 60, une nouvelle entrée est créée dans alerte_burnout avec un message généré par l'IA, visible par le RH dans la section Activité récente du Dashboard.
+L'historique complet de la session est sauvegardé dans historique_chat pour les sessions futures.
+v. Tables utilisées
+
+reponse_questionnaire — réponses brutes de l'employé
+alerte_burnout — alertes créées automatiquement selon le score
+session_ia — résumés anonymisés et scores finaux par session
+historique_chat — historique des conversations pour la mémoire du bot
+profiles — prénom et nom de l'employé pour la personnalisation
+notifications — notifications envoyées à l'employé et au RH en cas de risque élevé
+
 2. Partie Paramètre
 
 Accessible via le menu latéral ou l'icône avatar (route `/profile/:id`), ce composant permet à tout utilisateur de gérer son compte. Il fetch la table `profiles` (`id`, `role`, `nom`, `prenom`, `service`, `date_embauche`) et expose deux sections :
