@@ -403,7 +403,7 @@ function StartQuestionnaire({ user }) {
               <h1 className={styles.h1}>Questionnaire en cours</h1>
               <p className={styles.p}>ID du questionnaire : {questionnaireId}</p>
               <p className={styles.p}>Titre du questionnaire : {title}</p>
-              <p className={styles.p}>Description du questionnaire : {description}</p>
+              <p className={styles.description}>Description du questionnaire : {description}</p>
               <button className={styles.button} onClick={() => {handleStopQuestionnaire(); setMode(null)}}>Arrêter le questionnaire</button>
             </div> 
           </div>
