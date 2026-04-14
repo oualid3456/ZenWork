@@ -82,6 +82,50 @@ Les tables utilisees sont surtout :
 
 4. Partie Forum
 5. Partie Ressource
+La partie Ressource du projet regroupe les composants React permettant de consulter et de gérer la médiathèque de bien-être (vidéos de relaxation, articles sur le sommeil, la concentration, etc.). Elle se base principalement sur la table ressources de Supabase et adapte son interface selon le rôle de l'utilisateur.
+
+i. Ressources (Page principale et logique de tri)
+
+Le composant Ressources est la vue principale. Lors du chargement de la page (via un useEffect), deux actions asynchrones sont effectuées :
+
+Vérification du rôle : On récupère l'utilisateur connecté via supabase.auth.getUser(), puis on interroge la table profiles pour vérifier si son rôle est RH. Ce booléen (isRH) déterminera l'affichage des options de gestion.
+
+Récupération des données : On effectue un fetch global sur la table ressources (SELECT *).
+
+Une fois les données récupérées, le composant extrait dynamiquement toutes les catégories existantes dans la base de données (ex: Sommeil, Mental). Ainsi, les boutons de filtres ("chips") s'adaptent automatiquement au contenu réel de la base de données sans avoir besoin de les coder en dur. L'utilisateur peut cliquer sur ces filtres pour mettre à jour la grille de ressources affichée.
+
+ii. Gestion CRUD (Système réservé aux RH)
+
+Si l'utilisateur est identifié comme RH (isRH === true), l'interface se modifie pour afficher un bouton global "+ Ajouter une ressource", ainsi que des boutons "Modifier" et "Supprimer" sur chaque carte.
+
+Ajout et Modification (Modal) : L'action d'ajout ou de modification ouvre une fenêtre modale superposée. Le formulaire (formData) est dynamique :
+
+Il propose de choisir entre un type video ou article. Si "vidéo" est sélectionné, un champ pour l'URL YouTube Embed apparaît. Si "article" est sélectionné, c'est une zone de texte (textarea) qui s'affiche.
+
+Le champ "Catégorie" utilise la balise HTML <datalist>, ce qui permet au RH de sélectionner une catégorie existante dans un menu déroulant, ou d'en taper une nouvelle (qui s'ajoutera automatiquement aux filtres généraux après sauvegarde).
+
+À la soumission, un appel à Supabase est fait via .insert() (si création) ou .update() (si modification d'un editingId existant).
+
+Suppression :
+Au clic sur le bouton "Supprimer", une fenêtre de confirmation native (window.confirm) s'affiche pour éviter les erreurs. Si validée, une requête .delete() est envoyée à Supabase en ciblant l'id de la ressource, puis la liste locale est mise à jour.
+
+iii. RessourceDetail (Lecteur et Vue Détaillée)
+
+Plutôt que d'utiliser React Router et de changer d'URL (ce qui pourrait causer des erreurs 404), la navigation vers une ressource se fait par un système de "Vue Unique". Lorsqu'une ressource est cliquée, elle est stockée dans la variable d'état selectedRessource.
+
+Le composant parent efface alors la grille pour afficher le composant enfant RessourceDetail, en lui passant la ressource en prop ainsi qu'une fonction de retour (onBack).
+
+L'affichage s'adapte au type de la ressource :
+
+Si video : Le composant intègre une balise iframe YouTube, encapsulée dans un conteneur CSS utilisant l'astuce du padding-bottom: 56.25% pour forcer un ratio 16:9 parfait et responsive.
+
+Si article : Le composant affiche l'image d'illustration en bannière (img) et le contenu textuel. La propriété CSS white-space: pre-line est utilisée pour que les sauts de ligne tapés par le RH dans le formulaire soient respectés à l'affichage.
+
+iv. Design et Dark Mode
+
+L'ensemble de l'interface (grille, cartes, modal, lecteur) est géré par Ressources.css et RessourceDetail.css.
+Le système intègre nativement une requête média @media (prefers-color-scheme: dark). Si le système d'exploitation de l'utilisateur (ou son navigateur) est configuré en mode sombre, toutes les couleurs (fonds de cartes, textes, fenêtres modales) basculent automatiquement vers des teintes sombres (gris anthracite et bleu-violet) pour réduire la fatigue oculaire, ce qui est particulièrement pertinent pour les ressources liées au sommeil et à la relaxation.
+
 6. Partie Questionnaire
 
 La partie Questionnaire du projet est regroupée dans un dossier Questionnaire contenant des composants React, elle se compose principalement d’un module permettant de créer un questionnaire et d’un autre permettant d’y répondre.
