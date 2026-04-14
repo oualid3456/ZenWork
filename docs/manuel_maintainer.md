@@ -150,7 +150,7 @@ L'authentification entre le frontend et le backend est gérée par un middleware
 
 ii. Analyse du questionnaire
 Une fois qu'un employé a soumis ses réponses au questionnaire, le frontend appelle l'endpoint POST /psychobot/questionnaire/ en transmettant le questionnaire_id.
-Le backend récupère alors les réponses depuis la table reponse_questionnaire et les transmet au modèle IA. Les réponses peuvent être de plusieurs formats : emojis (😟 😐 😊), valeurs numériques de 1 à 10, oui/non, ou texte libre. Chaque format est normalisé avant l'analyse pour que le modèle puisse les interpréter correctement.
+Le backend récupère alors les réponses depuis la table reponse_questionnaire et les transmet au modèle IA. Les réponses peuvent être de plusieurs formats : emojis (😟 😐 😊), valeurs numériques de 1 à 10, oui/non, ou texte libre.
 Le modèle retourne un score de 0 à 100 ainsi qu'une liste de signaux détectés. À partir de ce score, un niveau de risque est déterminé :
 
 0–34 : aucun signal préoccupant
@@ -158,11 +158,11 @@ Le modèle retourne un score de 0 à 100 ainsi qu'une liste de signaux détecté
 55–74 : modéré, intervention recommandée
 75–100 : sévère, attention immédiate
 
-Un message court à la troisième personne est ensuite généré par l'IA (ex : "Se sent épuisé et complètement débordé, une intervention est urgente.") et stocké dans le champ commentaire_rh de la table alerte_burnout.
+Un message court à la troisième personne est ensuite généré par l'IA et stocké dans le champ commentaire_rh de la table alerte_burnout.
 
 iii. Chat
 L'employé peut ensuite ouvrir une session de chat avec PsychoBot. Chaque message est envoyé via POST /psychobot/chat/message/ avec l'historique complet de la conversation.
-Au premier message de la session, le backend injecte discrètement dans le contexte les données clés du questionnaire (niveau de stress, charge de travail, isolement, humeur) sans les mentionner directement, afin que PsychoBot puisse personnaliser ses réponses de façon naturelle. Le prénom de l'employé est également récupéré depuis la table profiles et intégré dans ce contexte.
+Au premier message de la session, le backend injecte discrètement dans le contexte les données clés du questionnaire (niveau de stress, charge de travail, isolement, humeur) sans les mentionner directement, afin que PsychoBot puisse personnaliser ses réponses de façon naturelle. Le prénom de l'employé est également récupéré depuis la table profiles.
 Le backend réinjecte aussi les 10 derniers messages des conversations précédentes (table historique_chat) pour donner à PsychoBot une mémoire entre les sessions.
 Après chaque message, le backend analyse la conversation pour détecter les besoins de l'employé et recommande une catégorie de ressource parmi : stress, sommeil, mental, sport, méditation.
 
@@ -170,15 +170,6 @@ iv. Clôture de session
 Lorsque l'employé ferme le chat, le frontend appelle POST /psychobot/chat/fermer/. Le backend relit l'intégralité de la conversation et affine le score initial grâce au modèle IA, qui peut détecter des éléments aggravants ou rassurants non visibles dans le questionnaire seul.
 Le score final et un résumé anonymisé sont stockés dans la table session_ia. Si le score dépasse 60, une nouvelle entrée est créée dans alerte_burnout avec un message généré par l'IA, visible par le RH dans la section Activité récente du Dashboard.
 L'historique complet de la session est sauvegardé dans historique_chat pour les sessions futures.
-v. Tables utilisées
-
-reponse_questionnaire — réponses brutes de l'employé
-alerte_burnout — alertes créées automatiquement selon le score
-session_ia — résumés anonymisés et scores finaux par session
-historique_chat — historique des conversations pour la mémoire du bot
-profiles — prénom et nom de l'employé pour la personnalisation
-notifications — notifications envoyées à l'employé et au RH en cas de risque élevé
-
 2. Partie Paramètre
 
 Accessible via le menu latéral ou l'icône avatar (route `/profile/:id`), ce composant permet à tout utilisateur de gérer son compte. Il fetch la table `profiles` (`id`, `role`, `nom`, `prenom`, `service`, `date_embauche`) et expose deux sections :
