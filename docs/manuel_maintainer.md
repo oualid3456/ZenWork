@@ -22,7 +22,7 @@ iii. EmployeeLogin
 
 Composant identique à RhLogin à la différence près qu’il s’applique aux employés et non au RH.
 
-1. Partie Register
+2. Partie Register
 
 Cette partie de projet est dédié à la création de compte que ce soit employé ou RH.
 
@@ -45,7 +45,7 @@ Une fois, ce formulaire remplit, on envoie ses informations vers la base de donn
 
 Lors de la création du compte, un id unique est automatiquement généré pour l’utilisateur pour l’identifier dans les autres pages du site (ex. dans Questionnaire voir qui a répondu au questionnaire).
 
-1. Partie Dashboard
+3. Partie Dashboard
   Ce composant affiche une vue differente selon le role :
 
 - version RH
@@ -80,9 +80,9 @@ Les tables utilisees sont surtout :
 - session_ia
 - demande_changement
 
-1. Partie Forum
-2. Partie Ressource
-3. Partie Questionnaire
+4. Partie Forum
+5. Partie Ressource
+6. Partie Questionnaire
 
 La partie Questionnaire du projet est regroupée dans un dossier Questionnaire contenant des composants React, elle se compose principalement d’un module permettant de créer un questionnaire et d’un autre permettant d’y répondre.
 
@@ -136,7 +136,7 @@ iv. NoQuestionnaire
 
 Ce composant a uniquement pour vocation d’afficher « Il n'y a pas de questionnaire disponible pour le moment ». Il est utilisé par Questionnaire lorsqu’aucun questionnaire n’est lancé.
 
-1. Partie Psychobot
+7. Partie Psychobot
 
 La partie Psychobot du projet est regroupée dans un dossier Psychobot contenant des composants React côté frontend et une application Django côté backend. Elle se compose d'un module d'analyse de questionnaire, d'un chat thérapeutique et d'un système de détection de burn-out.
 
@@ -179,7 +179,7 @@ historique_chat — historique des conversations pour la mémoire du bot
 profiles — prénom et nom de l'employé pour la personnalisation
 notifications — notifications envoyées à l'employé et au RH en cas de risque élevé
 
-2. Partie Paramètre
+8. Partie Paramètre
 
 Accessible via le menu latéral ou l'icône avatar (route `/profile/:id`), ce composant permet à tout utilisateur de gérer son compte. Il fetch la table `profiles` (`id`, `role`, `nom`, `prenom`, `service`, `date_embauche`) et expose deux sections :
 
@@ -187,13 +187,13 @@ i. Mon compte — modification du mot de passe (min. 10 caractères, confirmatio
 
 ii. Informations personnelles — mise à jour de `nom`, `prenom`, `service`, `date_embauche` via `UPDATE` sur `profiles`. Le rôle est en lecture seule (modifiable uniquement par un RH depuis la page Employés).
 
-1. Page Employés (RH uniquement)
+9. Page Employés (RH uniquement)
 
 Protégé par `RhSecuredRoute`, accessible via `/employees` ou le bouton « Voir les employés » du Dashboard RH. Affiche tous les profils de la table `profiles` triés par nom (colonnes : Nom, Prénom, Service, Date d'embauche, Rôle).
 
 Un bouton « Modifier » par ligne ouvre un formulaire inline pour mettre à jour `nom`, `prenom`, `service`, `date_embauche` et `role` (EMPLOYE / RH) via `UPDATE` sur `profiles`. Un seul employé est modifiable à la fois ; les autres boutons sont désactivés le temps de l'édition.
 
-1. Partie Notifications
+10. Partie Notifications
 
 Intégré dans `DashboardLayout`, le système est accessible via l'icône de cloche en haut à droite. Un badge rouge indique le nombre de notifications non lues (`SELECT COUNT` sur `notifications` où `user_id` et `is_read = false`, rafraîchi à chaque ouverture du panneau).
 
@@ -203,7 +203,7 @@ Pour les alertes burnout, le champ `body` identifie l'employé concerné (nom, p
 
 Tables : `notifications` (`id`, `user_id`, `type`, `title`, `body`, `is_read`, `created_at`) et `alerte_burnout`.f
 
-1. Partie Feedback
+11. Partie Feedback
   Cette page sert a afficher les retours IA issus des sessions PsychoBot de l'utilisateur connecte.
 
 On recupere dans Supabase :
@@ -245,7 +245,6 @@ Réalisé par
 - Mohamed ALDYAB
 - Oualid FELKAOUI
 - Abderrahim HERMEZ
-- Lilia AIT-MOKHTAR
+- Lylia AIT-MOKHTAR
 - Rayane HEBBACHE
 - Nassim ICHCHOU
-
