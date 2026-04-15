@@ -54,6 +54,17 @@
   box-shadow: 0 0 0 2px rgba(108, 93, 211, 0.15);
 }
 
+.inputBlocked {
+  background: #F7F8FA;
+  color: #4A5568;
+  cursor: not-allowed;
+}
+
+.inputBlocked:focus {
+  border-color: #E2E8F0;
+  box-shadow: none;
+}
+
 .button {
   align-self: flex-start;
   padding: 0.5rem 1.25rem;
