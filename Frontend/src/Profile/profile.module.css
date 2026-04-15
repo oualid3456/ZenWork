@@ -119,6 +119,21 @@
   color: #1A202C;
 }
 
+.deleteButton {
+  background: #E53E3E;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.deleteButton:hover {
+  transform: scale(1.05);
+}
+
 /* Dark mode — aligné PsychoBot / Layout */
 @media (prefers-color-scheme: dark) {
   .page {

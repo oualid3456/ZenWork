@@ -101,6 +101,24 @@ function Profile({ user, embedded }) {
     setProfileMessage({ type: "success", text: "Profil mis à jour." });
   };
 
+  const handleDeleteProfile = async () => {
+    const confirmation = window.confirm(
+      "⚠️ Etes-vous sûr de vouloir supprimer votre compte ?"
+    );
+    if (!confirmation) return;
+    const { error } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", user.id);
+    if (error) {
+      alert("Erreur : " + error.message);
+      return;
+    }
+    alert("Compte supprimé avec succès");
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
   if (loading || !profile) {
     return <Loading />;
   }
@@ -217,6 +235,16 @@ function Profile({ user, embedded }) {
           </button>
         </div>
       )}
+
+      <div className={styles.section}>
+        <div className={styles.div}>
+          <button className={styles.deleteButton}
+            onClick={handleDeleteProfile}
+          >
+            Supprimer mon profil
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
