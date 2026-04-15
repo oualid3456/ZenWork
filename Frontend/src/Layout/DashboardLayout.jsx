@@ -546,7 +546,7 @@ export default function DashboardLayout({ user, children }) {
             }}
           >
             <img
-              src="/tableau-de-bord.png"
+              src="/forum.png"
               alt="Forum"
               className="sidebar-icon-img"
             />
@@ -597,7 +597,7 @@ export default function DashboardLayout({ user, children }) {
               }}
             >
               <img
-                src="/parametre.png"
+                src="/employee.png"
                 alt="Employés"
                 className="sidebar-icon-img"
               />
