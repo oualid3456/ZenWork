@@ -116,7 +116,7 @@ function Profile({ user, embedded }) {
     }
     alert("Compte supprimé avec succès");
     await supabase.auth.signOut();
-    navigate("/login");
+    navigate("/");
   };
 
   if (loading || !profile) {
