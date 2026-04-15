@@ -37,8 +37,19 @@ def _get_reponses_et_utilisateur(questionnaire_id):
             except (json.JSONDecodeError, ValueError):
                 break
         return (reponse if isinstance(reponse, dict) else None), utilisateur_id
- 
- 
+
+
+def _niveau_urgence_from_level(level):
+    """Aligné avec determine_level : low/medium/high → 1/2/3 pour alerte_burnout."""
+    if level == "high":
+        return 3
+    if level == "medium":
+        return 2
+    if level == "low":
+        return 1
+    return None
+
+
 def _upsert_alerte_burnout(utilisateur_id, niveau, score, raisons):
     """
     Écrit dans alerte_burnout (liée à profiles.id via utilisateur_id).
@@ -46,14 +57,17 @@ def _upsert_alerte_burnout(utilisateur_id, niveau, score, raisons):
     psychobot_questionnairereponse — table incompatible avec reponse_questionnaire.
     """
     commentaire = generate_commentaire_rh(score, raisons)
+    niveau_urgence = _niveau_urgence_from_level(niveau)
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            INSERT INTO alerte_burnout (utilisateur_id, statut, commentaire_rh, created_at)
-            VALUES (%s, 'NOUVEAU', %s, NOW())
+            INSERT INTO alerte_burnout (
+                utilisateur_id, statut, commentaire_rh, niveau_urgence, created_at
+            )
+            VALUES (%s, 'NOUVEAU', %s, %s, NOW())
             RETURNING id
             """,
-            [utilisateur_id, commentaire]
+            [utilisateur_id, commentaire, niveau_urgence],
         )
         return cursor.fetchone()[0]
 
@@ -198,13 +212,16 @@ def close_chat_session(request):
         # Si score dépasse 60 → alerte
         if score_final >= 60:
             commentaire = generate_commentaire_rh(score_final, raisons_finales)
+            niveau_urgence = _niveau_urgence_from_level(niveau_final)
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO alerte_burnout (utilisateur_id, statut, commentaire_rh)
-                    VALUES (%s, 'NOUVEAU', %s)
+                    INSERT INTO alerte_burnout (
+                        utilisateur_id, statut, commentaire_rh, niveau_urgence
+                    )
+                    VALUES (%s, 'NOUVEAU', %s, %s)
                     """,
-                    [utilisateur_id, commentaire]
+                    [utilisateur_id, commentaire, niveau_urgence],
                 )
         # Sauvegarde l'historique
         _save_historique(utilisateur_id, history)

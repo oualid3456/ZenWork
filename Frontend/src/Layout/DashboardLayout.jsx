@@ -217,7 +217,6 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
     if (!user?.id || n.is_read || markingAll) return;
     if (markingId === n.id) return;
     setMarkingId(n.id);
-    console.log("marquerUneLue", n);
     const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
@@ -329,6 +328,9 @@ function PopupNotifications({ user, onFermer, onMarkedRead }) {
                       )}
                       {n.title && (
                         <div className="notification-title">{n.title}</div>
+                      )}
+                      {n.body && (
+                        <div className="notification-body">{n.body}</div>
                       )}
                       <div className="notification-seen">
                         {markingId === n.id ? "…" : n.is_read ? "Lu" : "Non lu"}

@@ -699,6 +699,9 @@ button.notification-item:disabled {
   font-size: 13px;
   color: #4A5568;
   line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 4px;
 }
 
 .notification-seen {
@@ -807,5 +810,58 @@ button.notification-item:disabled {
   .floating-topbar .user-greeting,
   .floating-topbar .company-name {
     color: #ffffff;
+  }
+
+  .notification-popup,
+  .notification-popup-header {
+    background: #13161e;
+    border-color: #252a38;
+  }
+
+  .notification-popup-title,
+  .notification-popup-close {
+    color: #e8eaf0;
+  }
+
+  .notification-popup-close:hover {
+    background: #252a38;
+    color: #fff;
+  }
+
+  .notification-item {
+    background: #13161e;
+    border-color: #252a38;
+    color: #e8eaf0;
+  }
+
+  button.notification-item.notification-item-unread {
+    background: #1a1f2e;
+    border-color: #4c3f9e;
+  }
+
+  .notification-type {
+    color: #a5b4fc;
+  }
+
+  .notification-date,
+  .notification-seen {
+    color: #9ca3af;
+  }
+
+  .notification-title {
+    color: #e8eaf0;
+  }
+
+  .notification-body {
+    color: #cbd5e1;
+  }
+
+  .notification-triggered-by {
+    background: rgba(99, 102, 241, 0.15);
+    color: #c7d2fe;
+  }
+
+  .notification-triggered-by strong {
+    color: #e0e7ff;
   }
 }
