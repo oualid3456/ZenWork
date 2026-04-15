@@ -241,7 +241,7 @@ function Profile({ user, embedded }) {
           <button className={styles.deleteButton}
             onClick={handleDeleteProfile}
           >
-            Supprimer mon profil
+            Supprimer mon compte
           </button>
         </div>
       </div>
