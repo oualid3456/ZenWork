@@ -22,7 +22,7 @@ iii. EmployeeLogin
 
 Composant identique à RhLogin à la différence près qu’il s’applique aux employés et non au RH.
 
-1. Partie Register
+2. Partie Register
 
 Cette partie de projet est dédié à la création de compte que ce soit employé ou RH.
 
@@ -45,7 +45,7 @@ Une fois, ce formulaire remplit, on envoie ses informations vers la base de donn
 
 Lors de la création du compte, un id unique est automatiquement généré pour l’utilisateur pour l’identifier dans les autres pages du site (ex. dans Questionnaire voir qui a répondu au questionnaire).
 
-1. Partie Dashboard
+3. Partie Dashboard
   Ce composant affiche une vue differente selon le role :
 
 - version RH
@@ -80,9 +80,53 @@ Les tables utilisees sont surtout :
 - session_ia
 - demande_changement
 
-1. Partie Forum
-2. Partie Ressource
-3. Partie Questionnaire
+4. Partie Forum
+5. Partie Ressource
+La partie Ressource du projet regroupe les composants React permettant de consulter et de gérer la médiathèque de bien-être (vidéos de relaxation, articles sur le sommeil, la concentration, etc.). Elle se base principalement sur la table ressources de Supabase et adapte son interface selon le rôle de l'utilisateur.
+
+i. Ressources (Page principale et logique de tri)
+
+Le composant Ressources est la vue principale. Lors du chargement de la page (via un useEffect), deux actions asynchrones sont effectuées :
+
+Vérification du rôle : On récupère l'utilisateur connecté via supabase.auth.getUser(), puis on interroge la table profiles pour vérifier si son rôle est RH. Ce booléen (isRH) déterminera l'affichage des options de gestion.
+
+Récupération des données : On effectue un fetch global sur la table ressources (SELECT *).
+
+Une fois les données récupérées, le composant extrait dynamiquement toutes les catégories existantes dans la base de données (ex: Sommeil, Mental). Ainsi, les boutons de filtres ("chips") s'adaptent automatiquement au contenu réel de la base de données sans avoir besoin de les coder en dur. L'utilisateur peut cliquer sur ces filtres pour mettre à jour la grille de ressources affichée.
+
+ii. Gestion CRUD (Système réservé aux RH)
+
+Si l'utilisateur est identifié comme RH (isRH === true), l'interface se modifie pour afficher un bouton global "+ Ajouter une ressource", ainsi que des boutons "Modifier" et "Supprimer" sur chaque carte.
+
+Ajout et Modification (Modal) : L'action d'ajout ou de modification ouvre une fenêtre modale superposée. Le formulaire (formData) est dynamique :
+
+Il propose de choisir entre un type video ou article. Si "vidéo" est sélectionné, un champ pour l'URL YouTube Embed apparaît. Si "article" est sélectionné, c'est une zone de texte (textarea) qui s'affiche.
+
+Le champ "Catégorie" utilise la balise HTML <datalist>, ce qui permet au RH de sélectionner une catégorie existante dans un menu déroulant, ou d'en taper une nouvelle (qui s'ajoutera automatiquement aux filtres généraux après sauvegarde).
+
+À la soumission, un appel à Supabase est fait via .insert() (si création) ou .update() (si modification d'un editingId existant).
+
+Suppression :
+Au clic sur le bouton "Supprimer", une fenêtre de confirmation native (window.confirm) s'affiche pour éviter les erreurs. Si validée, une requête .delete() est envoyée à Supabase en ciblant l'id de la ressource, puis la liste locale est mise à jour.
+
+iii. RessourceDetail (Lecteur et Vue Détaillée)
+
+Plutôt que d'utiliser React Router et de changer d'URL (ce qui pourrait causer des erreurs 404), la navigation vers une ressource se fait par un système de "Vue Unique". Lorsqu'une ressource est cliquée, elle est stockée dans la variable d'état selectedRessource.
+
+Le composant parent efface alors la grille pour afficher le composant enfant RessourceDetail, en lui passant la ressource en prop ainsi qu'une fonction de retour (onBack).
+
+L'affichage s'adapte au type de la ressource :
+
+Si video : Le composant intègre une balise iframe YouTube, encapsulée dans un conteneur CSS utilisant l'astuce du padding-bottom: 56.25% pour forcer un ratio 16:9 parfait et responsive.
+
+Si article : Le composant affiche l'image d'illustration en bannière (img) et le contenu textuel. La propriété CSS white-space: pre-line est utilisée pour que les sauts de ligne tapés par le RH dans le formulaire soient respectés à l'affichage.
+
+iv. Design et Dark Mode
+
+L'ensemble de l'interface (grille, cartes, modal, lecteur) est géré par Ressources.css et RessourceDetail.css.
+Le système intègre nativement une requête média @media (prefers-color-scheme: dark). Si le système d'exploitation de l'utilisateur (ou son navigateur) est configuré en mode sombre, toutes les couleurs (fonds de cartes, textes, fenêtres modales) basculent automatiquement vers des teintes sombres (gris anthracite et bleu-violet) pour réduire la fatigue oculaire, ce qui est particulièrement pertinent pour les ressources liées au sommeil et à la relaxation.
+
+6. Partie Questionnaire
 
 La partie Questionnaire du projet est regroupée dans un dossier Questionnaire contenant des composants React, elle se compose principalement d’un module permettant de créer un questionnaire et d’un autre permettant d’y répondre.
 
@@ -136,8 +180,42 @@ iv. NoQuestionnaire
 
 Ce composant a uniquement pour vocation d’afficher « Il n'y a pas de questionnaire disponible pour le moment ». Il est utilisé par Questionnaire lorsqu’aucun questionnaire n’est lancé.
 
-1. Partie Psychobot
-2. Partie Paramètre
+7. Partie Psychobot
+
+La partie Psychobot du projet est regroupée dans un dossier Psychobot contenant des composants React côté frontend et une application Django côté backend. Elle se compose d'un module d'analyse de questionnaire, d'un chat thérapeutique et d'un système de détection de burn-out.
+
+i. Architecture générale
+Le Psychobot repose sur deux couches :
+
+Frontend : composants React qui affichent le chat et communiquent avec le backend via des appels fetch.
+Backend Django (dossier psychobot/) : trois endpoints REST qui font appel au modèle Llama 3 via l'API Groq pour analyser les réponses et générer des messages personnalisés.
+
+L'authentification entre le frontend et le backend est gérée par un middleware Django (middleware.py) qui vérifie le JWT Supabase transmis dans le header Authorization: Bearer <token> et injecte l'UUID de l'utilisateur dans chaque requête.
+
+ii. Analyse du questionnaire
+Une fois qu'un employé a soumis ses réponses au questionnaire, le frontend appelle l'endpoint POST /psychobot/questionnaire/ en transmettant le questionnaire_id.
+Le backend récupère alors les réponses depuis la table reponse_questionnaire et les transmet au modèle IA. Les réponses peuvent être de plusieurs formats : emojis (😟 😐 😊), valeurs numériques de 1 à 10, oui/non, ou texte libre.
+Le modèle retourne un score de 0 à 100 ainsi qu'une liste de signaux détectés. À partir de ce score, un niveau de risque est déterminé :
+
+0–34 : aucun signal préoccupant
+35–54 : léger, à surveiller
+55–74 : modéré, intervention recommandée
+75–100 : sévère, attention immédiate
+
+Un message court à la troisième personne est ensuite généré par l'IA et stocké dans le champ commentaire_rh de la table alerte_burnout.
+
+iii. Chat
+L'employé peut ensuite ouvrir une session de chat avec PsychoBot. Chaque message est envoyé via POST /psychobot/chat/message/ avec l'historique complet de la conversation.
+Au premier message de la session, le backend injecte discrètement dans le contexte les données clés du questionnaire (niveau de stress, charge de travail, isolement, humeur) sans les mentionner directement, afin que PsychoBot puisse personnaliser ses réponses de façon naturelle. Le prénom de l'employé est également récupéré depuis la table profiles.
+Le backend réinjecte aussi les 10 derniers messages des conversations précédentes (table historique_chat) pour donner à PsychoBot une mémoire entre les sessions.
+Après chaque message, le backend analyse la conversation pour détecter les besoins de l'employé et recommande une catégorie de ressource parmi : stress, sommeil, mental, sport, méditation.
+
+iv. Clôture de session
+Lorsque l'employé ferme le chat, le frontend appelle POST /psychobot/chat/fermer/. Le backend relit l'intégralité de la conversation et affine le score initial grâce au modèle IA, qui peut détecter des éléments aggravants ou rassurants non visibles dans le questionnaire seul.
+Le score final et un résumé anonymisé sont stockés dans la table session_ia. Si le score dépasse 60, une nouvelle entrée est créée dans alerte_burnout avec un message généré par l'IA, visible par le RH dans la section Activité récente du Dashboard.
+L'historique complet de la session est sauvegardé dans historique_chat pour les sessions futures.
+
+8. Partie Paramètre
 
 Accessible via le menu latéral ou l'icône avatar (route `/profile/:id`), ce composant permet à tout utilisateur de gérer son compte. Il fetch la table `profiles` (`id`, `role`, `nom`, `prenom`, `service`, `date_embauche`) et expose deux sections :
 
@@ -145,13 +223,13 @@ i. Mon compte — modification du mot de passe (min. 10 caractères, confirmatio
 
 ii. Informations personnelles — mise à jour de `nom`, `prenom`, `service`, `date_embauche` via `UPDATE` sur `profiles`. Le rôle est en lecture seule (modifiable uniquement par un RH depuis la page Employés).
 
-1. Page Employés (RH uniquement)
+9. Page Employés (RH uniquement)
 
 Protégé par `RhSecuredRoute`, accessible via `/employees` ou le bouton « Voir les employés » du Dashboard RH. Affiche tous les profils de la table `profiles` triés par nom (colonnes : Nom, Prénom, Service, Date d'embauche, Rôle).
 
 Un bouton « Modifier » par ligne ouvre un formulaire inline pour mettre à jour `nom`, `prenom`, `service`, `date_embauche` et `role` (EMPLOYE / RH) via `UPDATE` sur `profiles`. Un seul employé est modifiable à la fois ; les autres boutons sont désactivés le temps de l'édition.
 
-1. Partie Notifications
+10. Partie Notifications
 
 Intégré dans `DashboardLayout`, le système est accessible via l'icône de cloche en haut à droite. Un badge rouge indique le nombre de notifications non lues (`SELECT COUNT` sur `notifications` où `user_id` et `is_read = false`, rafraîchi à chaque ouverture du panneau).
 
@@ -161,7 +239,7 @@ Pour les alertes burnout, le champ `body` identifie l'employé concerné (nom, p
 
 Tables : `notifications` (`id`, `user_id`, `type`, `title`, `body`, `is_read`, `created_at`) et `alerte_burnout`.f
 
-1. Partie Feedback
+11. Partie Feedback
   Cette page sert a afficher les retours IA issus des sessions PsychoBot de l'utilisateur connecte.
 
 On recupere dans Supabase :
@@ -203,7 +281,6 @@ Réalisé par
 - Mohamed ALDYAB
 - Oualid FELKAOUI
 - Abderrahim HERMEZ
-- Lilia AIT-MOKHTAR
+- Lylia AIT-MOKHTAR
 - Rayane HEBBACHE
 - Nassim ICHCHOU
-

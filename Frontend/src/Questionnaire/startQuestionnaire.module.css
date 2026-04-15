@@ -12,6 +12,10 @@
   font-size: 25px;
 }
 
+.description {
+  text-align: center;
+}
+
 .button, .start_button {
   /*
   background-color: blue;

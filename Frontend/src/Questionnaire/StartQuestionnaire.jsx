@@ -20,13 +20,13 @@ function StartQuestionnaire({ user }) {
       validated: true
     },
     {
-      question: 'À quel point vous sentez-vous fatigué(e) ?',
+      question: "Comment évalueriez-vous votre niveau d'énergie général ?",
       type: "emoji",
       optional: false,
       validated: true
     },
     {
-      question: 'À quel point vous sentez-vous déprimé(e) ?',
+      question: "Comment évalueriez-vous votre niveau de déprime ?",
       type: "emoji",
       optional: false,
       validated: true
@@ -38,7 +38,7 @@ function StartQuestionnaire({ user }) {
       validated: true
     },
     {
-      question: 'À quel point sentez-vous que votre travail interfère avec votre vie privée.',
+      question: 'À quel point sentez-vous que votre travail interfère avec votre vie privée',
       type: "emoji",
       optional: false,
       validated: true
@@ -83,7 +83,7 @@ function StartQuestionnaire({ user }) {
       validated: true
     },
     {
-      question: 'Commentaires libres (facultatif)',
+      question: 'Commentaires libres',
       type: "text",
       optional: true,
       validated: true
@@ -403,7 +403,7 @@ function StartQuestionnaire({ user }) {
               <h1 className={styles.h1}>Questionnaire en cours</h1>
               <p className={styles.p}>ID du questionnaire : {questionnaireId}</p>
               <p className={styles.p}>Titre du questionnaire : {title}</p>
-              <p className={styles.p}>Description du questionnaire : {description}</p>
+              <p className={styles.description}>Description du questionnaire : {description}</p>
               <button className={styles.button} onClick={() => {handleStopQuestionnaire(); setMode(null)}}>Arrêter le questionnaire</button>
             </div> 
           </div>

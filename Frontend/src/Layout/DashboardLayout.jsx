@@ -630,7 +630,7 @@ export default function DashboardLayout({ user, children }) {
             }
           >
             <img
-              src="/tableau-de-bord.png"
+              src="/forum.png"
               alt="Forum"
               className="sidebar-icon-img"
             />
@@ -686,7 +686,7 @@ export default function DashboardLayout({ user, children }) {
               }}
             >
               <img
-                src="/parametre.png"
+                src="/employee.png"
                 alt="Employés"
                 className="sidebar-icon-img"
               />
@@ -700,10 +700,10 @@ export default function DashboardLayout({ user, children }) {
               setTab(TAB_QUESTIONNAIRE);
 
               if (isRH) {
-                navigate(`/start_questionnaire/${user.id}`);
+                navigate('/start_questionnaire');
               } else {
                 navigate(
-                  `/questionnaire/${user.id}/${questionnaireId || "none"}`,
+                  '/questionnaire',
                 );
               }
             }}

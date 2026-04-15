@@ -96,3 +96,23 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+@media (prefers-color-scheme: dark) {
+  .detail-header h1 { color: #E2E8F0; }
+  .detail-meta { color: #A0AEC0; }
+  
+  .detail-category { 
+    background: rgba(108, 93, 211, 0.2); 
+    color: #8A7EE5;
+  }
+
+  .article-body { 
+    background: #1A202C; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+  }
+  .article-text { color: #CBD5E0; }
+  
+  .back-btn { color: #8A7EE5; }
+  .back-btn:hover { color: #B7AFFF; }
+}
