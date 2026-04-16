@@ -181,6 +181,28 @@ html, body, #root, .App {
   gap: 20px;
 }
 
+.menu-item-badge {
+  position: absolute;
+  top: 6px;
+  left: 26px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e53e3e;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: 8px;
+  border: 2px solid #fff;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .notification-unread-badge {
   position: absolute;
   top: -2px;
@@ -656,10 +678,30 @@ button.notification-item:disabled {
   margin-bottom: 4px;
 }
 
+.notification-triggered-by {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #5A67D8;
+  background: #EBF4FF;
+  border-radius: 6px;
+  padding: 3px 8px;
+  margin-bottom: 6px;
+  width: fit-content;
+}
+
+.notification-triggered-by strong {
+  color: #3730A3;
+}
+
 .notification-body {
   font-size: 13px;
   color: #4A5568;
   line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 4px;
 }
 
 .notification-seen {
@@ -768,5 +810,58 @@ button.notification-item:disabled {
   .floating-topbar .user-greeting,
   .floating-topbar .company-name {
     color: #ffffff;
+  }
+
+  .notification-popup,
+  .notification-popup-header {
+    background: #13161e;
+    border-color: #252a38;
+  }
+
+  .notification-popup-title,
+  .notification-popup-close {
+    color: #e8eaf0;
+  }
+
+  .notification-popup-close:hover {
+    background: #252a38;
+    color: #fff;
+  }
+
+  .notification-item {
+    background: #13161e;
+    border-color: #252a38;
+    color: #e8eaf0;
+  }
+
+  button.notification-item.notification-item-unread {
+    background: #1a1f2e;
+    border-color: #4c3f9e;
+  }
+
+  .notification-type {
+    color: #a5b4fc;
+  }
+
+  .notification-date,
+  .notification-seen {
+    color: #9ca3af;
+  }
+
+  .notification-title {
+    color: #e8eaf0;
+  }
+
+  .notification-body {
+    color: #cbd5e1;
+  }
+
+  .notification-triggered-by {
+    background: rgba(99, 102, 241, 0.15);
+    color: #c7d2fe;
+  }
+
+  .notification-triggered-by strong {
+    color: #e0e7ff;
   }
 }

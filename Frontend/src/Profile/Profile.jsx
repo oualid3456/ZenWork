@@ -85,15 +85,15 @@ function Profile({ user, embedded }) {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setProfileMessage({ type: "", text: "" });
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        nom: nom.trim() || null,
-        prenom: prenom.trim() || null,
-        service: service.trim() || null,
-        date_embauche: dateEmbauche || null,
-      })
-      .eq("id", user.id);
+    const champs = {
+      nom: nom.trim() || null,
+      prenom: prenom.trim() || null,
+    };
+    if (profile.role === "RH") {
+      champs.service = service.trim() || null;
+      champs.date_embauche = dateEmbauche || null;
+    }
+    const { error } = await supabase.from("profiles").update(champs).eq("id", user.id);
     if (error) {
       setProfileMessage({ type: "error", text: error.message });
       return;
@@ -101,9 +101,30 @@ function Profile({ user, embedded }) {
     setProfileMessage({ type: "success", text: "Profil mis à jour." });
   };
 
+  const handleDeleteProfile = async () => {
+    const confirmation = window.confirm(
+      "⚠️ Etes-vous sûr de vouloir supprimer votre compte ?"
+    );
+    if (!confirmation) return;
+    const { error } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", user.id);
+    if (error) {
+      alert("Erreur : " + error.message);
+      return;
+    }
+    alert("Compte supprimé avec succès");
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   if (loading || !profile) {
     return <Loading />;
   }
+
+  const estRh = profile.role === "RH";
+  const classeChampBloque = [styles.input, styles.inputBlocked].join(" ");
 
   return (
     <div className={styles.page}>
@@ -168,22 +189,31 @@ function Profile({ user, embedded }) {
           <label className={styles.label}>
             Service
             <input
-              className={styles.input}
+              className={estRh ? styles.input : classeChampBloque}
               type="text"
               value={service}
               onChange={(e) => setService(e.target.value)}
               placeholder="Service"
+              readOnly={!estRh}
+              aria-readonly={!estRh}
             />
           </label>
           <label className={styles.label}>
             Date d&apos;embauche
             <input
-              className={styles.input}
+              className={estRh ? styles.input : classeChampBloque}
               type="date"
               value={dateEmbauche}
               onChange={(e) => setDateEmbauche(e.target.value)}
+              readOnly={!estRh}
+              aria-readonly={!estRh}
             />
           </label>
+          {!estRh && (
+            <p className={styles.muted}>
+              Service et date d&apos;embauche : lecture seule (définis par le RH).
+            </p>
+          )}
           <p className={styles.muted}>Rôle : {profile.role}</p>
           <button type="submit" className={styles.button}>Enregistrer les modifications</button>
         </form>
@@ -205,6 +235,16 @@ function Profile({ user, embedded }) {
           </button>
         </div>
       )}
+
+      <div className={styles.section}>
+        <div className={styles.div}>
+          <button className={styles.deleteButton}
+            onClick={handleDeleteProfile}
+          >
+            Supprimer mon compte
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

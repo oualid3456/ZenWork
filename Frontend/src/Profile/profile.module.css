@@ -54,6 +54,17 @@
   box-shadow: 0 0 0 2px rgba(108, 93, 211, 0.15);
 }
 
+.inputBlocked {
+  background: #F7F8FA;
+  color: #4A5568;
+  cursor: not-allowed;
+}
+
+.inputBlocked:focus {
+  border-color: #E2E8F0;
+  box-shadow: none;
+}
+
 .button {
   align-self: flex-start;
   padding: 0.5rem 1.25rem;
@@ -106,4 +117,93 @@
 .backButton:hover {
   background: #F7F8FA;
   color: #1A202C;
+}
+
+.deleteButton {
+  background: #E53E3E;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.deleteButton:hover {
+  transform: scale(1.05);
+}
+
+/* Dark mode — aligné PsychoBot / Layout */
+@media (prefers-color-scheme: dark) {
+  .page {
+    color: #e8eaf0;
+    color-scheme: dark;
+  }
+
+  .section {
+    background: #13161e;
+    border-color: #252a38;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .title {
+    color: #e8eaf0;
+  }
+
+  .label {
+    color: #9ca3af;
+  }
+
+  .input {
+    background: #0d0f14;
+    border-color: #252a38;
+    color: #e8eaf0;
+  }
+
+  .input:focus {
+    border-color: #7c6ff7;
+    box-shadow: 0 0 0 2px rgba(124, 111, 247, 0.25);
+  }
+
+  .inputBlocked {
+    background: #1a1f2e;
+    color: #9ca3af;
+    border-color: #252a38;
+  }
+
+  .inputBlocked:focus {
+    border-color: #252a38;
+  }
+
+  .button {
+    background: #7c6ff7;
+  }
+
+  .button:hover {
+    background: #6d5ff0;
+  }
+
+  .muted {
+    color: #6b7280;
+  }
+
+  .error {
+    color: #fca5a5;
+  }
+
+  .success {
+    color: #6ee7b7;
+  }
+
+  .backButton {
+    background: #13161e;
+    border-color: #252a38;
+    color: #9ca3af;
+  }
+
+  .backButton:hover {
+    background: #1a1f2e;
+    color: #e8eaf0;
+  }
 }

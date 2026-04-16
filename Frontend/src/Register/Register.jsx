@@ -11,10 +11,16 @@ function Register() {
   const [message, setMessage] = useState("");
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
+  const [consent, setConsent] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    if (!consent) {
+      setMessage("Vous devez accepter les conditions d'utilisation");
+      return;
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -87,6 +93,21 @@ function Register() {
             <option className={styles.option} value="EMPLOYE">Employé</option>
             <option className={styles.option} value="RH">RH</option>
           </select>
+
+          <label className={styles.label}>
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+            />
+            Si vous appuyez sur ce bouton vous consentez à ce
+            <br />
+            que vos données soient utilisées par une intelligence
+            <br />
+            artificielle et exploitables par celle-ci, ainsi que
+            <br />
+            consultables par les RH et vous.
+          </label>
 
           <button className={styles.button} type="submit">Créer le compte</button>
         </form>
