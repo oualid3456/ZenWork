@@ -1,21 +1,296 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   createComment,
+  createForumReport,
+  createForumSanction,
   deleteComment as deleteCommentAction,
+  fetchActiveForumSanction,
+  fetchAttachmentsByTargets,
   fetchComments,
   fetchLikes,
   fetchProfilesByIds,
+  moderateForumComment,
+  moderateForumPost,
   toggleLike as toggleLikeAction,
   updateComment as updateCommentAction,
 } from "./forumService";
-import { formatDate, isAdminLike } from "./forumUtils";
+import {
+  canBanForumUsers,
+  canCommentInForum,
+  canModerateForum,
+  formatDate,
+  formatFileSize,
+  getUserDisplayName,
+  groupCommentsByParent,
+  isAllowedCommentGif,
+} from "./forumUtils";
+
+function CommentNode({
+  comment,
+  user,
+  role,
+  commentProfiles,
+  commentAttachmentsMap,
+  onReply,
+  onEdit,
+  onDelete,
+  onModerate,
+  onBanAuthor,
+  onReport,
+  replyState,
+  setReplyState,
+  activeSanction,
+}) {
+  const profile = commentProfiles[comment.user_id];
+  const label =
+    [profile?.prenom, profile?.nom].filter(Boolean).join(" ") ||
+    comment.author_name ||
+    "Utilisateur";
+
+  const canManageComment = comment.user_id === user.id || canModerateForum(role);
+  const gifAttachment = (commentAttachmentsMap[String(comment.id)] ?? []).find(
+    (item) => item.kind === "gif"
+  );
+
+  const isEditing = replyState.mode === "edit" && replyState.targetId === comment.id;
+  const isReplying = replyState.mode === "reply" && replyState.targetId === comment.id;
+
+  return (
+    <div className={comment.depth > 0 ? "forum-reply-card" : "forum-comment-card"}>
+      <div className="forum-comment-header">
+        <div>
+          {comment.user_id ? (
+            <strong className="forum-comment-author">
+              <Link to={`/profile/${comment.user_id}`}>{label}</Link>
+            </strong>
+          ) : (
+            <strong className="forum-comment-author">{label}</strong>
+          )}
+          <div className="forum-comment-date">
+            {formatDate(comment.created_at)}
+            {comment.edited_at ? " • modifié" : ""}
+          </div>
+        </div>
+
+        {comment.status !== "published" && (
+          <span className={`forum-status-pill ${comment.status}`}>
+            {comment.status === "hidden" ? "Masqué" : comment.status}
+          </span>
+        )}
+      </div>
+
+      {isEditing ? (
+        <>
+          <div className="forum-comment-composer search-box">
+            <textarea
+              value={replyState.text}
+              onChange={(e) =>
+                setReplyState((prev) => ({ ...prev, text: e.target.value }))
+              }
+              rows={3}
+            />
+          </div>
+
+          <div className="forum-comment-actions">
+            <button
+              type="button"
+              className="start-btn forum-admin-btn"
+              onClick={() => onEdit(comment.id)}
+            >
+              Enregistrer
+            </button>
+            <button
+              type="button"
+              className="start-btn forum-admin-btn"
+              onClick={() =>
+                setReplyState({ mode: null, targetId: null, text: "", gifFile: null })
+              }
+            >
+              Annuler
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="forum-comment-content">{comment.content}</div>
+
+          {gifAttachment?.publicUrl && (
+            <div className="forum-comment-gif">
+              <img src={gifAttachment.publicUrl} alt={gifAttachment.file_name} />
+            </div>
+          )}
+
+          <div className="forum-comment-actions">
+            <button
+              type="button"
+              className="start-btn forum-action-btn"
+              onClick={() =>
+                setReplyState({
+                  mode: "reply",
+                  targetId: comment.id,
+                  text: "",
+                  gifFile: null,
+                })
+              }
+              disabled={!canCommentInForum(activeSanction)}
+            >
+              Répondre
+            </button>
+
+            {comment.user_id === user.id && (
+              <button
+                type="button"
+                className="start-btn forum-action-btn"
+                onClick={() =>
+                  setReplyState({
+                    mode: "edit",
+                    targetId: comment.id,
+                    text: comment.content ?? "",
+                    gifFile: null,
+                  })
+                }
+              >
+                Modifier
+              </button>
+            )}
+
+            {canManageComment && (
+              <button
+                type="button"
+                className="start-btn forum-action-btn"
+                onClick={() => onDelete(comment)}
+              >
+                Supprimer
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="start-btn forum-report-btn"
+              onClick={() => onReport("comment", comment.id)}
+            >
+              Signaler
+            </button>
+
+            {canModerateForum(role) && comment.status === "published" && (
+              <button
+                type="button"
+                className="start-btn forum-admin-btn"
+                onClick={() => onModerate(comment.id, "hidden")}
+              >
+                Masquer
+              </button>
+            )}
+
+            {canModerateForum(role) && comment.status === "hidden" && (
+              <button
+                type="button"
+                className="start-btn forum-admin-btn"
+                onClick={() => onModerate(comment.id, "published")}
+              >
+                Restaurer
+              </button>
+            )}
+
+            {canBanForumUsers(role) && comment.user_id !== user.id && (
+              <button
+                type="button"
+                className="start-btn forum-admin-btn forum-admin-danger"
+                onClick={() => onBanAuthor(comment.user_id)}
+              >
+                Bannir auteur
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {isReplying && (
+        <>
+          <div className="forum-comment-composer search-box">
+            <textarea
+              value={replyState.text}
+              onChange={(e) =>
+                setReplyState((prev) => ({ ...prev, text: e.target.value }))
+              }
+              placeholder="Écrire une réponse..."
+              rows={3}
+            />
+          </div>
+
+          <div className="forum-comment-toolbar">
+            <label className="forum-tool-btn" htmlFor={`reply-gif-${comment.id}`}>
+              GIF
+            </label>
+            <input
+              id={`reply-gif-${comment.id}`}
+              type="file"
+              accept="image/gif"
+              style={{ display: "none" }}
+              onChange={(e) =>
+                setReplyState((prev) => ({
+                  ...prev,
+                  gifFile: e.target.files?.[0] ?? null,
+                }))
+              }
+            />
+          </div>
+
+          <div className="forum-comment-actions">
+            <button
+              type="button"
+              className="start-btn forum-admin-btn"
+              onClick={() => onReply(comment.id)}
+            >
+              Envoyer la réponse
+            </button>
+            <button
+              type="button"
+              className="start-btn forum-admin-btn"
+              onClick={() =>
+                setReplyState({ mode: null, targetId: null, text: "", gifFile: null })
+              }
+            >
+              Annuler
+            </button>
+          </div>
+        </>
+      )}
+
+      {comment.replies?.length > 0 && (
+        <div className="forum-replies-list">
+          {comment.replies.map((reply) => (
+            <CommentNode
+              key={reply.id}
+              comment={reply}
+              user={user}
+              role={role}
+              commentProfiles={commentProfiles}
+              commentAttachmentsMap={commentAttachmentsMap}
+              onReply={onReply}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onModerate={onModerate}
+              onBanAuthor={onBanAuthor}
+              onReport={onReport}
+              replyState={replyState}
+              setReplyState={setReplyState}
+              activeSanction={activeSanction}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Post({
   post,
   user,
   role,
   authorProfile,
+  attachments = [],
   refreshPosts,
   onEditPost,
   onDeletePost,
@@ -24,16 +299,39 @@ export default function Post({
   const [likes, setLikes] = useState(0);
   const [comments, setComments] = useState([]);
   const [commentProfiles, setCommentProfiles] = useState({});
+  const [commentAttachmentsMap, setCommentAttachmentsMap] = useState({});
   const [commentText, setCommentText] = useState("");
+  const [commentGifFile, setCommentGifFile] = useState(null);
   const [showComments, setShowComments] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingCommentText, setEditingCommentText] = useState("");
+  const [replyState, setReplyState] = useState({
+    mode: null,
+    targetId: null,
+    text: "",
+    gifFile: null,
+  });
+  const [activeSanction, setActiveSanction] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     loadLikes();
     loadComments();
   }, [post.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadSanction();
+  }, [user?.id]);
+
+  async function loadSanction() {
+    try {
+      const sanction = await fetchActiveForumSanction(user.id);
+      setActiveSanction(sanction);
+    } catch (error) {
+      console.error("Erreur chargement sanction forum :", error.message);
+      setActiveSanction(null);
+    }
+  }
 
   async function loadLikes() {
     try {
@@ -48,21 +346,38 @@ export default function Post({
   async function loadComments() {
     try {
       const data = await fetchComments(post.id);
-      setComments(data);
+      const visibleComments = canModerateForum(role)
+        ? data
+        : data.filter((comment) => comment.status === "published");
 
-      const ids = [...new Set(data.map((comment) => comment.user_id).filter(Boolean))];
+      setComments(visibleComments);
+
+      const ids = [
+        ...new Set(visibleComments.map((comment) => comment.user_id).filter(Boolean)),
+      ];
+
       const profiles = await fetchProfilesByIds(ids);
-
       const map = {};
       profiles.forEach((profile) => {
         map[profile.id] = profile;
       });
-
       setCommentProfiles(map);
+
+      let commentAttachmentMap = {};
+      try {
+        commentAttachmentMap = await fetchAttachmentsByTargets(
+          "comment",
+          visibleComments.map((comment) => comment.id)
+        );
+      } catch (error) {
+        console.warn("Erreur chargement attachments commentaires :", error.message);
+      }
+      setCommentAttachmentsMap(commentAttachmentMap);
     } catch (error) {
       console.error("Erreur chargement commentaires :", error.message);
       setComments([]);
       setCommentProfiles({});
+      setCommentAttachmentsMap({});
     }
   }
 
@@ -73,7 +388,6 @@ export default function Post({
         userId: user.id,
         hasLiked,
       });
-
       setHasLiked(result.liked);
       setLikes((prev) => (result.liked ? prev + 1 : prev - 1));
     } catch (error) {
@@ -81,61 +395,159 @@ export default function Post({
     }
   }
 
-  async function addComment() {
-    if (!commentText.trim()) return;
+  async function addComment(parentCommentId = null) {
+    const text = parentCommentId ? replyState.text : commentText;
+    const gifFile = parentCommentId ? replyState.gifFile : commentGifFile;
 
-    const authorName =
-      user?.user_metadata?.prenom || user?.email || "Utilisateur";
+    if (!text.trim() && !gifFile) return;
+
+    if (!canCommentInForum(activeSanction)) {
+      setErrorMessage(
+        "Tu ne peux pas commenter sur le forum actuellement à cause d’une restriction."
+      );
+      return;
+    }
+
+    if (gifFile && !isAllowedCommentGif(gifFile.type)) {
+      setErrorMessage("Seul un GIF est autorisé dans les commentaires.");
+      return;
+    }
+
+    const authorName = getUserDisplayName(user, commentProfiles[user.id]);
 
     try {
       await createComment({
         postId: post.id,
         userId: user.id,
         authorName,
-        content: commentText.trim(),
+        content: text.trim(),
+        parentCommentId,
+        gifFile,
       });
 
-      setCommentText("");
+      if (parentCommentId) {
+        setReplyState({ mode: null, targetId: null, text: "", gifFile: null });
+      } else {
+        setCommentText("");
+        setCommentGifFile(null);
+      }
+
+      setErrorMessage("");
       await loadComments();
       refreshPosts?.();
     } catch (error) {
       console.error("Erreur ajout commentaire :", error.message);
+      setErrorMessage("Impossible d’ajouter le commentaire.");
     }
   }
 
-  function startEditComment(comment) {
-    if (comment.user_id !== user.id) return;
-    setEditingCommentId(comment.id);
-    setEditingCommentText(comment.content || "");
-  }
-
   async function saveCommentEdit(commentId) {
-    if (!editingCommentText.trim()) return;
-
+    if (!replyState.text.trim()) return;
     try {
       await updateCommentAction({
         commentId,
         userId: user.id,
-        content: editingCommentText.trim(),
+        content: replyState.text.trim(),
       });
-
-      setEditingCommentId(null);
-      setEditingCommentText("");
+      setReplyState({ mode: null, targetId: null, text: "", gifFile: null });
       loadComments();
     } catch (error) {
       console.error("Erreur modification commentaire :", error.message);
+      setErrorMessage("Impossible de modifier le commentaire.");
     }
   }
 
   async function removeComment(comment) {
-    const canDelete = comment.user_id === user.id || isAdminLike(role);
+    const canDelete = comment.user_id === user.id || canModerateForum(role);
     if (!canDelete) return;
-
     try {
       await deleteCommentAction(comment.id);
       loadComments();
     } catch (error) {
       console.error("Erreur suppression commentaire :", error.message);
+      setErrorMessage("Impossible de supprimer le commentaire.");
+    }
+  }
+
+  async function handleReport(targetType, targetId) {
+    const reason = window.prompt(
+      "Motif du signalement (insulte, haine, violence, NSFW, spam, autre) :"
+    );
+    if (!reason) return;
+
+    const details = window.prompt("Détail facultatif :") ?? "";
+
+    try {
+      await createForumReport({
+        reporterId: user.id,
+        targetType,
+        targetId,
+        reason,
+        details,
+      });
+      setErrorMessage("");
+      window.alert("Signalement envoyé.");
+    } catch (error) {
+      console.error("Erreur signalement :", error.message);
+      setErrorMessage("Impossible d’envoyer le signalement.");
+    }
+  }
+
+  async function handleModeratePost(status) {
+    const moderationReason =
+      window.prompt("Motif de modération :") || "Modération forum";
+
+    try {
+      await moderateForumPost({
+        postId: post.id,
+        status,
+        moderationReason,
+      });
+      refreshPosts?.();
+    } catch (error) {
+      console.error("Erreur modération post :", error.message);
+      setErrorMessage("Impossible de modérer cette publication.");
+    }
+  }
+
+  async function handleModerateComment(commentId, status) {
+    const moderationReason =
+      window.prompt("Motif de modération :") || "Modération forum";
+
+    try {
+      await moderateForumComment({
+        commentId,
+        status,
+        moderationReason,
+      });
+      loadComments();
+    } catch (error) {
+      console.error("Erreur modération commentaire :", error.message);
+      setErrorMessage("Impossible de modérer ce commentaire.");
+    }
+  }
+
+  async function handleBanAuthor(authorId) {
+    const reason = window.prompt("Motif du bannissement forum :");
+    if (!reason) return;
+
+    const confirmBan = window.confirm(
+      "Confirmer le bannissement forum de cet utilisateur ?"
+    );
+    if (!confirmBan) return;
+
+    try {
+      await createForumSanction({
+        userId: authorId,
+        type: "forum_banned",
+        reason,
+        issuedBy: user.id,
+      });
+
+      window.alert("Utilisateur banni du forum.");
+    } catch (error) {
+      console.error("Erreur bannissement forum :", error.message);
+      setErrorMessage("Impossible de bannir cet utilisateur du forum.");
     }
   }
 
@@ -144,63 +556,89 @@ export default function Post({
     post.author_name ||
     "Utilisateur";
 
+  const commentsTree = useMemo(() => groupCommentsByParent(comments), [comments]);
+
   return (
-    <div className="video-card">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 16,
-          marginBottom: 12,
-        }}
-      >
-        <div className="video-body">
+    <div className="video-card forum-post-card">
+      <div className="forum-post-header">
+        <div className="forum-post-author">
           {post.user_id ? (
-            <h3 style={{ margin: 0 }}>
+            <span className="forum-post-author-name">
               <Link to={`/profile/${post.user_id}`}>{authorName}</Link>
-            </h3>
+            </span>
           ) : (
-            <h3 style={{ margin: 0 }}>{authorName}</h3>
+            <span className="forum-post-author-name">{authorName}</span>
           )}
-          <p style={{ marginTop: 6 }}>
+
+          <span className="forum-post-author-meta">
             {authorProfile?.role ? `${authorProfile.role} • ` : ""}
             {formatDate(post.created_at)}
-          </p>
+            {post.edited_at ? " • modifié" : ""}
+          </span>
         </div>
 
-        {canManagePost && (
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-            {post.user_id === user.id && (
-              <button
-                type="button"
-                className="start-btn"
-                style={{ width: "120px" }}
-                onClick={onEditPost}
-              >
-                Modifier
-              </button>
-            )}
-            <button
-              type="button"
-              className="start-btn"
-              style={{ width: "120px" }}
-              onClick={onDeletePost}
-            >
-              Supprimer
-            </button>
-          </div>
+        {post.status !== "published" && (
+          <span className={`forum-status-pill ${post.status}`}>
+            {post.status === "hidden" ? "Masqué" : post.status}
+          </span>
         )}
       </div>
 
-      <div className="video-body" style={{ marginBottom: 16 }}>
-        <p style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}>{post.content}</p>
-      </div>
+      <div className="forum-post-content">{post.content}</div>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+      {attachments.length > 0 && (
+        <div className="forum-post-media">
+          {attachments.map((attachment) => {
+            if (attachment.kind === "image" || attachment.kind === "gif") {
+              return (
+                <img
+                  key={attachment.id}
+                  src={attachment.publicUrl}
+                  alt={attachment.file_name}
+                  className={
+                    attachment.kind === "gif" ? "forum-media-gif" : "forum-media-image"
+                  }
+                />
+              );
+            }
+
+            if (attachment.kind === "video") {
+              return (
+                <video
+                  key={attachment.id}
+                  src={attachment.publicUrl}
+                  className="forum-media-video"
+                  controls
+                />
+              );
+            }
+
+            if (attachment.kind === "pdf") {
+              return (
+                <a
+                  key={attachment.id}
+                  href={attachment.publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="forum-media-pdf"
+                >
+                  <span className="forum-media-pdf-title">📄 {attachment.file_name}</span>
+                  <span className="forum-media-pdf-meta">
+                    PDF • {formatFileSize(attachment.size_bytes)}
+                  </span>
+                </a>
+              );
+            }
+
+            return null;
+          })}
+        </div>
+      )}
+
+      <div className="forum-post-actions">
         <button
           type="button"
-          className="start-btn"
-          style={{ width: "160px" }}
+          className="start-btn forum-action-btn"
           onClick={handleToggleLike}
         >
           {hasLiked ? "❤️ Like" : "🤍 Like"} ({likes})
@@ -208,161 +646,135 @@ export default function Post({
 
         <button
           type="button"
-          className="start-btn"
-          style={{ width: "190px" }}
+          className="start-btn forum-action-btn"
           onClick={() => setShowComments((prev) => !prev)}
         >
-          💬 Commentaire ({comments.length})
+          💬 Commentaires ({comments.length})
         </button>
+
+        <button
+          type="button"
+          className="start-btn forum-report-btn"
+          onClick={() => handleReport("post", post.id)}
+        >
+          🚩 Signaler
+        </button>
+
+        {canManagePost && post.user_id === user.id && (
+          <button
+            type="button"
+            className="start-btn forum-admin-btn"
+            onClick={onEditPost}
+          >
+            Modifier
+          </button>
+        )}
+
+        {canManagePost && (
+          <button
+            type="button"
+            className="start-btn forum-admin-btn"
+            onClick={onDeletePost}
+          >
+            Supprimer
+          </button>
+        )}
+
+        {canModerateForum(role) && post.status === "published" && (
+          <button
+            type="button"
+            className="start-btn forum-admin-btn"
+            onClick={() => handleModeratePost("hidden")}
+          >
+            Masquer
+          </button>
+        )}
+
+        {canModerateForum(role) && post.status === "hidden" && (
+          <button
+            type="button"
+            className="start-btn forum-admin-btn"
+            onClick={() => handleModeratePost("published")}
+          >
+            Restaurer
+          </button>
+        )}
+
+        {canBanForumUsers(role) && post.user_id !== user.id && (
+          <button
+            type="button"
+            className="start-btn forum-admin-btn forum-admin-danger"
+            onClick={() => handleBanAuthor(post.user_id)}
+          >
+            Bannir auteur
+          </button>
+        )}
       </div>
 
-      {showComments && (
-        <div className="video-body">
-          <h3>Commentaires</h3>
+      {errorMessage && <p style={{ color: "#E53E3E" }}>{errorMessage}</p>}
 
-          {comments.length === 0 ? (
+      {showComments && (
+        <div className="forum-comments-section">
+          <h3 className="forum-comments-title">Commentaires</h3>
+
+          {commentsTree.length === 0 ? (
             <p>Aucun commentaire pour le moment.</p>
           ) : (
-            comments.map((comment) => {
-              const profile = commentProfiles[comment.user_id];
-              const label =
-                [profile?.prenom, profile?.nom].filter(Boolean).join(" ") ||
-                comment.author_name ||
-                "Utilisateur";
-
-              const canManageComment =
-                comment.user_id === user.id || isAdminLike(role);
-
-              return (
-                <div
+            <div className="forum-comments-list">
+              {commentsTree.map((comment) => (
+                <CommentNode
                   key={comment.id}
-                  style={{
-                    background: "#F7F8FA",
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 10,
-                  }}
-                >
-                  {editingCommentId === comment.id ? (
-                    <>
-                      <div className="search-box" style={{ width: "100%", marginBottom: 12 }}>
-                        <textarea
-                          value={editingCommentText}
-                          onChange={(e) => setEditingCommentText(e.target.value)}
-                          rows={3}
-                          style={{
-                            width: "100%",
-                            border: "none",
-                            outline: "none",
-                            background: "transparent",
-                            resize: "vertical",
-                            fontFamily: "inherit",
-                          }}
-                        />
-                      </div>
-
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button
-                          type="button"
-                          className="start-btn"
-                          style={{ width: "140px" }}
-                          onClick={() => saveCommentEdit(comment.id)}
-                        >
-                          Enregistrer
-                        </button>
-                        <button
-                          type="button"
-                          className="start-btn"
-                          style={{ width: "140px" }}
-                          onClick={() => {
-                            setEditingCommentId(null);
-                            setEditingCommentText("");
-                          }}
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          marginBottom: 8,
-                        }}
-                      >
-                        <div>
-                          {comment.user_id ? (
-                            <strong>
-                              <Link to={`/profile/${comment.user_id}`}>{label}</Link>
-                            </strong>
-                          ) : (
-                            <strong>{label}</strong>
-                          )}
-                          <p style={{ margin: "4px 0 0 0", color: "#808191", fontSize: 13 }}>
-                            {formatDate(comment.created_at)}
-                          </p>
-                        </div>
-
-                        {canManageComment && (
-                          <div style={{ display: "flex", gap: 8 }}>
-                            {comment.user_id === user.id && (
-                              <button
-                                type="button"
-                                className="start-btn"
-                                style={{ width: "120px" }}
-                                onClick={() => startEditComment(comment)}
-                              >
-                                Modifier
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              className="start-btn"
-                              style={{ width: "120px" }}
-                              onClick={() => removeComment(comment)}
-                            >
-                              Supprimer
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <p style={{ margin: 0 }}>{comment.content}</p>
-                    </>
-                  )}
-                </div>
-              );
-            })
+                  comment={comment}
+                  user={user}
+                  role={role}
+                  commentProfiles={commentProfiles}
+                  commentAttachmentsMap={commentAttachmentsMap}
+                  onReply={addComment}
+                  onEdit={saveCommentEdit}
+                  onDelete={removeComment}
+                  onModerate={handleModerateComment}
+                  onBanAuthor={handleBanAuthor}
+                  onReport={handleReport}
+                  replyState={replyState}
+                  setReplyState={setReplyState}
+                  activeSanction={activeSanction}
+                />
+              ))}
+            </div>
           )}
 
-          <div className="search-box" style={{ width: "100%", marginTop: 16 }}>
+          <div className="forum-comment-composer search-box">
             <textarea
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Ajouter un commentaire..."
               rows={3}
-              style={{
-                width: "100%",
-                border: "none",
-                outline: "none",
-                background: "transparent",
-                resize: "vertical",
-                fontFamily: "inherit",
-              }}
             />
           </div>
 
-          <button
-            type="button"
-            className="start-btn"
-            style={{ width: "160px", marginTop: 12 }}
-            onClick={addComment}
-          >
-            Envoyer
-          </button>
+          <div className="forum-comment-toolbar">
+            <label className="forum-tool-btn" htmlFor={`comment-gif-${post.id}`}>
+              GIF
+            </label>
+            <input
+              id={`comment-gif-${post.id}`}
+              type="file"
+              accept="image/gif"
+              style={{ display: "none" }}
+              onChange={(e) => setCommentGifFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+
+          <div className="forum-comment-actions">
+            <button
+              type="button"
+              className="start-btn forum-admin-btn"
+              onClick={() => addComment(null)}
+              disabled={!canCommentInForum(activeSanction)}
+            >
+              Envoyer
+            </button>
+          </div>
         </div>
       )}
     </div>
