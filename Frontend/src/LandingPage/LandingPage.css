@@ -105,9 +105,8 @@
 
 .nav-logo { display: flex; align-items: center; }
 .landing-logo {
-  height: 38px; /* Taille un poil plus élégante */
+  height: 38px;
   width: auto;
-  display: block;
 }
 .logo-text {
   font-family: 'Outfit', sans-serif;
@@ -288,26 +287,19 @@
     gap: 15px;
   }
 }
-/* ========================================================== */
-/* 🌙 MAGIE DU DARK MODE AUTOMATIQUE */
-/* ========================================================== */
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-color: #0F0D1C; /* Nuit profonde */
-    --text-main: #FFFFFF; /* Blanc pour une lisibilité parfaite */
-    --text-muted: #9E9BB8; /* Gris clair élégant */
-    --brand-purple: #8A7EE5; /* Violet un peu plus clair pour ressortir dans le noir */
-    --soft-purple: #342B6B; /* Halo sombre */
-    --petal-color: #2F265C; /* Pétales subtiles */
+    --bg-color: #0F0D1C;
+    --text-main: #FFFFFF; 
+    --text-muted: #9E9BB8; 
+    --brand-purple: #8A7EE5; 
+    --soft-purple: #342B6B; 
+    --petal-color: #2F265C; 
     
     --glass-bg: rgba(20, 18, 38, 0.6);
     --glass-border: rgba(255, 255, 255, 0.08);
     --panel-bg: rgba(20, 18, 38, 0.5);
-  }
-
-  /* Remplacement auto du logo pour sa version sombre (si elle existe !) */
-  .landing-logo {
-    content: url("/zenwork_logo_dark.png");
   }
 
   /* Ajustements pour que ça reste lisible et esthétique dans le noir */
@@ -320,4 +312,13 @@
     background: rgba(255, 255, 255, 0.05);
     color: var(--brand-purple);
   }
+
+  .light-logo {
+    display: none !important; 
+  }
+  
+  .dark-logo {
+    display: block !important;
+  }
+
 }

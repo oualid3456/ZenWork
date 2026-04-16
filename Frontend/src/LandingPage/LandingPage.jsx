@@ -30,16 +30,11 @@ export default function LandingPage() {
       </div>
 
       {/* --- HEADER NAVBAR --- */}
-      {/* --- HEADER NAVBAR --- */}
       <nav className="glass-navbar fade-in-down">
         <div className="nav-logo">
-        <picture>
-            {/* Si l'utilisateur est en mode sombre, le navigateur prend cette image */}
-            <source srcSet="/zenwork-dessin-dark.png" media="(prefers-color-scheme: dark)" />
-            {/* Par défaut, il prend celle-ci */}
-            <img src="/zenwork-dessin.png" alt="ZenWork Logo" className="landing-logo" />
-        </picture>
-        <span className="logo-text">ZenWork</span>
+          <img src="/zenwork-dessin.png" alt="ZenWork Logo" className="landing-logo light-logo" />
+          <img src="/zenwork-dessin-dark.png" alt="ZenWork Logo" className="landing-logo dark-logo" />
+          <span className="logo-text">ZenWork</span>
         </div>
         <div className="nav-actions">
           <button onClick={() => handleNavigation('/login')} className="nav-link">Connexion</button>
