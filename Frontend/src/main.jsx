@@ -16,14 +16,15 @@ import EmployeesList from "./Employees/EmployeesList.jsx";
 import Profile from "./Profile/Profile.jsx";
 import Ressources from "./Espace Ressource/Ressources.jsx";
 import PsychoBot from "./Psychobot/Psychobot.jsx";
-
+import LandingPage from './LandingPage/LandingPage';
 
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
           path="/start_questionnaire"
@@ -62,9 +63,12 @@ createRoot(document.getElementById("root")).render(
         />
         <Route path="/ForumHome" element={<ForumHome />} />
         <Route path="/psychobot" element={<SecurisedRoute><PsychoBot /></SecurisedRoute>} />
+
         <Route path="*" element={<Error />} />
+
 
       </Routes>
     </BrowserRouter>
   </StrictMode>
+  
 );
