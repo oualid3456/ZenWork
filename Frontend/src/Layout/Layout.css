@@ -1360,3 +1360,84 @@ button.notification-item:disabled {
     color: #FECACA;
   }
 }
+.forum-more-btn {
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.forum-more-btn:hover {
+  color: #6C5DD3;
+}
+
+.forum-context-menu {
+  position: absolute;
+  background: #1F2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
+}
+
+.forum-context-menu button {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  color: #E5E7EB;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.forum-context-menu button:hover {
+  background: #374151;
+}
+
+.forum-context-menu .danger {
+  color: #F87171;
+}
+.forum-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.forum-modal {
+  background: #1F2937;
+  border-radius: 16px;
+  padding: 20px;
+  width: 360px;
+  color: #E5E7EB;
+}
+
+.forum-radio {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.forum-modal textarea {
+  width: 100%;
+  margin-top: 10px;
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 10px;
+  color: white;
+}
+
+.forum-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}

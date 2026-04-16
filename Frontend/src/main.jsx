@@ -50,9 +50,9 @@ createRoot(document.getElementById("root")).render(
         <Route path="/feedback" element={<SecurisedRoute><DashboardLayout /></SecurisedRoute>} />
         <Route path="/ressource" element={<SecurisedRoute><DashboardLayout><Ressources /></DashboardLayout></SecurisedRoute>} />
         <Route path="/employees" element={<SecurisedRoute><DashboardLayout><EmployeesList /></DashboardLayout></SecurisedRoute>} />
-        <Route path="/profile/:id" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
+        <Route path="/profile" element={<SecurisedRoute><DashboardLayout><Profile /></DashboardLayout></SecurisedRoute>} />
         <Route
-          path="/forum/:userId"
+          path="/forum"
           element={
             <SecurisedRoute>
               <DashboardLayout>

@@ -10,7 +10,6 @@ import {
 } from "./forumService";
 import Post from "./Post";
 import {
-  canCommentInForum,
   canModerateForum,
   canPostInForum,
   formatFileSize,
@@ -36,7 +35,10 @@ export default function EmployeeDiscussion({ mode, user, role }) {
   const [activeSanction, setActiveSanction] = useState(null);
 
   const normalizedRole = useMemo(() => normalizeRole(role), [role]);
-  const isModerator = useMemo(() => canModerateForum(normalizedRole), [normalizedRole]);
+  const isModerator = useMemo(
+    () => canModerateForum(normalizedRole),
+    [normalizedRole]
+  );
 
   useEffect(() => {
     loadPosts();
@@ -135,6 +137,9 @@ export default function EmployeeDiscussion({ mode, user, role }) {
       return;
     }
 
+    // ✅ mémorise la position actuelle avant publication
+    const currentScrollY = window.scrollY;
+
     setSubmitting(true);
     setErrorMessage("");
 
@@ -152,7 +157,13 @@ export default function EmployeeDiscussion({ mode, user, role }) {
 
       setText("");
       setFiles([]);
+
       await loadPosts();
+
+      // ✅ restaure la position du scroll après rerender
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScrollY });
+      });
     } catch (error) {
       console.error("Erreur ajout post :", error.message);
       setErrorMessage(
@@ -177,6 +188,9 @@ export default function EmployeeDiscussion({ mode, user, role }) {
   async function saveEditPost(postId) {
     if (!editingText.trim()) return;
 
+    // ✅ mémorise la position avant rechargement
+    const currentScrollY = window.scrollY;
+
     try {
       await updatePostAction({
         postId,
@@ -185,7 +199,12 @@ export default function EmployeeDiscussion({ mode, user, role }) {
       });
 
       cancelEditPost();
-      loadPosts();
+      await loadPosts();
+
+      // ✅ restaure la position après rerender
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScrollY });
+      });
     } catch (error) {
       console.error("Erreur modification post :", error.message);
       setErrorMessage("Impossible de modifier la publication.");
@@ -196,9 +215,17 @@ export default function EmployeeDiscussion({ mode, user, role }) {
     const canDelete = post.user_id === user.id || isAdminLike(normalizedRole);
     if (!canDelete) return;
 
+    // ✅ mémorise la position avant rechargement
+    const currentScrollY = window.scrollY;
+
     try {
       await deletePostAction(post.id);
-      loadPosts();
+      await loadPosts();
+
+      // ✅ restaure la position après rerender
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScrollY });
+      });
     } catch (error) {
       console.error("Erreur suppression post :", error.message);
       setErrorMessage("Impossible de supprimer la publication.");
