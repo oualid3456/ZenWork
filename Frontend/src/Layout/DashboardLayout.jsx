@@ -35,7 +35,7 @@ function PopupProfil({ user, profile, onFermer, onOuvrirParametres }) {
   const ouvrirParametres = () => {
     onFermer();
     onOuvrirParametres();
-    navigate(`/profile/${user.id}`);
+    navigate("/profile");
   };
 
   return (
@@ -388,17 +388,29 @@ export default function DashboardLayout({ user, children }) {
   }, [notificationsOpen, rafraichirCompteurNonLues]);
 
   useEffect(() => {
-    if (pathname.includes("/employees")) setTab(TAB_EMPLOYEES);
-    else if (pathname.includes("/profile")) setTab(TAB_PARAMETRES);
-    else if (pathname.includes("/forum")) { setTab(TAB_FORUM); resetForumCount(); }
-    else if (pathname.includes("/feedback")) setTab(TAB_FEEDBACK);
-    else if (pathname.includes("/ressource")) setTab(TAB_RESSOURCE);
-    else if (pathname.includes("/dashboard")) setTab(TAB_DASHBOARD);
-    else if (pathname.includes("/questionnaire")) setTab(TAB_QUESTIONNAIRE);
-    else if (pathname.includes("/start_questionnaire"))
-      setTab(TAB_QUESTIONNAIRE);
-    else setTab(TAB_DASHBOARD);
-  }, [pathname, resetForumCount]);
+  if (pathname.includes("/employees")) {
+    setTab(TAB_EMPLOYEES);
+  } else if (pathname.includes("/profile")) {
+    setTab(TAB_PARAMETRES);
+  } else if (pathname.includes("/forum")) {
+    setTab(TAB_FORUM);
+    resetForumCount();
+  } else if (pathname.includes("/feedback")) {
+    setTab(TAB_FEEDBACK);
+  } else if (pathname.includes("/ressource")) {
+    setTab(TAB_RESSOURCE);
+  } else if (pathname.includes("/psychobot")) {
+    setTab(TAB_PSYCHOBOT);
+  } else if (pathname.includes("/dashboard")) {
+    setTab(TAB_DASHBOARD);
+  } else if (pathname.includes("/questionnaire")) {
+    setTab(TAB_QUESTIONNAIRE);
+  } else if (pathname.includes("/start_questionnaire")) {
+    setTab(TAB_QUESTIONNAIRE);
+  } else {
+    setTab(TAB_DASHBOARD);
+  }
+}, [pathname, resetForumCount]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -622,7 +634,7 @@ export default function DashboardLayout({ user, children }) {
             style={{ position: "relative" }}
             onClick={() => {
               setTab(TAB_FORUM);
-              navigate(`/forum/${user.id}`);
+              navigate("/forum");
               resetForumCount();
             }}
             aria-label={
@@ -722,7 +734,12 @@ export default function DashboardLayout({ user, children }) {
           <button
             type="button"
             className={`menu-item ${tab === TAB_PSYCHOBOT ? "active" : ""}`}
-            onClick={() => setTab(TAB_PSYCHOBOT)}
+            onClick={() => {
+              
+              setTab(TAB_PSYCHOBOT)
+              navigate("/psychobot");
+
+            }}
           >
             <img src="/bot.png" alt="Psychobot" className="sidebar-icon-img" />
             <span className="label">Psychobot</span>
@@ -733,7 +750,7 @@ export default function DashboardLayout({ user, children }) {
             className={`menu-item ${tab === TAB_PARAMETRES ? "active" : ""}`}
             onClick={() => {
               setTab(TAB_PARAMETRES);
-              navigate(`/profile/${user.id}`);
+              navigate("/profile");
             }}
           >
             <img
@@ -856,7 +873,7 @@ export default function DashboardLayout({ user, children }) {
           onFermer={() => setPopupOpen(false)}
           onOuvrirParametres={() => {
             setTab(TAB_PARAMETRES);
-            navigate(`/profile/${user.id}`);
+            navigate("/profile");
           }}
         />
       )}

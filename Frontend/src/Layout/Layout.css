@@ -873,7 +873,9 @@ button.notification-item:disabled {
 .forum-page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
 .forum-tabs {
@@ -909,7 +911,9 @@ button.notification-item:disabled {
 .forum-feed {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
 }
 
 .forum-composer {
@@ -956,8 +960,8 @@ button.notification-item:disabled {
 .forum-admin-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .forum-tool-btn {
@@ -1019,65 +1023,72 @@ button.notification-item:disabled {
 }
 
 .forum-post-card {
-  padding: 18px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  width: 100%;
+  box-sizing: border-box;
 }
+
 
 .forum-post-header {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
   align-items: flex-start;
-  margin-bottom: 12px;
-}
-
-.forum-post-author {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
 .forum-post-author-name {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   color: #1A202C;
+  line-height: 1.2;
 }
 
 .forum-post-author-meta {
-  font-size: 13px;
+  font-size: 11px;
+  color: #718096;
+  line-height: 1.2;
+}
+
+.forum-post-author-meta {
+  font-size: 12px;
   color: #718096;
 }
 
 .forum-post-content {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   color: #1A202C;
-  line-height: 1.6;
+  line-height: 1.45;
+  font-size: 14px;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .forum-post-media {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .forum-media-image,
 .forum-media-gif,
 .forum-media-video {
   width: 100%;
-  border-radius: 18px;
+  border-radius: 14px;
   background: #EDF2F7;
   object-fit: cover;
 }
 
 .forum-media-image,
 .forum-media-gif {
-  max-height: 260px;
+  max-height: 200px;
 }
 
 .forum-media-video {
-  max-height: 320px;
+  max-height: 240px;
 }
 
 .forum-media-pdf {
@@ -1103,8 +1114,9 @@ button.notification-item:disabled {
 
 .forum-action-btn {
   width: auto;
-  min-width: 130px;
-  padding-inline: 16px;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 12px;
 }
 
 .forum-report-btn {
@@ -1124,11 +1136,12 @@ button.notification-item:disabled {
 }
 
 .forum-comments-title {
-  margin: 0 0 12px 0;
-  font-size: 16px;
-  font-weight: 800;
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  font-weight: 700;
   color: #1A202C;
 }
+
 
 .forum-comments-list,
 .forum-replies-list {
@@ -1141,38 +1154,43 @@ button.notification-item:disabled {
 .forum-reply-card {
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
-  border-radius: 16px;
-  padding: 12px;
+  border-radius: 14px;
+  padding: 8px 10px;
 }
 
 .forum-replies-list {
-  margin-top: 10px;
-  margin-left: 18px;
-  padding-left: 12px;
+  margin-top: 8px;
+  margin-left: 12px;
+  padding-left: 8px;
   border-left: 2px solid #E9D8FD;
 }
 
 .forum-comment-header {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   align-items: flex-start;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
 }
 
 .forum-comment-author {
   font-weight: 700;
+  font-size: 13px;
   color: #1A202C;
+  line-height: 1.2;
 }
 
 .forum-comment-date {
-  font-size: 12px;
+  font-size: 11px;
   color: #A0AEC0;
+  line-height: 1.2;
 }
 
 .forum-comment-content {
   color: #1A202C;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.4;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -1189,8 +1207,8 @@ button.notification-item:disabled {
 
 .forum-comment-composer {
   width: 100%;
-  margin-top: 14px;
-  padding: 12px 14px;
+  margin-top: 10px;
+  padding: 8px 10px;
   align-items: flex-start;
   box-sizing: border-box;
 }
@@ -1201,8 +1219,9 @@ button.notification-item:disabled {
 
 .forum-admin-btn {
   width: auto;
-  min-width: 120px;
-  padding-inline: 14px;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 12px;
 }
 
 .forum-admin-danger {
@@ -1254,27 +1273,63 @@ button.notification-item:disabled {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
 
-@media (max-width: 768px) {
-  .forum-post-header,
-  .forum-comment-header {
-    flex-direction: column;
+@media (max-width: 900px) {
+  .forum-post-card {
+    padding: 10px 12px;
   }
 
   .forum-post-media {
     grid-template-columns: 1fr;
   }
 
-  .forum-action-btn,
-  .forum-admin-btn,
-  .forum-publish-btn {
-    width: 100%;
+  .forum-post-header,
+  .forum-comment-header {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .forum-post-actions,
+  .forum-comment-actions,
+  .forum-admin-actions {
+    gap: 6px;
   }
 
   .forum-replies-list {
-    margin-left: 10px;
-    padding-left: 10px;
+    margin-left: 8px;
+    padding-left: 8px;
   }
 }
+
+@media (max-width: 640px) {
+  .forum-tabs {
+    gap: 8px;
+  }
+
+  .forum-tab-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .forum-action-btn,
+  .forum-admin-btn,
+  .forum-publish-btn,
+  .forum-tool-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .forum-post-content,
+  .forum-comment-content {
+    font-size: 13px;
+  }
+
+  .forum-media-image,
+  .forum-media-gif,
+  .forum-media-video {
+    max-height: 220px;
+  }
+}
+
 
 @media (prefers-color-scheme: dark) {
   .forum-tab-btn {
@@ -1328,13 +1383,24 @@ button.notification-item:disabled {
   }
 
   .forum-composer-box textarea,
-  .forum-comment-composer textarea {
-    color: #F9FAFB;
-  }
+.forum-comment-composer textarea {
+  width: 100%;
+  min-height: 72px;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: vertical;
+  color: #1A202C;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+}
 
   .forum-comments-section {
-    border-top-color: #374151;
-  }
+  margin-top: 8px;
+  border-top: 1px solid #EDF2F7;
+  padding-top: 10px;
+}
 
   .forum-replies-list {
     border-left-color: #6C5DD3;

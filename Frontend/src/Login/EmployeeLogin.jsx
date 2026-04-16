@@ -40,7 +40,7 @@ function EmployeeLogin() {
   
       setMessage("Connexion réussie !");
       console.log("User connecté :", data.user);
-      navigate(`/profile/${data.user.id}`);
+      navigate("/dashboard");
     };
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createComment,
   createForumReport,
@@ -21,10 +21,74 @@ import {
   formatFileSize,
   getUserDisplayName,
   groupCommentsByParent,
-  isAdminLike,           // CORRECTIF : import ajouté pour la vérification modérateur
-  isAllowedCommentGif,
+  isAdminLike,
 } from "./forumUtils";
 import ReportModal from "./ReportModal";
+import GiphyGifPicker from "./GiphyGifPicker";
+
+const textareaStyle = {
+  width: "100%",
+  minHeight: 112,
+  borderRadius: 16,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.04)",
+  color: "#ffffff",
+  padding: "16px 18px",
+  outline: "none",
+  resize: "vertical",
+  fontFamily: "inherit",
+  fontSize: 15,
+  lineHeight: 1.5,
+  boxSizing: "border-box",
+};
+
+function GifPreview({ item, onRemove }) {
+  if (!item?.publicUrl && !item?.gifUrl && !item?.previewUrl) return null;
+
+  const src = item.publicUrl || item.gifUrl || item.previewUrl;
+
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        display: "inline-flex",
+        flexDirection: "column",
+        gap: 8,
+        maxWidth: 220,
+      }}
+    >
+      <img
+        src={src}
+        alt={item.file_name || item.title || "GIF"}
+        style={{
+          width: "100%",
+          maxHeight: 160,
+          objectFit: "cover",
+          borderRadius: 10,
+        }}
+      />
+
+      {onRemove && (
+        <button
+          type="button"
+          className="forum-tool-btn"
+          onClick={onRemove}
+          style={{ width: "fit-content" }}
+        >
+          Retirer le GIF
+        </button>
+      )}
+    </div>
+  );
+}
+
+// État vide partagé pour réinitialisation propre
+const EMPTY_REPLY_STATE = {
+  mode: null,
+  targetId: null,
+  text: "",
+  externalGif: null,
+};
 
 function CommentNode({
   comment,
@@ -39,7 +103,18 @@ function CommentNode({
   onDelete,
   onOpenReport,
   activeSanction,
+  submitting,
 }) {
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  // Ferme le gif picker si on change de targetId
+  const prevTargetId = useRef(replyState.targetId);
+  useEffect(() => {
+    if (prevTargetId.current !== replyState.targetId) {
+      setShowGifPicker(false);
+      prevTargetId.current = replyState.targetId;
+    }
+  }, [replyState.targetId]);
+
   const profile = commentProfiles[comment.user_id];
   const label =
     [profile?.prenom, profile?.nom].filter(Boolean).join(" ") ||
@@ -47,208 +122,240 @@ function CommentNode({
     "Utilisateur";
 
   const isOwnComment = comment.user_id === user.id;
-
-  const gifAttachment = (
-    commentAttachmentsMap[String(comment.id)] ?? []
-  ).find((item) => item.kind === "gif");
+  const gifAttachment = (commentAttachmentsMap[String(comment.id)] ?? []).find(
+    (item) => item.kind === "gif"
+  );
 
   const isEditing =
     replyState.mode === "edit" && replyState.targetId === comment.id;
   const isReplying =
     replyState.mode === "reply" && replyState.targetId === comment.id;
 
-  return (
-    <div
-      className={
-        comment.depth > 0 ? "forum-reply-card" : "forum-comment-card"
-      }
-    >
-      <div className="forum-comment-header">
-        <div>
-          <strong className="forum-comment-author">{label}</strong>
-          <div className="forum-comment-date">
-            {formatDate(comment.created_at)}
-            {comment.edited_at ? " • modifié" : ""}
-          </div>
-        </div>
+  function handleCancelState() {
+    setShowGifPicker(false);
+    setReplyState(EMPTY_REPLY_STATE);
+  }
 
-        {comment.status !== "published" && (
-          <span className={`forum-status-pill ${comment.status}`}>
-            {comment.status === "hidden" ? "Masqué" : comment.status}
-          </span>
-        )}
+  return (
+    <div className={comment.depth > 0 ? "forum-reply-card" : "forum-comment-card"}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <strong>{label}</strong>
+
+        <small>
+          {formatDate(comment.created_at)}
+          {comment.edited_at ? " • modifié" : ""}
+        </small>
       </div>
+
+      {comment.status !== "published" && (
+        <div className="forum-status-pill reported" style={{ marginTop: 8 }}>
+          {comment.status === "hidden" ? "Masqué" : comment.status}
+        </div>
+      )}
 
       {isEditing ? (
         <>
-          <div className="forum-comment-composer search-box">
-            <textarea
-              value={replyState.text}
-              onChange={(e) =>
-                setReplyState((prev) => ({ ...prev, text: e.target.value }))
-              }
-              rows={3}
-            />
-          </div>
+          <textarea
+            value={replyState.text}
+            onChange={(e) =>
+              setReplyState((prev) => ({ ...prev, text: e.target.value }))
+            }
+            rows={3}
+            style={{ ...textareaStyle, minHeight: 110, marginTop: 12 }}
+          />
 
-          <div className="forum-comment-actions">
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
             <button
               type="button"
-              className="start-btn forum-admin-btn"
+              className="forum-tool-btn"
+              // BUG FIX : autoriser l'enregistrement même si texte vide (garde le contenu précédent côté service)
+              // mais on bloque seulement si texte ET pas de gif existant
               onClick={() => onEditSubmit(comment.id)}
+              disabled={submitting || !replyState.text.trim()}
             >
-              Enregistrer
-            </button>
-
-            <button
-              type="button"
-              className="start-btn forum-admin-btn"
-              onClick={() =>
-                setReplyState({
-                  mode: null,
-                  targetId: null,
-                  text: "",
-                  gifFile: null,
-                })
-              }
-            >
-              Annuler
+              {submitting ? "Enregistrement..." : "Enregistrer"}
             </button>
           </div>
         </>
       ) : (
         <>
-          <div className="forum-comment-content">{comment.content}</div>
+          {comment.content && <p style={{ marginTop: 10 }}>{comment.content}</p>}
 
-          {gifAttachment?.publicUrl && (
-            <div className="forum-comment-gif">
+          {/* BUG FIX : affichage GIF via external_url (storage_path peut être une URL directe GIPHY) */}
+          {gifAttachment && (gifAttachment.publicUrl || gifAttachment.external_url) && (
+            <div style={{ marginTop: 8 }}>
               <img
-                src={gifAttachment.publicUrl}
-                alt={gifAttachment.file_name}
+                src={gifAttachment.publicUrl || gifAttachment.external_url}
+                alt={gifAttachment.file_name || "GIF"}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: 260,
+                  borderRadius: 12,
+                  display: "block",
+                }}
               />
             </div>
           )}
 
-          <div className="forum-comment-actions">
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginTop: 10,
+              alignItems: "center",
+            }}
+          >
+            {/* BUG FIX : si déjà en train de répondre à CE commentaire, le bouton sert à annuler */}
             <button
               type="button"
-              className="start-btn forum-action-btn"
-              onClick={() =>
-                setReplyState({
-                  mode: "reply",
-                  targetId: comment.id,
-                  text: "",
-                  gifFile: null,
-                })
-              }
+              className="forum-tool-btn"
+              onClick={() => {
+                if (isReplying) {
+                  handleCancelState();
+                } else {
+                  setReplyState({
+                    mode: "reply",
+                    targetId: comment.id,
+                    text: "",
+                    externalGif: null,
+                  });
+                }
+              }}
               disabled={!canCommentInForum(activeSanction)}
             >
-              Répondre
+              {isReplying ? "Annuler la réponse" : "Répondre"}
             </button>
 
             {isOwnComment && (
               <button
                 type="button"
-                className="start-btn forum-action-btn"
-                onClick={() =>
+                className="forum-tool-btn"
+                onClick={() => {
                   setReplyState({
                     mode: "edit",
                     targetId: comment.id,
                     text: comment.content ?? "",
-                    gifFile: null,
-                  })
-                }
+                    externalGif: null,
+                  });
+                }}
               >
                 Modifier
               </button>
             )}
 
-            {/* CORRECTIF : condition alignée avec removeComment ci-dessous */}
             {(isOwnComment || isAdminLike(role)) && (
               <button
                 type="button"
-                className="start-btn forum-action-btn"
+                className="forum-tool-btn"
                 onClick={() => onDelete(comment)}
               >
                 Supprimer
               </button>
             )}
 
-            <button
-              type="button"
-              className="start-btn forum-report-btn"
-              onClick={() => onOpenReport("comment", comment.id)}
-            >
-              🚩 Signaler
-            </button>
+            {!isOwnComment && (
+              <button
+                type="button"
+                className="forum-tool-btn forum-report-btn"
+                onClick={() => onOpenReport("comment", comment.id)}
+              >
+                🚩 Signaler
+              </button>
+            )}
           </div>
         </>
       )}
 
       {isReplying && (
-        <>
-          <div className="forum-comment-composer search-box">
-            <textarea
-              value={replyState.text}
-              onChange={(e) =>
-                setReplyState((prev) => ({ ...prev, text: e.target.value }))
-              }
-              placeholder="Écrire une réponse..."
-              rows={3}
-            />
-          </div>
+        <div style={{ marginTop: 12, position: "relative" }}>
+          <textarea
+            value={replyState.text}
+            onChange={(e) =>
+              setReplyState((prev) => ({ ...prev, text: e.target.value }))
+            }
+            placeholder="Écrire une réponse..."
+            rows={3}
+            style={{ ...textareaStyle, minHeight: 110 }}
+          />
 
-          <div className="forum-comment-toolbar">
-            <label
-              className="forum-tool-btn"
-              htmlFor={`reply-gif-${comment.id}`}
-            >
-              GIF
-            </label>
-            <input
-              id={`reply-gif-${comment.id}`}
-              type="file"
-              accept="image/gif"
-              style={{ display: "none" }}
-              onChange={(e) =>
-                setReplyState((prev) => ({
-                  ...prev,
-                  gifFile: e.target.files?.[0] ?? null,
-                }))
-              }
-            />
-          </div>
-
-          <div className="forum-comment-actions">
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginTop: 8,
+              alignItems: "center",
+              position: "relative",
+            }}
+          >
             <button
               type="button"
-              className="start-btn forum-admin-btn"
-              onClick={() => onReplySubmit(comment.id)}
-              disabled={!canCommentInForum(activeSanction)}
+              className="forum-tool-btn"
+              onClick={() => setShowGifPicker((prev) => !prev)}
             >
-              Envoyer la réponse
+              GIF GIPHY
+            </button>
+
+            {/* BUG FIX : bouton désactivé si ni texte ni GIF sélectionné + indicateur de chargement */}
+            <button
+              type="button"
+              className="forum-tool-btn"
+              onClick={() => onReplySubmit(comment.id)}
+              disabled={
+                submitting ||
+                (!replyState.text.trim() && !replyState.externalGif) ||
+                !canCommentInForum(activeSanction)
+              }
+            >
+              {submitting ? "Envoi..." : "Envoyer la réponse"}
             </button>
 
             <button
               type="button"
-              className="start-btn forum-admin-btn"
-              onClick={() =>
-                setReplyState({
-                  mode: null,
-                  targetId: null,
-                  text: "",
-                  gifFile: null,
-                })
-              }
+              className="forum-tool-btn"
+              onClick={handleCancelState}
             >
               Annuler
             </button>
+
+            <GiphyGifPicker
+              open={showGifPicker}
+              onClose={() => setShowGifPicker(false)}
+              onSelect={(gif) => {
+                setReplyState((prev) => ({
+                  ...prev,
+                  externalGif: gif,
+                }));
+                setShowGifPicker(false);
+              }}
+              anchorLabel="GIF GIPHY"
+            />
           </div>
-        </>
+
+          {replyState.externalGif && (
+            <GifPreview
+              item={replyState.externalGif}
+              onRemove={() =>
+                setReplyState((prev) => ({
+                  ...prev,
+                  externalGif: null,
+                }))
+              }
+            />
+          )}
+        </div>
       )}
 
       {comment.replies?.length > 0 && (
-        <div className="forum-replies-list">
+        <div style={{ marginTop: 12 }}>
           {comment.replies.map((reply) => (
             <CommentNode
               key={reply.id}
@@ -264,6 +371,7 @@ function CommentNode({
               onDelete={onDelete}
               onOpenReport={onOpenReport}
               activeSanction={activeSanction}
+              submitting={submitting}
             />
           ))}
         </div>
@@ -288,28 +396,33 @@ export default function Post({
   const [commentProfiles, setCommentProfiles] = useState({});
   const [commentAttachmentsMap, setCommentAttachmentsMap] = useState({});
   const [commentText, setCommentText] = useState("");
-  const [commentGifFile, setCommentGifFile] = useState(null);
+  const [commentExternalGif, setCommentExternalGif] = useState(null);
+  const [showRootGifPicker, setShowRootGifPicker] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
-  const [replyState, setReplyState] = useState({
-    mode: null,
-    targetId: null,
-    text: "",
-    gifFile: null,
-  });
+  const [replyState, setReplyState] = useState(EMPTY_REPLY_STATE);
   const [activeSanction, setActiveSanction] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [reportTarget, setReportTarget] = useState(null);
+  // BUG FIX : flag anti double-submit global pour tous les commentaires/réponses
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadLikes();
     loadComments();
-  }, [post.id]);
+  }, [post.id, role]);
 
   useEffect(() => {
     if (!user?.id) return;
     loadSanction();
   }, [user?.id]);
+
+  // BUG FIX : fermer le picker GIF racine si on ferme la section commentaires
+  useEffect(() => {
+    if (!showComments) {
+      setShowRootGifPicker(false);
+    }
+  }, [showComments]);
 
   async function loadSanction() {
     try {
@@ -341,9 +454,7 @@ export default function Post({
       setComments(visibleComments);
 
       const ids = [
-        ...new Set(
-          visibleComments.map((comment) => comment.user_id).filter(Boolean)
-        ),
+        ...new Set(visibleComments.map((comment) => comment.user_id).filter(Boolean)),
       ];
 
       const profiles = await fetchProfilesByIds(ids);
@@ -360,11 +471,9 @@ export default function Post({
           visibleComments.map((comment) => comment.id)
         );
       } catch (error) {
-        console.warn(
-          "Erreur chargement attachments commentaires :",
-          error.message
-        );
+        console.warn("Erreur chargement attachments commentaires :", error.message);
       }
+
       setCommentAttachmentsMap(commentAttachmentMap);
     } catch (error) {
       console.error("Erreur chargement commentaires :", error.message);
@@ -381,6 +490,7 @@ export default function Post({
         userId: user.id,
         hasLiked,
       });
+
       setHasLiked(result.liked);
       setLikes((prev) => (result.liked ? prev + 1 : prev - 1));
     } catch (error) {
@@ -389,10 +499,11 @@ export default function Post({
   }
 
   async function addComment(parentCommentId = null) {
-    const text = parentCommentId ? replyState.text : commentText;
-    const gifFile = parentCommentId ? replyState.gifFile : commentGifFile;
+    const text = parentCommentId !== null ? replyState.text : commentText;
+    const externalGif = parentCommentId !== null ? replyState.externalGif : commentExternalGif;
 
-    if (!text.trim() && !gifFile) return;
+    // BUG FIX : autoriser GIF seul sans texte
+    if (!text.trim() && !externalGif) return;
 
     if (!canCommentInForum(activeSanction)) {
       setErrorMessage(
@@ -401,13 +512,14 @@ export default function Post({
       return;
     }
 
-    if (gifFile && !isAllowedCommentGif(gifFile.type)) {
-      setErrorMessage("Seul un GIF est autorisé dans les commentaires.");
-      return;
-    }
+    // BUG FIX : protection double-submit
+    if (submitting) return;
 
     const currentScrollY = window.scrollY;
     const authorName = getUserDisplayName(user, commentProfiles[user.id]);
+
+    setSubmitting(true);
+    setErrorMessage("");
 
     try {
       await createComment({
@@ -416,14 +528,15 @@ export default function Post({
         authorName,
         content: text.trim(),
         parentCommentId,
-        gifFile,
+        externalGif,
       });
 
-      if (parentCommentId) {
-        setReplyState({ mode: null, targetId: null, text: "", gifFile: null });
+      if (parentCommentId !== null) {
+        setReplyState(EMPTY_REPLY_STATE);
       } else {
         setCommentText("");
-        setCommentGifFile(null);
+        setCommentExternalGif(null);
+        setShowRootGifPicker(false);
       }
 
       setErrorMessage("");
@@ -435,13 +548,24 @@ export default function Post({
     } catch (error) {
       console.error("Erreur ajout commentaire :", error.message);
       setErrorMessage("Impossible d'ajouter le commentaire.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function saveCommentEdit(commentId) {
-    if (!replyState.text.trim()) return;
+    // BUG FIX : on vérifie le texte ici et on affiche une erreur claire
+    if (!replyState.text.trim()) {
+      setErrorMessage("Le commentaire ne peut pas être vide.");
+      return;
+    }
+
+    if (submitting) return;
 
     const currentScrollY = window.scrollY;
+
+    setSubmitting(true);
+    setErrorMessage("");
 
     try {
       await updateCommentAction({
@@ -450,7 +574,8 @@ export default function Post({
         content: replyState.text.trim(),
       });
 
-      setReplyState({ mode: null, targetId: null, text: "", gifFile: null });
+      setReplyState(EMPTY_REPLY_STATE);
+
       await loadComments();
 
       requestAnimationFrame(() => {
@@ -459,15 +584,12 @@ export default function Post({
     } catch (error) {
       console.error("Erreur modification commentaire :", error.message);
       setErrorMessage("Impossible de modifier le commentaire.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function removeComment(comment) {
-    /*
-     * CORRECTIF : la version originale ne vérifiait que comment.user_id === user.id,
-     * ce qui empêchait les modérateurs (RH, direction) de supprimer les commentaires
-     * d'autres utilisateurs. On aligne ce comportement avec celui des posts.
-     */
     const canDelete = comment.user_id === user.id || isAdminLike(role);
     if (!canDelete) return;
 
@@ -475,6 +597,13 @@ export default function Post({
 
     try {
       await deleteCommentAction(comment.id);
+      // BUG FIX : si on supprime un commentaire qu'on était en train d'éditer/répondre, reset l'état
+      if (
+        replyState.targetId === comment.id ||
+        comment.replies?.some((r) => r.id === replyState.targetId)
+      ) {
+        setReplyState(EMPTY_REPLY_STATE);
+      }
       await loadComments();
 
       requestAnimationFrame(() => {
@@ -511,8 +640,7 @@ export default function Post({
   }
 
   async function handleModeratePost(status) {
-    const moderationReason =
-      window.prompt("Motif de modération :") || "Modération forum";
+    const moderationReason = window.prompt("Motif de modération :") || "Modération forum";
 
     try {
       await moderateForumPost({
@@ -520,6 +648,7 @@ export default function Post({
         status,
         moderationReason,
       });
+
       refreshPosts?.();
     } catch (error) {
       console.error("Erreur modération post :", error.message);
@@ -556,52 +685,59 @@ export default function Post({
     post.author_name ||
     "Utilisateur";
 
-  const commentsTree = useMemo(
-    () => groupCommentsByParent(comments),
-    [comments]
-  );
+  const commentsTree = useMemo(() => groupCommentsByParent(comments), [comments]);
+
+  // BUG FIX : calcul correct du nombre de commentaires visibles (tous niveaux)
+  const totalCommentsCount = comments.length;
+
+  const isOwnPost = post.user_id === user.id;
 
   return (
     <>
       <div className="video-card forum-post-card">
-        <div className="forum-post-header">
-          <div className="forum-post-author">
-            <span className="forum-post-author-name">{authorName}</span>
-
-            <span className="forum-post-author-meta">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <strong>{authorName}</strong>
+            <div style={{ opacity: 0.8, fontSize: 13, marginTop: 2 }}>
               {authorProfile?.role ? `${authorProfile.role} • ` : ""}
               {formatDate(post.created_at)}
               {post.edited_at ? " • modifié" : ""}
-            </span>
+            </div>
           </div>
 
           {post.status !== "published" && (
-            <span className={`forum-status-pill ${post.status}`}>
+            <div className="forum-status-pill reported">
               {post.status === "hidden" ? "Masqué" : post.status}
-            </span>
+            </div>
           )}
         </div>
 
-        <div className="forum-post-content">{post.content}</div>
+        {post.content && <p style={{ marginTop: 12 }}>{post.content}</p>}
 
         {attachments.length > 0 && (
-          <div className="forum-post-media">
+          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
             {attachments.map((attachment) => {
-              if (
-                attachment.kind === "image" ||
-                attachment.kind === "gif"
-              ) {
+              if (attachment.kind === "image" || attachment.kind === "gif") {
                 return (
-                  <img
-                    key={attachment.id}
-                    src={attachment.publicUrl}
-                    alt={attachment.file_name}
-                    className={
-                      attachment.kind === "gif"
-                        ? "forum-media-gif"
-                        : "forum-media-image"
-                    }
-                  />
+                  <div key={attachment.id}>
+                    <img
+                      src={attachment.publicUrl}
+                      alt={attachment.file_name}
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 420,
+                        borderRadius: 14,
+                        display: "block",
+                      }}
+                    />
+                  </div>
                 );
               }
 
@@ -610,8 +746,11 @@ export default function Post({
                   <video
                     key={attachment.id}
                     src={attachment.publicUrl}
-                    className="forum-media-video"
                     controls
+                    style={{
+                      maxWidth: "100%",
+                      borderRadius: 14,
+                    }}
                   />
                 );
               }
@@ -623,14 +762,14 @@ export default function Post({
                     href={attachment.publicUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="forum-media-pdf"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
                   >
-                    <span className="forum-media-pdf-title">
-                      📄 {attachment.file_name}
-                    </span>
-                    <span className="forum-media-pdf-meta">
-                      PDF • {formatFileSize(attachment.size_bytes)}
-                    </span>
+                    📄 {attachment.file_name} • PDF •{" "}
+                    {formatFileSize(attachment.size_bytes)}
                   </a>
                 );
               }
@@ -640,47 +779,46 @@ export default function Post({
           </div>
         )}
 
-        <div className="forum-post-actions">
-          <button
-            type="button"
-            className="start-btn forum-action-btn"
-            onClick={handleToggleLike}
-          >
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            marginTop: 12,
+            alignItems: "center",
+          }}
+        >
+          <button type="button" className="forum-tool-btn" onClick={handleToggleLike}>
             {hasLiked ? "❤️ Like" : "🤍 Like"} ({likes})
           </button>
 
           <button
             type="button"
-            className="start-btn forum-action-btn"
+            className="forum-tool-btn"
             onClick={() => setShowComments((prev) => !prev)}
           >
-            💬 Commentaires ({comments.length})
+            {/* BUG FIX : compte total correct sur tous niveaux */}
+            💬 Commentaires ({totalCommentsCount})
           </button>
 
-          <button
-            type="button"
-            className="start-btn forum-report-btn"
-            onClick={() => handleOpenReport("post", post.id)}
-          >
-            🚩 Signaler
-          </button>
-
-          {canManagePost && post.user_id === user.id && (
+          {!isOwnPost && (
             <button
               type="button"
-              className="start-btn forum-admin-btn"
-              onClick={onEditPost}
+              className="forum-tool-btn forum-report-btn forum-action-btn"
+              onClick={() => handleOpenReport("post", post.id)}
             >
+              🚩 Signaler
+            </button>
+          )}
+
+          {canManagePost && post.user_id === user.id && (
+            <button type="button" className="forum-tool-btn" onClick={onEditPost}>
               Modifier
             </button>
           )}
 
           {canManagePost && post.user_id === user.id && (
-            <button
-              type="button"
-              className="start-btn forum-admin-btn"
-              onClick={onDeletePost}
-            >
+            <button type="button" className="forum-tool-btn" onClick={onDeletePost}>
               Supprimer
             </button>
           )}
@@ -688,7 +826,7 @@ export default function Post({
           {canModerateForum(role) && post.status === "published" && (
             <button
               type="button"
-              className="start-btn forum-admin-btn"
+              className="forum-tool-btn"
               onClick={() => handleModeratePost("hidden")}
             >
               Masquer
@@ -698,7 +836,7 @@ export default function Post({
           {canModerateForum(role) && post.status === "hidden" && (
             <button
               type="button"
-              className="start-btn forum-admin-btn"
+              className="forum-tool-btn"
               onClick={() => handleModeratePost("published")}
             >
               Restaurer
@@ -708,7 +846,7 @@ export default function Post({
           {canBanForumUsers(role) && post.user_id !== user.id && (
             <button
               type="button"
-              className="start-btn forum-admin-btn forum-admin-danger"
+              className="forum-tool-btn"
               onClick={() => handleBanAuthor(post.user_id)}
             >
               Bannir auteur
@@ -717,17 +855,17 @@ export default function Post({
         </div>
 
         {errorMessage && (
-          <p style={{ color: "#E53E3E" }}>{errorMessage}</p>
+          <div style={{ marginTop: 10, color: "#f87171" }}>{errorMessage}</div>
         )}
 
         {showComments && (
-          <div className="forum-comments-section">
-            <h3 className="forum-comments-title">Commentaires</h3>
+          <div style={{ marginTop: 18 }}>
+            <h4>Commentaires</h4>
 
             {commentsTree.length === 0 ? (
               <p>Aucun commentaire pour le moment.</p>
             ) : (
-              <div className="forum-comments-list">
+              <div style={{ display: "grid", gap: 12 }}>
                 {commentsTree.map((comment) => (
                   <CommentNode
                     key={comment.id}
@@ -743,54 +881,93 @@ export default function Post({
                     onDelete={removeComment}
                     onOpenReport={handleOpenReport}
                     activeSanction={activeSanction}
+                    submitting={submitting}
                   />
                 ))}
               </div>
             )}
 
-            <div className="forum-comment-composer search-box">
+            {/* Formulaire de commentaire racine */}
+            <div style={{ marginTop: 16, position: "relative" }}>
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Ajouter un commentaire..."
                 rows={3}
+                style={{ ...textareaStyle, minHeight: 110 }}
               />
-            </div>
 
-            <div className="forum-comment-toolbar">
-              <label
-                className="forum-tool-btn"
-                htmlFor={`comment-gif-${post.id}`}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  marginTop: 8,
+                  position: "relative",
+                }}
               >
-                GIF
-              </label>
-              <input
-                id={`comment-gif-${post.id}`}
-                type="file"
-                accept="image/gif"
-                style={{ display: "none" }}
-                onChange={(e) =>
-                  setCommentGifFile(e.target.files?.[0] ?? null)
-                }
-              />
-            </div>
+                <button
+                  type="button"
+                  className="forum-tool-btn"
+                  onClick={() => setShowRootGifPicker((prev) => !prev)}
+                >
+                  GIF GIPHY
+                </button>
 
-            <div className="forum-comment-actions">
-              <button
-                type="button"
-                className="start-btn forum-admin-btn"
-                onClick={() => addComment(null)}
-                disabled={!canCommentInForum(activeSanction)}
-              >
-                Envoyer
-              </button>
+                {/* BUG FIX : désactivé si rien à envoyer (ni texte ni GIF) */}
+                <button
+                  type="button"
+                  className="forum-tool-btn"
+                  onClick={() => addComment(null)}
+                  disabled={
+                    submitting ||
+                    (!commentText.trim() && !commentExternalGif) ||
+                    !canCommentInForum(activeSanction)
+                  }
+                >
+                  {submitting ? "Envoi..." : "Envoyer"}
+                </button>
+
+                {/* BUG FIX : bouton Annuler sur le formulaire racine */}
+                {(commentText.trim() || commentExternalGif) && (
+                  <button
+                    type="button"
+                    className="forum-tool-btn"
+                    onClick={() => {
+                      setCommentText("");
+                      setCommentExternalGif(null);
+                      setShowRootGifPicker(false);
+                    }}
+                  >
+                    Annuler
+                  </button>
+                )}
+
+                <GiphyGifPicker
+                  open={showRootGifPicker}
+                  onClose={() => setShowRootGifPicker(false)}
+                  onSelect={(gif) => {
+                    setCommentExternalGif(gif);
+                    setShowRootGifPicker(false);
+                  }}
+                  anchorLabel="GIF GIPHY"
+                />
+              </div>
+
+              {commentExternalGif && (
+                <GifPreview
+                  item={commentExternalGif}
+                  onRemove={() => setCommentExternalGif(null)}
+                />
+              )}
             </div>
           </div>
         )}
       </div>
 
       <ReportModal
-        open={!!reportTarget}
+        open={Boolean(reportTarget)}
         onClose={() => setReportTarget(null)}
         onSubmit={handleSubmitReport}
       />

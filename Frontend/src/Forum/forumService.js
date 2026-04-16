@@ -9,6 +9,9 @@ import {
 
 const FORUM_BUCKET = "forum-media";
 
+const GIPHY_API_BASE = "https://api.giphy.com/v1";
+const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY ?? "";
+
 function sanitizeFileName(name = "file") {
   return name
     .normalize("NFD")
@@ -20,6 +23,84 @@ function sanitizeFileName(name = "file") {
 function getPublicUrl(path) {
   const { data } = supabase.storage.from(FORUM_BUCKET).getPublicUrl(path);
   return data?.publicUrl ?? null;
+}
+
+function resolveAttachmentUrl(item) {
+  if (item?.external_url) return item.external_url;
+  if (/^https?:\/\//i.test(item?.storage_path ?? "")) return item.storage_path;
+  return getPublicUrl(item.storage_path);
+}
+
+function mapGiphyResult(item) {
+  const preview =
+    item?.images?.fixed_width?.url ||
+    item?.images?.downsized?.url ||
+    item?.images?.original?.url ||
+    null;
+
+  const full =
+    item?.images?.original?.url ||
+    item?.images?.downsized?.url ||
+    item?.images?.fixed_width?.url ||
+    null;
+
+  return {
+    id: item.id,
+    title: item.title || item.slug || "GIF",
+    previewUrl: preview,
+    gifUrl: full,
+    itemUrl: item.url ?? null,
+  };
+}
+
+async function giphyFetch(endpoint, params = {}) {
+  if (!GIPHY_API_KEY) {
+    throw new Error("Clé GIPHY absente.");
+  }
+
+  const url = new URL(`${GIPHY_API_BASE}/${endpoint}`);
+  url.searchParams.set("api_key", GIPHY_API_KEY);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, String(value));
+    }
+  });
+
+  const response = await fetch(url.toString());
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data?.message || "Erreur GIPHY.");
+  }
+
+  return data;
+}
+
+export function hasGiphyConfig() {
+  return Boolean(GIPHY_API_KEY);
+}
+
+export async function searchGiphyGifs(query, limit = 24) {
+  const data = await giphyFetch("gifs/search", {
+    q: query,
+    limit,
+    rating: "pg",
+    lang: "fr",
+    bundle: "messaging_non_clips",
+  });
+
+  return (data?.data ?? []).map(mapGiphyResult).filter((item) => item.gifUrl);
+}
+
+export async function getGiphyTrendingGifs(limit = 24) {
+  const data = await giphyFetch("gifs/trending", {
+    limit,
+    rating: "pg",
+    bundle: "messaging_non_clips",
+  });
+
+  return (data?.data ?? []).map(mapGiphyResult).filter((item) => item.gifUrl);
 }
 
 export function normalizeForumRole(role) {
@@ -61,6 +142,7 @@ export async function fetchMembersExcept(userId) {
 
 export async function fetchProfilesByIds(ids = []) {
   if (!ids.length) return [];
+
   const { data, error } = await supabase
     .from("profiles")
     .select("id, nom, prenom, role")
@@ -111,9 +193,10 @@ export async function fetchAttachmentsByTargets(targetType, targetIds = []) {
   (data ?? []).forEach((item) => {
     const key = String(item.target_id);
     if (!grouped[key]) grouped[key] = [];
+
     grouped[key].push({
       ...item,
-      publicUrl: getPublicUrl(item.storage_path),
+      publicUrl: resolveAttachmentUrl(item),
     });
   });
 
@@ -123,7 +206,7 @@ export async function fetchAttachmentsByTargets(targetType, targetIds = []) {
 export async function uploadForumAttachment(file, { targetType, targetId, uploaderId }) {
   if (!file) throw new Error("Fichier manquant.");
 
-  const mimeType = file.type || "";
+  const mimeType = file.type ?? "";
   const kind = getAttachmentKind(mimeType);
 
   if (!kind) {
@@ -183,7 +266,45 @@ export async function uploadForumAttachment(file, { targetType, targetId, upload
 
   return {
     ...data,
-    publicUrl: getPublicUrl(data.storage_path),
+    publicUrl: resolveAttachmentUrl(data),
+  };
+}
+
+export async function createExternalGifAttachment({
+  targetType,
+  targetId,
+  uploaderId,
+  gif,
+}) {
+  if (!gif?.gifUrl) {
+    throw new Error("GIF externe invalide.");
+  }
+
+  const record = {
+    target_type: targetType,
+    target_id: targetId,
+    uploader_id: uploaderId,
+    kind: "gif",
+    storage_path: gif.gifUrl,
+    file_name: sanitizeFileName(`${gif.title || "giphy-gif"}.gif`),
+    mime_type: "image/gif",
+    size_bytes: 0,
+    scan_status: "external",
+    is_nsfw: false,
+    is_rejected: false,
+  };
+
+  const { data, error } = await supabase
+    .from("forum_attachments")
+    .insert([record])
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    ...data,
+    publicUrl: resolveAttachmentUrl(data),
   };
 }
 
@@ -196,11 +317,13 @@ export async function deleteAttachment(attachmentId) {
 
   if (error) throw error;
 
-  const { error: storageError } = await supabase.storage
-    .from(FORUM_BUCKET)
-    .remove([data.storage_path]);
+  if (data?.storage_path && !/^https?:\/\//i.test(data.storage_path)) {
+    const { error: storageError } = await supabase.storage
+      .from(FORUM_BUCKET)
+      .remove([data.storage_path]);
 
-  if (storageError) throw storageError;
+    if (storageError) throw storageError;
+  }
 
   const { error: deleteError } = await supabase
     .from("forum_attachments")
@@ -212,14 +335,21 @@ export async function deleteAttachment(attachmentId) {
   return true;
 }
 
-export async function createPost({ userId, authorName, content, mode, attachments = [] }) {
+export async function createPost({
+  userId,
+  authorName,
+  content,
+  mode,
+  attachments = [],
+  externalGif = null,
+}) {
   const payload = {
     user_id: userId,
     author_name: authorName,
     content,
     mode,
     status: "published",
-    has_media: attachments.length > 0,
+    has_media: attachments.length > 0 || Boolean(externalGif),
   };
 
   const { data, error } = await supabase
@@ -238,6 +368,15 @@ export async function createPost({ userId, authorName, content, mode, attachment
         uploaderId: userId,
       });
     }
+  }
+
+  if (externalGif) {
+    await createExternalGifAttachment({
+      targetType: "post",
+      targetId: data.id,
+      uploaderId: userId,
+      gif: externalGif,
+    });
   }
 
   return data;
@@ -337,6 +476,7 @@ export async function createComment({
   content,
   parentCommentId = null,
   gifFile = null,
+  externalGif = null,
 }) {
   const payload = {
     post_id: postId,
@@ -345,7 +485,7 @@ export async function createComment({
     content,
     parent_comment_id: parentCommentId,
     status: "published",
-    has_gif: Boolean(gifFile),
+    has_gif: Boolean(gifFile || externalGif),
   };
 
   const { data, error } = await supabase
@@ -361,6 +501,15 @@ export async function createComment({
       targetType: "comment",
       targetId: data.id,
       uploaderId: userId,
+    });
+  }
+
+  if (externalGif) {
+    await createExternalGifAttachment({
+      targetType: "comment",
+      targetId: data.id,
+      uploaderId: userId,
+      gif: externalGif,
     });
   }
 
@@ -529,3 +678,170 @@ export async function sendPrivateMessage({ senderId, receiverId, content }) {
   if (error) throw error;
   return data;
 }
+
+export async function fetchUserGroups(userId) {
+  const { data: memberships, error: membershipsError } = await supabase
+    .from("forum_message_group_members")
+    .select("group_id, role")
+    .eq("user_id", userId);
+
+  if (membershipsError) throw membershipsError;
+
+  const groupIds = [...new Set((memberships ?? []).map((item) => item.group_id))];
+  if (!groupIds.length) return [];
+
+  const { data: groups, error: groupsError } = await supabase
+    .from("forum_message_groups")
+    .select("*")
+    .in("id", groupIds)
+    .order("created_at", { ascending: false });
+
+  if (groupsError) throw groupsError;
+
+  const roleByGroupId = new Map(
+    (memberships ?? []).map((item) => [item.group_id, item.role])
+  );
+
+  return (groups ?? []).map((group) => ({
+    ...group,
+    membershipRole: roleByGroupId.get(group.id) ?? "member",
+  }));
+}
+
+export async function fetchGroupMembers(groupId) {
+  const { data: membershipRows, error: membershipError } = await supabase
+    .from("forum_message_group_members")
+    .select("user_id, role")
+    .eq("group_id", groupId);
+
+  if (membershipError) throw membershipError;
+
+  const userIds = [...new Set((membershipRows ?? []).map((row) => row.user_id))];
+  if (!userIds.length) return [];
+
+  const profiles = await fetchProfilesByIds(userIds);
+
+  const roleByUserId = new Map(
+    (membershipRows ?? []).map((row) => [row.user_id, row.role])
+  );
+
+  return profiles.map((profile) => ({
+    ...profile,
+    membershipRole: roleByUserId.get(profile.id) ?? "member",
+  }));
+}
+
+export async function fetchGroupMessages(groupId) {
+  const { data, error } = await supabase
+    .from("forum_group_messages")
+    .select("*")
+    .eq("group_id", groupId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createMessageGroup({
+  creatorId,
+  name = "",
+  memberIds = [],
+}) {
+  const uniqueIds = [...new Set([creatorId, ...memberIds].filter(Boolean))];
+
+  if (uniqueIds.length < 2) {
+    throw new Error("Un groupe doit contenir au moins 2 membres.");
+  }
+
+  const cleanName = String(name ?? "").trim();
+  const isDirectLikeGroup = uniqueIds.length === 2;
+
+  const groupId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  const { error: groupError } = await supabase
+    .from("forum_message_groups")
+    .insert([
+      {
+        id: groupId,
+        name: isDirectLikeGroup ? "__auto__" : cleanName,
+        created_by: creatorId,
+        created_at: now,
+      },
+    ]);
+
+  if (groupError) throw groupError;
+
+  const membersPayload = uniqueIds.map((userId) => ({
+    group_id: groupId,
+    user_id: userId,
+    role: userId === creatorId ? "owner" : "member",
+  }));
+
+  const { error: membersError } = await supabase
+    .from("forum_message_group_members")
+    .insert(membersPayload);
+
+  if (membersError) throw membersError;
+
+  return {
+    id: groupId,
+    name: isDirectLikeGroup ? "__auto__" : cleanName,
+    created_by: creatorId,
+    created_at: now,
+  };
+}
+
+export async function sendGroupMessage({ groupId, senderId, content }) {
+  const cleanContent = String(content ?? "").trim();
+  if (!cleanContent) {
+    throw new Error("Le message ne peut pas être vide.");
+  }
+
+  const { data, error } = await supabase
+    .from("forum_group_messages")
+    .insert([
+      {
+        group_id: groupId,
+        sender_id: senderId,
+        content: cleanContent,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchDirectThreads(userId) {
+  const { data, error } = await supabase
+    .from("forum_private_messages")
+    .select("sender_id, receiver_id, created_at")
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const otherIds = [
+    ...new Set(
+      (data ?? [])
+        .map((item) =>
+          item.sender_id === userId ? item.receiver_id : item.sender_id
+        )
+        .filter(Boolean)
+    ),
+  ];
+
+  if (!otherIds.length) return [];
+
+  const profiles = await fetchProfilesByIds(otherIds);
+
+  return profiles.sort((a, b) => {
+    const aName = [a?.prenom, a?.nom].filter(Boolean).join(" ");
+    const bName = [b?.prenom, b?.nom].filter(Boolean).join(" ");
+    return aName.localeCompare(bName, "fr");
+  });
+}
+
+

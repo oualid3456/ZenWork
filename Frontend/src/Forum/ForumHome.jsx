@@ -6,7 +6,6 @@ import {
   reviewForumReport,
 } from "./forumService";
 import EmployeeDiscussion from "./EmployeeDiscussion";
-import Secured_Space from "./Secured_Space";
 import PrivateMessages from "./PrivateMessages";
 import { canModerateForum, formatDate } from "./forumUtils";
 
@@ -18,6 +17,7 @@ function ModerationPanel({ user }) {
   async function loadReports() {
     setLoading(true);
     setErrorMessage("");
+
     try {
       const data = await fetchOpenForumReports();
       setReports(data);
@@ -40,7 +40,7 @@ function ModerationPanel({ user }) {
         reviewedBy: user.id,
         status: "reviewed",
       });
-      loadReports();
+      await loadReports();
     } catch (error) {
       console.error("Erreur traitement signalement :", error.message);
       setErrorMessage("Impossible de mettre à jour le signalement.");
@@ -50,65 +50,56 @@ function ModerationPanel({ user }) {
   return (
     <div className="forum-moderation-panel">
       <div className="forum-moderation-card">
-        <h3 style={{ marginTop: 0 }}>Modération du forum</h3>
-        <p style={{ marginBottom: 0, color: "#718096" }}>
+        <h4 style={{ marginTop: 0, marginBottom: 8 }}>Modération du forum</h4>
+        <p style={{ marginTop: 0, marginBottom: 14 }}>
           Traite ici les signalements ouverts du forum.
         </p>
-      </div>
 
-      {errorMessage && (
-        <div className="forum-moderation-card">
-          <p style={{ color: "#E53E3E", margin: 0 }}>{errorMessage}</p>
-        </div>
-      )}
+        {errorMessage && (
+          <p style={{ color: "#E53E3E", margin: "0 0 12px 0" }}>
+            {errorMessage}
+          </p>
+        )}
 
-      {loading ? (
-        <div className="forum-moderation-card">
+        {loading ? (
           <p style={{ margin: 0 }}>Chargement...</p>
-        </div>
-      ) : reports.length === 0 ? (
-        <div className="forum-moderation-card">
+        ) : reports.length === 0 ? (
           <p style={{ margin: 0 }}>Aucun signalement ouvert.</p>
-        </div>
-      ) : (
-        reports.map((report) => (
-          <div key={report.id} className="forum-moderation-card">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 16,
-                alignItems: "flex-start",
-              }}
-            >
-              <div>
-                <strong style={{ display: "block", marginBottom: 6 }}>
-                  {report.target_type === "post" ? "Post" : "Commentaire"} #{report.target_id}
-                </strong>
-                <p style={{ margin: "0 0 6px 0", color: "#1A202C" }}>
-                  Motif : {report.reason}
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {reports.map((report) => (
+              <div key={report.id} className="forum-moderation-card">
+                <p style={{ margin: "0 0 6px 0", fontWeight: 700 }}>
+                  {report.target_type === "post" ? "Post" : "Commentaire"} #
+                  {report.target_id}
                 </p>
+
+                <p style={{ margin: "0 0 6px 0" }}>
+                  <strong>Motif :</strong> {report.reason}
+                </p>
+
                 {report.details ? (
-                  <p style={{ margin: "0 0 6px 0", color: "#718096" }}>
-                    Détail : {report.details}
+                  <p style={{ margin: "0 0 6px 0" }}>
+                    <strong>Détail :</strong> {report.details}
                   </p>
                 ) : null}
-                <small style={{ color: "#A0AEC0" }}>
-                  Signalé le {formatDate(report.created_at)}
-                </small>
-              </div>
 
-              <button
-                type="button"
-                className="start-btn forum-admin-btn"
-                onClick={() => handleReview(report.id)}
-              >
-                Marquer traité
-              </button>
-            </div>
+                <p style={{ margin: "0 0 10px 0", color: "#718096" }}>
+                  Signalé le {formatDate(report.created_at)}
+                </p>
+
+                <button
+                  type="button"
+                  className="forum-tool-btn"
+                  onClick={() => handleReview(report.id)}
+                >
+                  Marquer traité
+                </button>
+              </div>
+            ))}
           </div>
-        ))
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -138,15 +129,15 @@ export default function ForumHome({ user, embedded = false }) {
     <div className="forum-page">
       {!embedded && (
         <div className="video-card">
-          <div className="video-body">
-            <h3>Forum interne</h3>
-            <p>Publications, échanges et messagerie interne.</p>
-          </div>
+          <h3 style={{ marginTop: 0, marginBottom: 8 }}>Forum interne</h3>
+          <p style={{ marginTop: 0, marginBottom: 14 }}>
+            Publications, échanges et messagerie interne.
+          </p>
+
           <button
             type="button"
-            className="start-btn"
-            style={{ width: "auto", padding: "10px 16px" }}
-            onClick={() => navigate(`/home/${user.id}`)}
+            className="forum-tool-btn"
+            onClick={() => navigate("/dashboard")}
           >
             Retour à l’accueil
           </button>
@@ -160,22 +151,6 @@ export default function ForumHome({ user, embedded = false }) {
           onClick={() => setTab("feed")}
         >
           Fil d’actualité
-        </button>
-
-        <button
-          type="button"
-          className={`forum-tab-btn ${tab === "employees" ? "active" : ""}`}
-          onClick={() => setTab("employees")}
-        >
-          Discussion employés
-        </button>
-
-        <button
-          type="button"
-          className={`forum-tab-btn ${tab === "secure" ? "active" : ""}`}
-          onClick={() => setTab("secure")}
-        >
-          Espace sécurisé
         </button>
 
         <button
@@ -197,13 +172,15 @@ export default function ForumHome({ user, embedded = false }) {
         )}
       </div>
 
-      {tab === "feed" && <EmployeeDiscussion mode="feed" user={user} role={role} />}
-      {tab === "employees" && (
-        <EmployeeDiscussion mode="employees" user={user} role={role} />
+      {tab === "feed" && (
+        <EmployeeDiscussion mode="feed" user={user} role={role} />
       )}
-      {tab === "secure" && <Secured_Space role={role} user={user} />}
+
       {tab === "messages" && <PrivateMessages user={user} />}
-      {tab === "moderation" && canModerateForum(role) && <ModerationPanel user={user} />}
+
+      {tab === "moderation" && canModerateForum(role) && (
+        <ModerationPanel user={user} />
+      )}
     </div>
   );
 }

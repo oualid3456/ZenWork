@@ -56,7 +56,7 @@ function Home({ user }) {
   return (
     <div>
       <h1>Hi {prenom} ! 👋</h1>
-      <button onClick={() => navigate(`/profile/${user.id}`)}>
+      <button onClick={() => navigate("/profile")}>
         Mon profil
       </button>
       {role === "RH" && (
@@ -64,7 +64,7 @@ function Home({ user }) {
           <button onClick={() => navigate(`/employees`)}>
             Liste des employés
           </button>
-          <button onClick={() => navigate(`/start_questionnaire/${user.id}`)}>
+          <button onClick={() => navigate("/start_questionnaire")}>
             Lancer un questionnaire
           </button>
         </>
@@ -73,7 +73,7 @@ function Home({ user }) {
       {role !== "RH" && latestQuestionnaireId && (
         <button
           onClick={() =>
-            navigate(`/questionnaire/${user.id}/${latestQuestionnaireId}`)
+            navigate(`/questionnaire/${latestQuestionnaireId}`)
           }
         >
           Questionnaire
@@ -85,7 +85,7 @@ function Home({ user }) {
       <br />
       <br />
 
-      <button onClick={() => navigate(`/forum/${user.id}`)}>
+      <button onClick={() => navigate("/forum")}>
         Accéder au forum
       </button>
 

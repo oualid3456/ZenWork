@@ -88,15 +88,17 @@ export function getAttachmentKind(mimeType) {
 }
 
 export function getPostAttachmentLimits(kind) {
+  const MB = 1024 * 1024;
+
   switch (kind) {
     case "image":
-      return 5 * 1024 * 1024;
+      return 10 * MB;
     case "gif":
-      return 8 * 1024 * 1024;
+      return 50 * MB;     // ✅ max réel Supabase
     case "video":
-      return 50 * 1024 * 1024;
+      return 50 * MB;     // ✅ max réel Supabase
     case "pdf":
-      return 10 * 1024 * 1024;
+      return 20 * MB;
     default:
       return 0;
   }
