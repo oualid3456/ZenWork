@@ -60,8 +60,8 @@ createRoot(document.getElementById("root")).render(
             </SecurisedRoute>
           }
         />
-        <Route path="/ForumHome/:id" element={<ForumHome />} />
-        <Route path="/psychobot/:id" element={<SecurisedRoute><PsychoBot /></SecurisedRoute>} />
+        <Route path="/ForumHome" element={<ForumHome />} />
+        <Route path="/psychobot" element={<SecurisedRoute><PsychoBot /></SecurisedRoute>} />
         <Route path="*" element={<Error />} />
 
       </Routes>
