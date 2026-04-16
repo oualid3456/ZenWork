@@ -80,8 +80,103 @@ Les tables utilisees sont surtout :
 - session_ia
 - demande_changement
 
-4. Partie Forum
+4. Partie Forum :
+
+
+La partie Forum du projet est regroupée dans un dossier Forum contenant plusieurs composants React et un service Supabase dédié. Elle permet aux utilisateurs authentifiés de publier des messages internes, commenter, liker, signaler du contenu, joindre des médias, utiliser des GIF GIPHY et échanger par messagerie privée. Le point d’entrée principal est ForumHome, qui organise l’interface en onglets et adapte certaines actions selon le rôle de l’utilisateur. 
+
+i. ForumHome
+Le composant ForumHome est la page principale du forum. Lors du chargement, il récupère le rôle de l’utilisateur connecté via fetchCurrentUserRole(user.id) afin d’adapter l’interface. Il affiche un onglet Fil d’actualité, un onglet Messagerie privée, et un onglet Modération uniquement si le rôle permet la modération du forum (canModerateForum). Le fil d’actualité repose sur le composant EmployeeDiscussion utilisé ici comme moteur du feed général avec mode="feed", tandis que la modération affiche les signalements ouverts et permet de les marquer comme traités. 
+
+
+ii. EmployeeDiscussion (moteur du fil d’actualité)
+Même si son nom historique est EmployeeDiscussion, ce composant sert de moteur principal du fil d’actualité général. Il charge les publications via fetchPostsByMode(mode), les profils auteurs via fetchProfilesByIds(...), les pièces jointes via fetchAttachmentsByTargets("post", ...), ainsi que les éventuelles sanctions actives de l’utilisateur via fetchActiveForumSanction(user.id). Les modérateurs voient tous les posts, alors que les autres utilisateurs ne voient que les publications dont le statut est published. 
+Le composant permet de créer une publication contenant :
+
+du texte,
+jusqu’à 4 fichiers,
+ou un GIF GIPHY sélectionné via le composant GiphyGifPicker. 
+
+Les fichiers autorisés sont validés par forumUtils et peuvent être de type :
+
+image (jpeg, png, webp),
+GIF,
+vidéo (mp4, webm),
+PDF.
+La taille maximale autorisée dépend du type de fichier et la validation est faite côté interface par isAllowedPostAttachment(...) et isAttachmentSizeAllowed(...). 
+
+Lorsqu’un post est publié, le composant appelle createPost(...), qui insère la publication dans forum_posts puis, si besoin, envoie les fichiers dans le bucket Supabase forum-media et crée les enregistrements correspondants dans forum_attachments. Un GIF externe GIPHY est enregistré comme pièce jointe de type gif via createExternalGifAttachment(...). L’édition et la suppression des publications sont également gérées depuis ce composant via updatePost(...) et deletePost(...). 
+
+iii. Post (affichage détaillé d’une publication)
+Le composant Post est responsable de l’affichage détaillé d’une publication et de toutes les interactions associées. Il affiche :
+
+l’auteur,
+la date,
+le statut éventuel (published, hidden, etc.),
+le contenu texte,
+les pièces jointes (images, GIF, vidéos, PDF),
+le nombre de likes,
+le nombre de commentaires visibles. 
+
+Les likes sont chargés via fetchLikes(post.id) et mis à jour avec toggleLike(...). Les commentaires sont chargés via fetchComments(post.id), puis réorganisés en arborescence grâce à groupCommentsByParent(...) afin de gérer les réponses imbriquées. Les commentaires peuvent être créés, modifiés et supprimés via createComment(...), updateComment(...) et deleteComment(...). Le composant gère aussi un état submitting pour éviter les doubles envois. 
+
+La zone des commentaires n’est affichée que lorsque l’utilisateur clique sur le bouton Commentaires. Le formulaire d’ajout d’un commentaire peut accepter du texte et/ou un GIF GIPHY. Chaque commentaire peut également recevoir des réponses. Les commentaires de l’utilisateur peuvent être modifiés ou supprimés ; les commentaires des autres peuvent être signalés via le système de signalement. 
+
+Les commentaires restent soumis aux éventuelles sanctions actives (canCommentInForum). 
+Le composant Post intègre également la logique de modération :
+
+masquer / restaurer une publication,
+bannir l’auteur d’une publication du forum,
+traiter les signalements via createForumReport(...).
+Ces actions sont réservées aux rôles autorisés (canModerateForum, canBanForumUsers, isAdminLike). 
+
+iv. ReportModal (signalement)
+Le composant ReportModal affiche une fenêtre modale de signalement lorsqu’un utilisateur souhaite signaler une publication ou un commentaire. Il propose une liste de motifs prédéfinis (spam, insultes, discours de haine, violence, contenu NSFW, autre), ainsi qu’une zone de détail libre. Le signalement n’est envoyé que si un motif a été sélectionné, puis il est transmis au composant parent via onSubmit(reason, details). 
+v. GiphyGifPicker (sélection de GIF GIPHY)
+Le composant GiphyGifPicker permet de rechercher des GIF GIPHY ou d’afficher les tendances via les fonctions searchGiphyGifs(...) et getGiphyTrendingGifs(...). Il s’ouvre au-dessus des formulaires de publication ou de commentaire, permet de choisir un GIF, puis renvoie l’objet sélectionné au composant parent. Il s’appuie sur une clé d’API GIPHY lue via VITE_GIPHY_API_KEY. 
+
+vi. Messagerie privée
+Le composant PrivateMessages gère la messagerie privée entre deux utilisateurs. Il charge d’abord les autres membres disponibles via une requête sur profiles, puis l’utilisateur peut sélectionner un contact pour ouvrir une conversation. Les messages sont récupérés dans la table forum_private_messages en filtrant sur les couples sender_id / receiver_id, puis triés par date croissante. L’envoi d’un message se fait par insertion d’une nouvelle ligne dans forum_private_messages. 
+
+
+vii. Service Supabase et utilitaires
+Toute la logique d’accès aux données du forum est centralisée dans forumService.js. Ce fichier regroupe notamment les fonctions de lecture / écriture vers :
+
+forum_posts,
+forum_comments,
+forum_likes,
+forum_attachments,
+forum_reports,
+forum_user_sanctions,
+forum_private_messages,
+ainsi que le bucket de stockage forum-media.
+
+Le fichier forumUtils.js contient les fonctions utilitaires liées au forum, notamment :
+
+la normalisation des rôles,
+les permissions de modération et de bannissement,
+les restrictions de publication / commentaire selon les sanctions,
+la validation du type et de la taille des fichiers,
+le regroupement arborescent des commentaires,
+le formatage des dates et tailles de fichiers,
+la sécurisation des URLs externes.
+
+viii. Tables et stockage utilisés
+Le forum repose principalement sur les tables suivantes :
+
+forum_posts pour les publications,
+forum_comments pour les commentaires et réponses,
+forum_likes pour les likes,
+forum_attachments pour les pièces jointes (images, GIF, vidéos, PDF),
+forum_reports pour les signalements,
+forum_user_sanctions pour les restrictions d’accès au forum,
+forum_private_messages pour la messagerie privée.
+Les fichiers envoyés par les utilisateurs sont stockés dans le bucket Supabase forum-media. 
+
+
+
 5. Partie Ressource
+
 La partie Ressource du projet regroupe les composants React permettant de consulter et de gérer la médiathèque de bien-être (vidéos de relaxation, articles sur le sommeil, la concentration, etc.). Elle se base principalement sur la table ressources de Supabase et adapte son interface selon le rôle de l'utilisateur.
 
 i. Ressources (Page principale et logique de tri)
