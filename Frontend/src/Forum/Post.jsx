@@ -41,38 +41,37 @@ const textareaStyle = {
   boxSizing: "border-box",
 };
 
+const pickerToolbarStyle = {
+  position: "relative",
+  overflow: "visible",
+  alignItems: "center",
+  zIndex: 5,
+};
+
+const mediaFrameStyle = {
+  borderRadius: 18,
+  overflow: "hidden",
+  background: "#0f172a",
+};
+
 function GifPreview({ item, onRemove }) {
   if (!item?.publicUrl && !item?.gifUrl && !item?.previewUrl) return null;
 
   const src = item.publicUrl || item.gifUrl || item.previewUrl;
 
   return (
-    <div
-      style={{
-        marginTop: 10,
-        display: "inline-flex",
-        flexDirection: "column",
-        gap: 8,
-        maxWidth: 260,
-      }}
-    >
+    <div className="forum-comment-gif">
       <img
         src={src}
         alt={item.file_name || item.title || "GIF"}
-        style={{
-          width: "100%",
-          maxWidth: 240,
-          maxHeight: 180,
-          objectFit: "cover",
-          borderRadius: 10,
-        }}
+        style={{ borderRadius: 14, display: "block", maxWidth: "min(240px, 100%)" }}
       />
       {onRemove && (
         <button
           type="button"
           className="forum-tool-btn"
           onClick={onRemove}
-          style={{ width: "fit-content" }}
+          style={{ marginTop: 8 }}
         >
           Retirer le GIF
         </button>
@@ -123,17 +122,14 @@ function CommentNode({
   const gifAttachment = (commentAttachmentsMap[String(comment.id)] ?? []).find(
     (item) => item.kind === "gif"
   );
-
   const isEditing =
-    replyState.mode === "edit" && replyState.targetId === comment.id;
-
+    replyState.mode === "edit" && String(replyState.targetId) === String(comment.id);
   const isReplying =
-    replyState.mode === "reply" && replyState.targetId === comment.id;
-
+    replyState.mode === "reply" && String(replyState.targetId) === String(comment.id);
   const isHighlighted =
-    String(highlightedCommentId) === String(comment.id);
+    String(highlightedCommentId ?? "") === String(comment.id ?? "");
 
-  function handleCancelState() {
+  function resetReplyState() {
     setShowGifPicker(false);
     setReplyState(EMPTY_REPLY_STATE);
   }
@@ -144,7 +140,10 @@ function CommentNode({
       className={comment.depth > 0 ? "forum-reply-card" : "forum-comment-card"}
       style={
         isHighlighted
-          ? { outline: "2px solid #6C5DD3", scrollMarginTop: 100 }
+          ? {
+              outline: "2px solid #6C5DD3",
+              scrollMarginTop: 100,
+            }
           : undefined
       }
     >
@@ -158,7 +157,11 @@ function CommentNode({
         </div>
 
         {comment.status !== "published" && (
-          <span className="forum-status-pill hidden">
+          <span
+            className={`forum-status-pill ${
+              comment.status === "hidden" ? "hidden" : "reported"
+            }`}
+          >
             {comment.status === "hidden" ? "Masqué" : comment.status}
           </span>
         )}
@@ -169,7 +172,10 @@ function CommentNode({
           <textarea
             value={replyState.text}
             onChange={(e) =>
-              setReplyState((prev) => ({ ...prev, text: e.target.value }))
+              setReplyState((prev) => ({
+                ...prev,
+                text: e.target.value,
+              }))
             }
             rows={3}
             style={{ ...textareaStyle, minHeight: 110, marginTop: 12 }}
@@ -178,7 +184,7 @@ function CommentNode({
           <div className="forum-comment-actions">
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
+              className="start-btn forum-admin-btn"
               onClick={() => onEditSubmit(comment.id)}
               disabled={submitting || !replyState.text.trim()}
             >
@@ -187,8 +193,8 @@ function CommentNode({
 
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
-              onClick={handleCancelState}
+              className="start-btn forum-admin-btn"
+              onClick={resetReplyState}
             >
               Annuler
             </button>
@@ -200,23 +206,22 @@ function CommentNode({
             <div className="forum-comment-content">{comment.content}</div>
           )}
 
-          {gifAttachment &&
-            (gifAttachment.publicUrl || gifAttachment.external_url) && (
-              <div className="forum-comment-gif">
-                <img
-                  src={gifAttachment.publicUrl || gifAttachment.external_url}
-                  alt={gifAttachment.file_name || "GIF"}
-                />
-              </div>
-            )}
+          {gifAttachment && (gifAttachment.publicUrl || gifAttachment.external_url) && (
+            <div className="forum-comment-gif">
+              <img
+                src={gifAttachment.publicUrl || gifAttachment.external_url}
+                alt={gifAttachment.file_name || "GIF"}
+              />
+            </div>
+          )}
 
           <div className="forum-comment-actions">
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
+              className="start-btn forum-action-btn"
               onClick={() => {
                 if (isReplying) {
-                  handleCancelState();
+                  resetReplyState();
                 } else {
                   setReplyState({
                     mode: "reply",
@@ -234,7 +239,7 @@ function CommentNode({
             {isOwnComment && (
               <button
                 type="button"
-                className="forum-tool-btn forum-action-btn"
+                className="start-btn forum-admin-btn"
                 onClick={() =>
                   setReplyState({
                     mode: "edit",
@@ -251,7 +256,7 @@ function CommentNode({
             {isOwnComment && (
               <button
                 type="button"
-                className="forum-tool-btn forum-action-btn"
+                className="start-btn forum-admin-btn forum-admin-danger"
                 onClick={() => onDelete(comment)}
               >
                 Supprimer
@@ -261,7 +266,7 @@ function CommentNode({
             {!isOwnComment && (
               <button
                 type="button"
-                className="forum-tool-btn forum-report-btn forum-action-btn"
+                className="start-btn forum-action-btn forum-report-btn"
                 onClick={() => onOpenReport("comment", comment.id)}
               >
                 🚩 Signaler
@@ -276,14 +281,17 @@ function CommentNode({
           <textarea
             value={replyState.text}
             onChange={(e) =>
-              setReplyState((prev) => ({ ...prev, text: e.target.value }))
+              setReplyState((prev) => ({
+                ...prev,
+                text: e.target.value,
+              }))
             }
             placeholder="Écrire une réponse..."
             rows={3}
             style={{ ...textareaStyle, minHeight: 110 }}
           />
 
-          <div className="forum-comment-actions">
+          <div className="forum-comment-toolbar" style={pickerToolbarStyle}>
             <button
               type="button"
               className="forum-tool-btn"
@@ -294,7 +302,7 @@ function CommentNode({
 
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
+              className="start-btn forum-action-btn"
               onClick={() => onReplySubmit(comment.id)}
               disabled={
                 submitting ||
@@ -304,23 +312,29 @@ function CommentNode({
             >
               {submitting ? "Envoi..." : "Envoyer la réponse"}
             </button>
-          </div>
 
-          <GiphyGifPicker
-            open={showGifPicker}
-            onClose={() => setShowGifPicker(false)}
-            onSelect={(gif) => {
-              setReplyState((prev) => ({ ...prev, externalGif: gif }));
-              setShowGifPicker(false);
-            }}
-            anchorLabel="GIF GIPHY"
-          />
+            <GiphyGifPicker
+              open={showGifPicker}
+              onClose={() => setShowGifPicker(false)}
+              onSelect={(gif) => {
+                setReplyState((prev) => ({
+                  ...prev,
+                  externalGif: gif,
+                }));
+                setShowGifPicker(false);
+              }}
+              anchorLabel="GIF GIPHY"
+            />
+          </div>
 
           {replyState.externalGif && (
             <GifPreview
               item={replyState.externalGif}
               onRemove={() =>
-                setReplyState((prev) => ({ ...prev, externalGif: null }))
+                setReplyState((prev) => ({
+                  ...prev,
+                  externalGif: null,
+                }))
               }
             />
           )}
@@ -405,13 +419,9 @@ export default function Post({
     if (!focusTarget?.id) return;
 
     const key = `${focusTarget.type}:${focusTarget.id}:${focusTarget.postId ?? ""}`;
-
     if (lastHandledFocusRef.current === key) return;
 
-    if (
-      focusTarget.type === "post" &&
-      String(focusTarget.id) === String(post.id)
-    ) {
+    if (focusTarget.type === "post" && String(focusTarget.id) === String(post.id)) {
       requestAnimationFrame(() => {
         postRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         lastHandledFocusRef.current = key;
@@ -439,7 +449,6 @@ export default function Post({
     }
 
     const key = `${focusTarget.type}:${focusTarget.id}:${focusTarget.postId ?? ""}`;
-
     if (lastHandledFocusRef.current === key) return;
 
     const element = document.getElementById(`forum-comment-${focusTarget.id}`);
@@ -492,17 +501,20 @@ export default function Post({
       });
       setCommentProfiles(map);
 
-      let commentAttachmentMap = {};
+      let attachmentMap = {};
       try {
-        commentAttachmentMap = await fetchAttachmentsByTargets(
+        attachmentMap = await fetchAttachmentsByTargets(
           "comment",
           visibleComments.map((comment) => comment.id)
         );
       } catch (error) {
-        console.warn("Erreur chargement attachments commentaires :", error.message);
+        console.warn(
+          "Erreur chargement attachments commentaires :",
+          error.message
+        );
       }
 
-      setCommentAttachmentsMap(commentAttachmentMap);
+      setCommentAttachmentsMap(attachmentMap);
     } catch (error) {
       console.error("Erreur chargement commentaires :", error.message);
       setComments([]);
@@ -520,7 +532,7 @@ export default function Post({
       });
 
       setHasLiked(result.liked);
-      setLikes((prev) => (result.liked ? prev + 1 : prev - 1));
+      setLikes((prev) => (result.liked ? prev + 1 : Math.max(prev - 1, 0)));
     } catch (error) {
       console.error("Erreur like :", error.message);
     }
@@ -544,7 +556,6 @@ export default function Post({
 
     const currentScrollY = window.scrollY;
     const authorName = getUserDisplayName(user, commentProfiles[user.id]);
-
     setSubmitting(true);
     setErrorMessage("");
 
@@ -613,9 +624,7 @@ export default function Post({
   }
 
   async function removeComment(comment) {
-    const canDelete = comment.user_id === user.id;
-
-    if (!canDelete) return;
+    if (comment.user_id !== user.id) return;
 
     const currentScrollY = window.scrollY;
 
@@ -623,8 +632,8 @@ export default function Post({
       await deleteCommentAction(comment.id);
 
       if (
-        replyState.targetId === comment.id ||
-        comment.replies?.some((r) => r.id === replyState.targetId)
+        String(replyState.targetId) === String(comment.id) ||
+        comment.replies?.some((reply) => String(reply.id) === String(replyState.targetId))
       ) {
         setReplyState(EMPTY_REPLY_STATE);
       }
@@ -665,8 +674,7 @@ export default function Post({
   }
 
   async function handleModeratePost(status) {
-    const moderationReason =
-      window.prompt("Motif de modération :") || "Modération forum";
+    const moderationReason = window.prompt("Motif de modération :") || "Modération forum";
 
     try {
       await moderateForumPost({
@@ -730,20 +738,16 @@ export default function Post({
       ? "Suspendu"
       : null;
 
+  const highlightedCommentId =
+    focusTarget?.type === "comment" && String(focusTarget.postId) === String(post.id)
+      ? focusTarget.id
+      : null;
+
   return (
     <>
-      <div
-        id={`forum-post-${post.id}`}
-        ref={postRef}
-        className="video-card forum-post-card"
-        style={
-          focusTarget?.type === "post" && String(focusTarget.id) === String(post.id)
-            ? { outline: "2px solid #6C5DD3", scrollMarginTop: 100 }
-            : { scrollMarginTop: 100 }
-        }
-      >
+      <div ref={postRef} className="video-card forum-post-card">
         <div className="forum-post-header">
-          <div className="forum-post-author">
+          <div>
             <div className="forum-post-author-name">{authorName}</div>
             <div className="forum-post-author-meta">
               {authorProfile?.role ? `${authorProfile.role} • ` : ""}
@@ -754,49 +758,68 @@ export default function Post({
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {post.status !== "published" && (
-              <span className="forum-status-pill hidden">
+              <span
+                className={`forum-status-pill ${
+                  post.status === "hidden" ? "hidden" : "reported"
+                }`}
+              >
                 {post.status === "hidden" ? "Masqué" : post.status}
               </span>
             )}
 
             {authorBlockLabel && (
-              <span className="forum-status-pill reported">
-                {authorBlockLabel}
-              </span>
+              <span className="forum-status-pill reported">{authorBlockLabel}</span>
             )}
           </div>
         </div>
 
-        {post.content && (
-          <div className="forum-post-content">{post.content}</div>
-        )}
+        {post.content && <div className="forum-post-content">{post.content}</div>}
 
         {attachments.length > 0 && (
           <div className="forum-post-media">
             {attachments.map((attachment) => {
+              const src =
+                attachment.publicUrl ||
+                attachment.external_url ||
+                attachment.storage_path ||
+                null;
+
+              if (!src) return null;
+
               if (attachment.kind === "image" || attachment.kind === "gif") {
                 return (
-                  <img
+                  <div
                     key={attachment.id}
-                    src={attachment.publicUrl}
-                    alt={attachment.file_name}
-                    className={
-                      attachment.kind === "gif"
-                        ? "forum-media-gif"
-                        : "forum-media-image"
-                    }
-                  />
+                    className="forum-media-item forum-media-item-visual"
+                    style={mediaFrameStyle}
+                  >
+                    <img
+                      src={src}
+                      alt={attachment.file_name || attachment.kind || "media"}
+                      className={
+                        attachment.kind === "gif"
+                          ? "forum-media-gif"
+                          : "forum-media-image"
+                      }
+                    />
+                  </div>
                 );
               }
 
               if (attachment.kind === "video") {
                 return (
-                  <video
+                  <div
                     key={attachment.id}
-                    className="forum-media-video"
-                    src={attachment.publicUrl}
-                    controls
-                  />
+                    className="forum-media-item forum-media-item-video"
+                    style={mediaFrameStyle}
+                  >
+                    <video
+                      src={src}
+                      controls
+                      className="forum-media-video"
+                      preload="metadata"
+                    />
+                  </div>
                 );
               }
 
@@ -804,16 +827,19 @@ export default function Post({
                 return (
                   <a
                     key={attachment.id}
-                    className="forum-media-pdf"
-                    href={attachment.publicUrl}
+                    href={src}
                     target="_blank"
                     rel="noreferrer"
+                    className="forum-media-item forum-media-item-file forum-media-pdf"
                   >
                     <span className="forum-media-pdf-title">
-                      📄 {attachment.file_name}
+                      📄 {attachment.file_name || "Document PDF"}
                     </span>
                     <span className="forum-media-pdf-meta">
-                      PDF • {formatFileSize(attachment.size_bytes)}
+                      PDF
+                      {attachment.size_bytes
+                        ? ` • ${formatFileSize(attachment.size_bytes)}`
+                        : ""}
                     </span>
                   </a>
                 );
@@ -827,7 +853,7 @@ export default function Post({
         <div className="forum-post-actions">
           <button
             type="button"
-            className="forum-tool-btn forum-action-btn"
+            className="start-btn forum-action-btn"
             onClick={handleToggleLike}
           >
             {hasLiked ? "❤️ Like" : "🤍 Like"} ({likes})
@@ -835,7 +861,7 @@ export default function Post({
 
           <button
             type="button"
-            className="forum-tool-btn forum-action-btn"
+            className="start-btn forum-action-btn"
             onClick={() => setShowComments((prev) => !prev)}
           >
             {showComments
@@ -846,27 +872,27 @@ export default function Post({
           {!isOwnPost && (
             <button
               type="button"
-              className="forum-tool-btn forum-report-btn forum-action-btn"
+              className="start-btn forum-action-btn forum-report-btn"
               onClick={() => handleOpenReport("post", post.id)}
             >
               🚩 Signaler
             </button>
           )}
 
-          {canManagePost && post.user_id === user.id && (
+          {canManagePost && isOwnPost && (
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
+              className="start-btn forum-admin-btn"
               onClick={onEditPost}
             >
               Modifier
             </button>
           )}
 
-          {canManagePost && post.user_id === user.id && (
+          {canManagePost && isOwnPost && (
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
+              className="start-btn forum-admin-btn forum-admin-danger"
               onClick={onDeletePost}
             >
               Supprimer
@@ -876,7 +902,7 @@ export default function Post({
           {canModerateForum(role) && post.status === "published" && (
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
+              className="start-btn forum-admin-btn"
               onClick={() => handleModeratePost("hidden")}
             >
               Masquer
@@ -886,7 +912,7 @@ export default function Post({
           {canModerateForum(role) && post.status === "hidden" && (
             <button
               type="button"
-              className="forum-tool-btn forum-action-btn"
+              className="start-btn forum-admin-btn"
               onClick={() => handleModeratePost("published")}
             >
               Restaurer
@@ -898,7 +924,7 @@ export default function Post({
             !isAuthorForumBlocked && (
               <button
                 type="button"
-                className="forum-tool-btn forum-action-btn"
+                className="start-btn forum-admin-btn forum-admin-danger"
                 onClick={() => handleBanAuthor(post.user_id)}
               >
                 Bannir auteur
@@ -907,15 +933,17 @@ export default function Post({
         </div>
 
         {errorMessage && (
-          <p style={{ color: "#E53E3E", marginBottom: 0 }}>{errorMessage}</p>
+          <div style={{ marginTop: 12 }}>
+            <p style={{ color: "#E53E3E", margin: 0 }}>{errorMessage}</p>
+          </div>
         )}
 
         {showComments && (
           <div className="forum-comments-section">
-            <h5 className="forum-comments-title">Commentaires</h5>
+            <h6 className="forum-comments-title">Commentaires</h6>
 
             {commentsTree.length === 0 ? (
-              <p style={{ marginTop: 0 }}>Aucun commentaire pour le moment.</p>
+              <p style={{ margin: "0 0 12px 0" }}>Aucun commentaire pour le moment.</p>
             ) : (
               <div className="forum-comments-list">
                 {commentsTree.map((comment) => (
@@ -933,12 +961,7 @@ export default function Post({
                     onOpenReport={handleOpenReport}
                     activeSanction={activeSanction}
                     submitting={submitting}
-                    highlightedCommentId={
-                      focusTarget?.type === "comment" &&
-                      String(focusTarget.postId) === String(post.id)
-                        ? focusTarget.id
-                        : null
-                    }
+                    highlightedCommentId={highlightedCommentId}
                   />
                 ))}
               </div>
@@ -953,7 +976,7 @@ export default function Post({
                 style={{ ...textareaStyle, minHeight: 110 }}
               />
 
-              <div className="forum-comment-actions">
+              <div className="forum-comment-toolbar" style={pickerToolbarStyle}>
                 <button
                   type="button"
                   className="forum-tool-btn"
@@ -964,7 +987,7 @@ export default function Post({
 
                 <button
                   type="button"
-                  className="forum-tool-btn forum-action-btn"
+                  className="start-btn forum-action-btn"
                   onClick={() => addComment(null)}
                   disabled={
                     submitting ||
@@ -978,7 +1001,7 @@ export default function Post({
                 {(commentText.trim() || commentExternalGif) && (
                   <button
                     type="button"
-                    className="forum-tool-btn forum-action-btn"
+                    className="start-btn forum-admin-btn"
                     onClick={() => {
                       setCommentText("");
                       setCommentExternalGif(null);
@@ -988,17 +1011,17 @@ export default function Post({
                     Annuler
                   </button>
                 )}
-              </div>
 
-              <GiphyGifPicker
-                open={showRootGifPicker}
-                onClose={() => setShowRootGifPicker(false)}
-                onSelect={(gif) => {
-                  setCommentExternalGif(gif);
-                  setShowRootGifPicker(false);
-                }}
-                anchorLabel="GIF GIPHY"
-              />
+                <GiphyGifPicker
+                  open={showRootGifPicker}
+                  onClose={() => setShowRootGifPicker(false)}
+                  onSelect={(gif) => {
+                    setCommentExternalGif(gif);
+                    setShowRootGifPicker(false);
+                  }}
+                  anchorLabel="GIF GIPHY"
+                />
+              </div>
 
               {commentExternalGif && (
                 <GifPreview

@@ -1070,45 +1070,61 @@ button.notification-item:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   align-items: flex-start;
 }
 
-.forum-post-media > * {
+.forum-media-item {
   flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.forum-media-item-visual {
+  width: min(420px, 100%);
+}
+
+.forum-media-item-video {
+  width: min(520px, 100%);
+}
+
+.forum-media-item-file {
+  width: min(320px, 100%);
 }
 
 .forum-media-image,
 .forum-media-gif,
 .forum-media-video {
+  display: block;
   width: 100%;
-  border-radius: 14px;
+  max-width: 100%;
+  border-radius: 16px;
   background: #EDF2F7;
-  object-fit: cover;
 }
 
 .forum-media-image,
 .forum-media-gif {
-  max-height: 200px;
+  height: auto;
+  max-height: 320px;
+  object-fit: contain;
 }
 
 .forum-media-video {
-  width: auto;
-  max-width: min(520px, 100%);
+  height: auto;
   max-height: 320px;
-  display: block;
-  margin: 0 auto;
+  object-fit: contain;
 }
 
 .forum-media-pdf {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 14px;
-  border-radius: 18px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
   color: #1A202C;
+  box-sizing: border-box;
 }
 
 .forum-media-pdf-title {
@@ -1314,6 +1330,20 @@ button.notification-item:disabled {
     gap: 8px;
   }
 
+@media (max-width: 640px) {
+  .forum-media-item-visual,
+  .forum-media-item-video,
+  .forum-media-item-file {
+    width: 100%;
+  }
+
+  .forum-media-image,
+  .forum-media-gif,
+  .forum-media-video {
+    max-height: 220px;
+  }
+}
+
   .forum-tab-btn {
     width: 100%;
     text-align: center;
@@ -1515,4 +1545,42 @@ button.notification-item:disabled {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 14px;
+}
+
+/* fix forum*/
+
+.forum-comment-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  position: relative;
+  overflow: visible;
+  align-items: center;
+  z-index: 5;
+}
+
+.forum-comment-composer,
+.forum-comment-card,
+.forum-reply-card,
+.forum-comments-section {
+  overflow: visible;
+}
+
+.forum-media-item,
+.forum-media-item-visual,
+.forum-media-item-video {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.forum-media-image,
+.forum-media-gif,
+.forum-media-video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #EDF2F7;
 }
