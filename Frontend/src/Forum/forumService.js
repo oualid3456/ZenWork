@@ -844,4 +844,51 @@ export async function fetchDirectThreads(userId) {
   });
 }
 
+export async function fetchAllActiveForumSanctions() {
+  const { data, error } = await supabase
+    .from("forum_user_sanctions")
+    .select("*")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchActiveForumSanctionsByUserIds(userIds = []) {
+  if (!userIds.length) return {};
+
+  const { data, error } = await supabase
+    .from("forum_user_sanctions")
+    .select("*")
+    .in("user_id", userIds)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const now = Date.now();
+  const map = {};
+
+  (data ?? []).forEach((item) => {
+    if (map[item.user_id]) return;
+
+    if (!item.end_at || new Date(item.end_at).getTime() > now) {
+      map[item.user_id] = item;
+    }
+  });
+
+  return map;
+}
+
+export async function fetchCommentById(commentId) {
+  const { data, error } = await supabase
+    .from("forum_comments")
+    .select("*")
+    .eq("id", commentId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ?? null;
+}
 

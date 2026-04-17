@@ -3,30 +3,56 @@ import {
   createPost,
   deletePost as deletePostAction,
   fetchActiveForumSanction,
+  fetchActiveForumSanctionsByUserIds,
   fetchAttachmentsByTargets,
   fetchPostsByMode,
   fetchProfilesByIds,
   updatePost as updatePostAction,
 } from "./forumService";
 import Post from "./Post";
+import GiphyGifPicker from "./GiphyGifPicker";
 import {
   canModerateForum,
   canPostInForum,
   formatFileSize,
   getUserDisplayName,
   getAttachmentKind,
-  isAdminLike,
   isAllowedPostAttachment,
   isAttachmentSizeAllowed,
   normalizeRole,
 } from "./forumUtils";
 
-export default function EmployeeDiscussion({ mode, user, role }) {
+const textareaStyle = {
+  width: "100%",
+  minHeight: 130,
+  borderRadius: 16,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.04)",
+  color: "#ffffff",
+  padding: "16px 18px",
+  outline: "none",
+  resize: "vertical",
+  fontFamily: "inherit",
+  fontSize: 15,
+  lineHeight: 1.5,
+  boxSizing: "border-box",
+};
+
+export default function EmployeeDiscussion({
+  mode,
+  user,
+  role,
+  focusTarget = null,
+  onFocusHandled,
+}) {
   const [posts, setPosts] = useState([]);
   const [profilesMap, setProfilesMap] = useState({});
   const [attachmentsMap, setAttachmentsMap] = useState({});
+  const [authorSanctionsMap, setAuthorSanctionsMap] = useState({});
   const [text, setText] = useState("");
   const [files, setFiles] = useState([]);
+  const [selectedGif, setSelectedGif] = useState(null);
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -42,7 +68,7 @@ export default function EmployeeDiscussion({ mode, user, role }) {
 
   useEffect(() => {
     loadPosts();
-  }, [mode]);
+  }, [mode, isModerator]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -65,16 +91,17 @@ export default function EmployeeDiscussion({ mode, user, role }) {
 
     try {
       const data = await fetchPostsByMode(mode);
-
       const visiblePosts = isModerator
         ? data
         : data.filter((post) => post.status === "published");
 
       setPosts(visiblePosts);
 
-      const userIds = [...new Set(visiblePosts.map((post) => post.user_id).filter(Boolean))];
-      const profiles = await fetchProfilesByIds(userIds);
+      const userIds = [
+        ...new Set(visiblePosts.map((post) => post.user_id).filter(Boolean)),
+      ];
 
+      const profiles = await fetchProfilesByIds(userIds);
       const profilesById = {};
       profiles.forEach((profile) => {
         profilesById[profile.id] = profile;
@@ -91,19 +118,28 @@ export default function EmployeeDiscussion({ mode, user, role }) {
         console.warn("Erreur chargement attachments forum :", error.message);
       }
       setAttachmentsMap(attachmentMap);
+
+      let sanctionsMap = {};
+      try {
+        sanctionsMap = await fetchActiveForumSanctionsByUserIds(userIds);
+      } catch (error) {
+        console.warn("Erreur chargement sanctions auteurs :", error.message);
+      }
+      setAuthorSanctionsMap(sanctionsMap);
     } catch (error) {
       console.error("Erreur chargement posts :", error.message);
       setErrorMessage("Impossible de charger les publications.");
       setPosts([]);
       setProfilesMap({});
       setAttachmentsMap({});
+      setAuthorSanctionsMap({});
     } finally {
       setLoading(false);
     }
   }
 
   function handleFilesChange(event) {
-    const selected = Array.from(event.target.files || []);
+    const selected = Array.from(event.target.files ?? []);
     const next = [];
 
     if (selected.length > 4) {
@@ -116,10 +152,12 @@ export default function EmployeeDiscussion({ mode, user, role }) {
         setErrorMessage(`Type non autorisé : ${file.name}`);
         return;
       }
+
       if (!isAttachmentSizeAllowed(file)) {
         setErrorMessage(`Fichier trop volumineux : ${file.name}`);
         return;
       }
+
       next.push(file);
     }
 
@@ -128,7 +166,9 @@ export default function EmployeeDiscussion({ mode, user, role }) {
   }
 
   async function addPost() {
-    if ((!text.trim() && files.length === 0) || submitting) return;
+    if ((!text.trim() && files.length === 0 && !selectedGif) || submitting) {
+      return;
+    }
 
     if (!canPostInForum(activeSanction)) {
       setErrorMessage(
@@ -137,9 +177,7 @@ export default function EmployeeDiscussion({ mode, user, role }) {
       return;
     }
 
-    // ✅ mémorise la position actuelle avant publication
     const currentScrollY = window.scrollY;
-
     setSubmitting(true);
     setErrorMessage("");
 
@@ -153,14 +191,16 @@ export default function EmployeeDiscussion({ mode, user, role }) {
         content: text.trim(),
         mode,
         attachments: files,
+        externalGif: selectedGif,
       });
 
       setText("");
       setFiles([]);
+      setSelectedGif(null);
+      setShowGifPicker(false);
 
       await loadPosts();
 
-      // ✅ restaure la position du scroll après rerender
       requestAnimationFrame(() => {
         window.scrollTo({ top: currentScrollY });
       });
@@ -188,7 +228,6 @@ export default function EmployeeDiscussion({ mode, user, role }) {
   async function saveEditPost(postId) {
     if (!editingText.trim()) return;
 
-    // ✅ mémorise la position avant rechargement
     const currentScrollY = window.scrollY;
 
     try {
@@ -201,7 +240,6 @@ export default function EmployeeDiscussion({ mode, user, role }) {
       cancelEditPost();
       await loadPosts();
 
-      // ✅ restaure la position après rerender
       requestAnimationFrame(() => {
         window.scrollTo({ top: currentScrollY });
       });
@@ -212,17 +250,16 @@ export default function EmployeeDiscussion({ mode, user, role }) {
   }
 
   async function removePost(post) {
-    const canDelete = post.user_id === user.id || isAdminLike(normalizedRole);
+    const canDelete = post.user_id === user.id;
+
     if (!canDelete) return;
 
-    // ✅ mémorise la position avant rechargement
     const currentScrollY = window.scrollY;
 
     try {
       await deletePostAction(post.id);
       await loadPosts();
 
-      // ✅ restaure la position après rerender
       requestAnimationFrame(() => {
         window.scrollTo({ top: currentScrollY });
       });
@@ -232,12 +269,7 @@ export default function EmployeeDiscussion({ mode, user, role }) {
     }
   }
 
-  const sectionTitle =
-    mode === "feed"
-      ? "Fil d’actualité interne"
-      : mode === "employees"
-      ? "Discussion entre employés"
-      : "Espace sécurisé";
+  const sectionTitle = "Fil d’actualité interne";
 
   return (
     <div className="forum-feed">
@@ -256,19 +288,30 @@ export default function EmployeeDiscussion({ mode, user, role }) {
           </div>
         )}
 
-        <div className="forum-composer-box search-box" style={{ width: "100%" }}>
+        <div style={{ width: "100%" }}>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Écris ton message..."
             rows={5}
+            style={textareaStyle}
           />
         </div>
 
-        <div className="forum-composer-toolbar">
+        <div
+          className="forum-composer-toolbar"
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            alignItems: "center",
+            position: "relative",
+          }}
+        >
           <label className="forum-tool-btn" htmlFor={`forum-post-files-${mode}`}>
             📎 Ajouter des fichiers
           </label>
+
           <input
             id={`forum-post-files-${mode}`}
             type="file"
@@ -277,15 +320,72 @@ export default function EmployeeDiscussion({ mode, user, role }) {
             onChange={handleFilesChange}
             style={{ display: "none" }}
           />
+
+          <button
+            type="button"
+            className="forum-tool-btn"
+            onClick={() => setShowGifPicker((prev) => !prev)}
+          >
+            GIF
+          </button>
+
           <span className="forum-attachment-meta">
             Max 4 fichiers : image, GIF, vidéo MP4/WebM, PDF
           </span>
+
+          <GiphyGifPicker
+            open={showGifPicker}
+            onClose={() => setShowGifPicker(false)}
+            onSelect={(gif) => {
+              setSelectedGif(gif);
+              setShowGifPicker(false);
+              setErrorMessage("");
+            }}
+            anchorLabel="GIF GIPHY"
+          />
         </div>
+
+        {selectedGif && (
+          <div
+            style={{
+              marginTop: 12,
+              background: "rgba(15,23,42,0.5)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 14,
+              padding: 10,
+              display: "inline-flex",
+              flexDirection: "column",
+              gap: 8,
+              maxWidth: 260,
+            }}
+          >
+            <img
+              src={selectedGif.previewUrl || selectedGif.gifUrl}
+              alt={selectedGif.title || "GIF"}
+              style={{
+                width: "100%",
+                maxWidth: 240,
+                maxHeight: 180,
+                objectFit: "cover",
+                borderRadius: 10,
+              }}
+            />
+            <button
+              type="button"
+              className="forum-tool-btn"
+              onClick={() => setSelectedGif(null)}
+              style={{ width: "fit-content" }}
+            >
+              Retirer le GIF
+            </button>
+          </div>
+        )}
 
         {files.length > 0 && (
           <div className="forum-attachments-preview">
             {files.map((file) => {
               const kind = getAttachmentKind(file.type);
+
               return (
                 <div key={`${file.name}-${file.size}`} className="forum-attachment-chip">
                   <span className="forum-attachment-name">{file.name}</span>
@@ -328,27 +428,21 @@ export default function EmployeeDiscussion({ mode, user, role }) {
         <div className="video-grid" style={{ gridTemplateColumns: "1fr" }}>
           {posts.map((post) => {
             const authorProfile = profilesMap[post.user_id] ?? null;
-            const canManage = post.user_id === user.id || isAdminLike(normalizedRole);
+            const canManage = post.user_id === user.id;
 
             if (editingPostId === post.id) {
               return (
                 <div key={post.id} className="video-card forum-post-card">
-                  <div className="search-box" style={{ width: "100%", marginBottom: 16 }}>
-                    <textarea
-                      value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
-                      rows={4}
-                      style={{
-                        width: "100%",
-                        border: "none",
-                        outline: "none",
-                        background: "transparent",
-                        resize: "vertical",
-                        fontFamily: "inherit",
-                      }}
-                    />
-                  </div>
-
+                  <textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={4}
+                    style={{
+                      ...textareaStyle,
+                      minHeight: 120,
+                      marginBottom: 16,
+                    }}
+                  />
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <button
                       type="button"
@@ -376,11 +470,14 @@ export default function EmployeeDiscussion({ mode, user, role }) {
                 user={user}
                 role={normalizedRole}
                 authorProfile={authorProfile}
+                authorSanction={authorSanctionsMap[post.user_id] ?? null}
                 attachments={attachmentsMap[String(post.id)] ?? []}
                 refreshPosts={loadPosts}
                 onEditPost={() => startEditPost(post)}
                 onDeletePost={() => removePost(post)}
                 canManagePost={canManage}
+                focusTarget={focusTarget}
+                onFocusHandled={onFocusHandled}
               />
             );
           })}
