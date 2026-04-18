@@ -335,6 +335,106 @@ export async function deleteAttachment(attachmentId) {
   return true;
 }
 
+export async function syncPostAttachments({
+  postId,
+  userId,
+  previousAttachments = [],
+  keepAttachmentIds = [],
+  newFiles = [],
+  externalGif = null,
+}) {
+  const keepIds = new Set((keepAttachmentIds ?? []).map((id) => String(id)));
+
+  for (const attachment of previousAttachments ?? []) {
+    if (!keepIds.has(String(attachment.id))) {
+      await deleteAttachment(attachment.id);
+    }
+  }
+
+  for (const file of newFiles ?? []) {
+    await uploadForumAttachment(file, {
+      targetType: "post",
+      targetId: postId,
+      uploaderId: userId,
+    });
+  }
+
+  if (externalGif) {
+    await createExternalGifAttachment({
+      targetType: "post",
+      targetId: postId,
+      uploaderId: userId,
+      gif: externalGif,
+    });
+  }
+
+  const hasMedia =
+    keepIds.size > 0 || (newFiles?.length ?? 0) > 0 || Boolean(externalGif);
+
+  const { error } = await supabase
+    .from("forum_posts")
+    .update({
+      has_media: hasMedia,
+      edited_at: new Date().toISOString(),
+    })
+    .eq("id", postId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+
+  return { hasMedia };
+}
+
+export async function syncCommentAttachments({
+  commentId,
+  userId,
+  previousAttachments = [],
+  keepAttachmentIds = [],
+  gifFile = null,
+  externalGif = null,
+}) {
+  const keepIds = new Set((keepAttachmentIds ?? []).map((id) => String(id)));
+
+  for (const attachment of previousAttachments ?? []) {
+    if (!keepIds.has(String(attachment.id))) {
+      await deleteAttachment(attachment.id);
+    }
+  }
+
+  if (gifFile) {
+    await uploadForumAttachment(gifFile, {
+      targetType: "comment",
+      targetId: commentId,
+      uploaderId: userId,
+    });
+  }
+
+  if (externalGif) {
+    await createExternalGifAttachment({
+      targetType: "comment",
+      targetId: commentId,
+      uploaderId: userId,
+      gif: externalGif,
+    });
+  }
+
+  const hasGif =
+    keepIds.size > 0 || Boolean(gifFile) || Boolean(externalGif);
+
+  const { error } = await supabase
+    .from("forum_comments")
+    .update({
+      has_gif: hasGif,
+      edited_at: new Date().toISOString(),
+    })
+    .eq("id", commentId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+
+  return { hasGif };
+}
+
 export async function createPost({
   userId,
   authorName,

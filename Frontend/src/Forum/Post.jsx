@@ -3,15 +3,16 @@ import {
   createComment,
   createForumReport,
   createForumSanction,
-  deleteComment as deleteCommentAction,
   fetchActiveForumSanction,
   fetchAttachmentsByTargets,
   fetchComments,
   fetchLikes,
   fetchProfilesByIds,
   moderateForumPost,
+  syncCommentAttachments,
   toggleLike as toggleLikeAction,
   updateComment as updateCommentAction,
+  deleteComment as deleteCommentAction,
 } from "./forumService";
 import {
   canBanForumUsers,
@@ -48,12 +49,6 @@ const pickerToolbarStyle = {
   zIndex: 5,
 };
 
-const mediaFrameStyle = {
-  borderRadius: 18,
-  overflow: "hidden",
-  background: "#0f172a",
-};
-
 function GifPreview({ item, onRemove }) {
   if (!item?.publicUrl && !item?.gifUrl && !item?.previewUrl) return null;
 
@@ -64,7 +59,6 @@ function GifPreview({ item, onRemove }) {
       <img
         src={src}
         alt={item.file_name || item.title || "GIF"}
-        style={{ borderRadius: 14, display: "block", maxWidth: "min(240px, 100%)" }}
       />
       {onRemove && (
         <button
@@ -85,6 +79,8 @@ const EMPTY_REPLY_STATE = {
   targetId: null,
   text: "",
   externalGif: null,
+  existingGif: null,
+  existingGifRemoved: false,
 };
 
 function CommentNode({
@@ -122,14 +118,19 @@ function CommentNode({
   const gifAttachment = (commentAttachmentsMap[String(comment.id)] ?? []).find(
     (item) => item.kind === "gif"
   );
+
   const isEditing =
-    replyState.mode === "edit" && String(replyState.targetId) === String(comment.id);
+    replyState.mode === "edit" &&
+    String(replyState.targetId) === String(comment.id);
+
   const isReplying =
-    replyState.mode === "reply" && String(replyState.targetId) === String(comment.id);
+    replyState.mode === "reply" &&
+    String(replyState.targetId) === String(comment.id);
+
   const isHighlighted =
     String(highlightedCommentId ?? "") === String(comment.id ?? "");
 
-  function resetReplyState() {
+  function closeAllModes() {
     setShowGifPicker(false);
     setReplyState(EMPTY_REPLY_STATE);
   }
@@ -140,10 +141,7 @@ function CommentNode({
       className={comment.depth > 0 ? "forum-reply-card" : "forum-comment-card"}
       style={
         isHighlighted
-          ? {
-              outline: "2px solid #6C5DD3",
-              scrollMarginTop: 100,
-            }
+          ? { outline: "2px solid #6C5DD3", scrollMarginTop: 100 }
           : undefined
       }
     >
@@ -181,12 +179,20 @@ function CommentNode({
             style={{ ...textareaStyle, minHeight: 110, marginTop: 12 }}
           />
 
-          <div className="forum-comment-actions">
+          <div className="forum-comment-toolbar" style={pickerToolbarStyle}>
+            <button
+              type="button"
+              className="forum-tool-btn"
+              onClick={() => setShowGifPicker((prev) => !prev)}
+            >
+              GIF GIPHY
+            </button>
+
             <button
               type="button"
               className="start-btn forum-admin-btn"
               onClick={() => onEditSubmit(comment.id)}
-              disabled={submitting || !replyState.text.trim()}
+              disabled={submitting}
             >
               {submitting ? "Enregistrement..." : "Enregistrer"}
             </button>
@@ -194,11 +200,74 @@ function CommentNode({
             <button
               type="button"
               className="start-btn forum-admin-btn"
-              onClick={resetReplyState}
+              onClick={closeAllModes}
+              disabled={submitting}
             >
               Annuler
             </button>
+
+            <GiphyGifPicker
+              open={showGifPicker}
+              onClose={() => setShowGifPicker(false)}
+              onSelect={(gif) => {
+                setReplyState((prev) => ({
+                  ...prev,
+                  externalGif: gif,
+                  existingGifRemoved: prev.existingGif ? true : false,
+                }));
+                setShowGifPicker(false);
+              }}
+              anchorLabel="GIF GIPHY"
+            />
           </div>
+
+          {!replyState.existingGifRemoved && replyState.existingGif && (
+            <div style={{ marginTop: 10 }}>
+              <GifPreview
+                item={replyState.existingGif}
+                onRemove={() =>
+                  setReplyState((prev) => ({
+                    ...prev,
+                    existingGifRemoved: true,
+                  }))
+                }
+              />
+            </div>
+          )}
+
+          {replyState.externalGif && (
+            <div style={{ marginTop: 10 }}>
+              <GifPreview
+                item={replyState.externalGif}
+                onRemove={() =>
+                  setReplyState((prev) => ({
+                    ...prev,
+                    externalGif: null,
+                    existingGifRemoved: prev.existingGif ? false : false,
+                  }))
+                }
+              />
+            </div>
+          )}
+
+          {replyState.existingGif &&
+            replyState.existingGifRemoved &&
+            !replyState.externalGif && (
+              <div style={{ marginTop: 10 }}>
+                <button
+                  type="button"
+                  className="forum-tool-btn"
+                  onClick={() =>
+                    setReplyState((prev) => ({
+                      ...prev,
+                      existingGifRemoved: false,
+                    }))
+                  }
+                >
+                  Rétablir le GIF actuel
+                </button>
+              </div>
+            )}
         </>
       ) : (
         <>
@@ -221,13 +290,12 @@ function CommentNode({
               className="start-btn forum-action-btn"
               onClick={() => {
                 if (isReplying) {
-                  resetReplyState();
+                  closeAllModes();
                 } else {
                   setReplyState({
+                    ...EMPTY_REPLY_STATE,
                     mode: "reply",
                     targetId: comment.id,
-                    text: "",
-                    externalGif: null,
                   });
                 }
               }}
@@ -240,14 +308,21 @@ function CommentNode({
               <button
                 type="button"
                 className="start-btn forum-admin-btn"
-                onClick={() =>
+                onClick={() => {
+                  const currentGif =
+                    (commentAttachmentsMap[String(comment.id)] ?? []).find(
+                      (item) => item.kind === "gif"
+                    ) ?? null;
+
                   setReplyState({
                     mode: "edit",
                     targetId: comment.id,
                     text: comment.content ?? "",
                     externalGif: null,
-                  })
-                }
+                    existingGif: currentGif,
+                    existingGifRemoved: false,
+                  });
+                }}
               >
                 Modifier
               </button>
@@ -501,20 +576,17 @@ export default function Post({
       });
       setCommentProfiles(map);
 
-      let attachmentMap = {};
+      let commentAttachmentMap = {};
       try {
-        attachmentMap = await fetchAttachmentsByTargets(
+        commentAttachmentMap = await fetchAttachmentsByTargets(
           "comment",
           visibleComments.map((comment) => comment.id)
         );
       } catch (error) {
-        console.warn(
-          "Erreur chargement attachments commentaires :",
-          error.message
-        );
+        console.warn("Erreur chargement attachments commentaires :", error.message);
       }
 
-      setCommentAttachmentsMap(attachmentMap);
+      setCommentAttachmentsMap(commentAttachmentMap);
     } catch (error) {
       console.error("Erreur chargement commentaires :", error.message);
       setComments([]);
@@ -556,6 +628,7 @@ export default function Post({
 
     const currentScrollY = window.scrollY;
     const authorName = getUserDisplayName(user, commentProfiles[user.id]);
+
     setSubmitting(true);
     setErrorMessage("");
 
@@ -591,7 +664,16 @@ export default function Post({
   }
 
   async function saveCommentEdit(commentId) {
-    if (!replyState.text.trim()) {
+    const keepAttachmentIds =
+      replyState.existingGif &&
+      !replyState.existingGifRemoved &&
+      !replyState.externalGif
+        ? [replyState.existingGif.id]
+        : [];
+
+    const hasGif = keepAttachmentIds.length > 0 || Boolean(replyState.externalGif);
+
+    if (!replyState.text.trim() && !hasGif) {
       setErrorMessage("Le commentaire ne peut pas être vide.");
       return;
     }
@@ -609,6 +691,14 @@ export default function Post({
         content: replyState.text.trim(),
       });
 
+      await syncCommentAttachments({
+        commentId,
+        userId: user.id,
+        previousAttachments: replyState.existingGif ? [replyState.existingGif] : [],
+        keepAttachmentIds,
+        externalGif: replyState.externalGif,
+      });
+
       setReplyState(EMPTY_REPLY_STATE);
       await loadComments();
 
@@ -624,7 +714,8 @@ export default function Post({
   }
 
   async function removeComment(comment) {
-    if (comment.user_id !== user.id) return;
+    const canDelete = comment.user_id === user.id;
+    if (!canDelete) return;
 
     const currentScrollY = window.scrollY;
 
@@ -633,7 +724,7 @@ export default function Post({
 
       if (
         String(replyState.targetId) === String(comment.id) ||
-        comment.replies?.some((reply) => String(reply.id) === String(replyState.targetId))
+        comment.replies?.some((r) => String(r.id) === String(replyState.targetId))
       ) {
         setReplyState(EMPTY_REPLY_STATE);
       }
@@ -791,7 +882,6 @@ export default function Post({
                   <div
                     key={attachment.id}
                     className="forum-media-item forum-media-item-visual"
-                    style={mediaFrameStyle}
                   >
                     <img
                       src={src}
@@ -811,7 +901,6 @@ export default function Post({
                   <div
                     key={attachment.id}
                     className="forum-media-item forum-media-item-video"
-                    style={mediaFrameStyle}
                   >
                     <video
                       src={src}
